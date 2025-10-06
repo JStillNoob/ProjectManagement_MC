@@ -1,0 +1,116 @@
+<?php
+
+namespace App\Models;
+
+// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+
+class User extends Authenticatable
+{
+    /** @use HasFactory<\Database\Factories\UserFactory> */
+    use HasFactory, Notifiable;
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var list<string>
+     */
+    protected $fillable = [
+        'FirstName',
+        'MiddleName',
+        'LastName',
+        'Sex',
+        'ContactNumber',
+        'Email',
+        'Username',
+        'Password',
+        'UserTypeID',
+        'Position',
+        'FlagDeleted',
+        'EmployeeID',
+        'RoleID'
+    ];
+
+    /**
+     * The attributes that should be hidden for serialization.
+     *
+     * @var list<string>
+     */
+    protected $hidden = [
+        'Password',
+        'remember_token',
+    ];
+
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'Password' => 'hashed',
+            'FlagDeleted' => 'boolean',
+        ];
+    }
+
+    // Accessor for full name
+    public function getFullNameAttribute()
+    {
+        $middleName = $this->MiddleName ? ' ' . $this->MiddleName . ' ' : ' ';
+        return $this->FirstName . $middleName . $this->LastName;
+    }
+
+    // Scope to get only non-deleted users
+    public function scopeActive($query)
+    {
+        return $query->where('FlagDeleted', 0);
+    }
+
+    // Tell Laravel to use 'Email' instead of 'email' for authentication
+    public function getEmailForPasswordReset()
+    {
+        return $this->Email;
+    }
+
+    // If you're using email verification
+    public function getEmailForVerification()
+    {
+        return $this->Email;
+    }
+
+    // Tell Laravel to use 'Password' instead of 'password'
+    public function getAuthPassword()
+    {
+        return $this->Password;
+    }
+
+    // Relationship with user type
+    public function userType()
+    {
+        return $this->belongsTo(UserType::class, 'UserTypeID', 'UserTypeID');
+    }
+
+    public function scopeVoters($query)
+    {
+        return $query->whereHas('userType', function($q) {
+            $q->where('userType_name', 'Voter');
+        });
+    }
+
+    // Relationship with employee
+    public function employee()
+    {
+        return $this->belongsTo(Employee::class, 'EmployeeID', 'id');
+    }
+
+    // Relationship with role
+    public function role()
+    {
+        return $this->belongsTo(Role::class, 'RoleID', 'RoleID');
+    }
+
+}
