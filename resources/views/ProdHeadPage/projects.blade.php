@@ -17,7 +17,8 @@
                         </h3>
                         <div class="card-tools">
                             <button type="button" class="btn btn-primary btn-sm" data-toggle="modal"
-                                data-target="#createProjectModal">
+                                data-target="#createProjectModal"
+                                style="background-color: #52b788 !important; border: 2px solid #52b788 !important; color: white !important; opacity: 1 !important; visibility: visible !important; display: inline-block !important;">
                                 <i class="fas fa-plus mr-1"></i>
                                 New Project
                             </button>
@@ -355,5 +356,6 @@
         });
     </script>
 @endpush
+
 
 

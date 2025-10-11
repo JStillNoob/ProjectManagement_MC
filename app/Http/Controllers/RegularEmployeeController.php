@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Employee;
 use App\Models\EmployeeType;
+use App\Services\EmployeeBenefitService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -16,7 +17,7 @@ class RegularEmployeeController extends Controller
     public function index()
     {
         $regularType = EmployeeType::where('EmployeeTypeName', 'Regular')->first();
-        $employees = Employee::with('employeeType')
+        $employees = Employee::with(['employeeType', 'employeeBenefits', 'position'])
             ->where('EmployeeTypeID', $regularType->EmployeeTypeID)
             ->active()
             ->orderBy('created_at', 'desc')
@@ -43,9 +44,17 @@ class RegularEmployeeController extends Controller
             'last_name' => 'required|string|max:255',
             'birthday' => 'required|date|before:today',
             'age' => 'required|integer|min:18|max:100',
-            'address' => 'required|string',
-            'position' => 'required|string|max:255',
+            'house_number' => 'nullable|string|max:255',
+            'street' => 'nullable|string|max:255',
+            'barangay' => 'required|string|max:255',
+            'city' => 'required|string|max:255',
+            'province' => 'required|string|max:255',
+            'postal_code' => 'nullable|string|max:10',
+            'country' => 'nullable|string|max:255',
+            'PositionID' => 'required|exists:positions,PositionID',
+            'base_salary' => 'required|numeric|min:0',
             'start_date' => 'required|date|after_or_equal:birthday',
+            'contact_number' => 'required|string|max:20',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
@@ -69,10 +78,11 @@ class RegularEmployeeController extends Controller
         }
 
         // Generate QR code data
+        $position = \App\Models\Position::find($data['PositionID']);
         $qrData = [
             'employee_id' => 'EMP-' . str_pad(rand(1, 999999), 6, '0', STR_PAD_LEFT),
             'name' => $data['first_name'] . ' ' . ($data['middle_name'] ?? '') . ' ' . $data['last_name'],
-            'position' => $data['position'],
+            'position' => $position ? $position->PositionName : 'Not assigned',
             'start_date' => $data['start_date'],
             'type' => 'Regular Employee'
         ];
@@ -81,10 +91,10 @@ class RegularEmployeeController extends Controller
         $qrCodeUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' . urlencode($qrDataString);
         $data['qr_code'] = $qrCodeUrl;
 
-        Employee::create($data);
+        $employee = Employee::create($data);
 
         return redirect()->route('regular-employees.index')
-            ->with('success', 'Regular employee created successfully.');
+            ->with('success', 'Regular employee created successfully. You can now assign benefits manually.');
     }
 
     /**
@@ -92,7 +102,7 @@ class RegularEmployeeController extends Controller
      */
     public function show(Employee $employee)
     {
-        $employee->load('employeeType');
+        $employee->load(['employeeType', 'employeeBenefits.benefit', 'position']);
         return view('Admin.employees.regular.show', compact('employee'));
     }
 
@@ -101,6 +111,7 @@ class RegularEmployeeController extends Controller
      */
     public function edit(Employee $employee)
     {
+        $employee->load(['employeeType', 'position']);
         return view('Admin.employees.regular.edit', compact('employee'));
     }
 
@@ -115,9 +126,17 @@ class RegularEmployeeController extends Controller
             'last_name' => 'required|string|max:255',
             'birthday' => 'required|date|before:today',
             'age' => 'integer|min:18|max:100',
-            'address' => 'required|string',
-            'position' => 'required|string|max:255',
+            'house_number' => 'nullable|string|max:255',
+            'street' => 'nullable|string|max:255',
+            'barangay' => 'required|string|max:255',
+            'city' => 'required|string|max:255',
+            'province' => 'required|string|max:255',
+            'postal_code' => 'nullable|string|max:10',
+            'country' => 'nullable|string|max:255',
+            'PositionID' => 'required|exists:positions,PositionID',
+            'base_salary' => 'nullable|numeric|min:0',
             'start_date' => 'required|date|after_or_equal:birthday',
+            'contact_number' => 'required|string|max:20',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
         ]);
 

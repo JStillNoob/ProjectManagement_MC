@@ -145,6 +145,145 @@ class ProjectController extends Controller
     }
 
     /**
+     * Show project employees management page.
+     */
+    public function manageEmployees(Project $project)
+    {
+        $project->load(['projectEmployees.employee.position', 'projectEmployees.employee.employeeType']);
+        $availableEmployees = Employee::active()
+            ->whereNotExists(function($query) use ($project) {
+                $query->select(\DB::raw(1))
+                      ->from('project_employees')
+                      ->whereRaw('project_employees.EmployeeID = employees.id')
+                      ->where('project_employees.ProjectID', $project->ProjectID);
+            })
+            ->with(['position', 'employeeType'])
+            ->get();
+        
+        return view('projects.manage-employees', compact('project', 'availableEmployees'));
+    }
+
+    /**
+     * Assign single employee to project.
+     */
+    public function assignSingleEmployee(Request $request, Project $project)
+    {
+        $request->validate([
+            'EmployeeID' => 'required|exists:employees,id',
+        ]);
+
+        // Check if employee is already assigned to this project
+        $existingAssignment = ProjectEmployee::where('ProjectID', $project->ProjectID)
+            ->where('EmployeeID', $request->EmployeeID)
+            ->first();
+
+        if ($existingAssignment) {
+            return redirect()->back()
+                ->with('error', 'Employee is already assigned to this project.');
+        }
+
+        // Create project employee assignment
+        ProjectEmployee::create([
+            'ProjectID' => $project->ProjectID,
+            'EmployeeID' => $request->EmployeeID,
+            'role_in_project' => null, // No additional role needed
+            'assigned_date' => now(),
+            'status' => 'Active'
+        ]);
+
+        return redirect()->back()
+            ->with('success', 'Employee assigned to project successfully.');
+    }
+
+    /**
+     * Assign multiple employees to project.
+     */
+    public function assignMultipleEmployees(Request $request, Project $project)
+    {
+        $request->validate([
+            'employee_ids' => 'required|array|min:1',
+            'employee_ids.*' => 'exists:employees,id',
+        ]);
+
+        $assignedCount = 0;
+        $alreadyAssigned = [];
+
+        foreach ($request->employee_ids as $employeeId) {
+            // Check if employee is already assigned to this project
+            $existingAssignment = ProjectEmployee::where('ProjectID', $project->ProjectID)
+                ->where('EmployeeID', $employeeId)
+                ->first();
+
+            if (!$existingAssignment) {
+                // Create project employee assignment
+                ProjectEmployee::create([
+                    'ProjectID' => $project->ProjectID,
+                    'EmployeeID' => $employeeId,
+                    'role_in_project' => null, // No additional role needed
+                    'assigned_date' => now(),
+                    'status' => 'Active'
+                ]);
+                $assignedCount++;
+            } else {
+                $employee = \App\Models\Employee::find($employeeId);
+                $alreadyAssigned[] = $employee->full_name;
+            }
+        }
+
+        $message = "Successfully assigned {$assignedCount} employee(s) to the project.";
+        if (!empty($alreadyAssigned)) {
+            $message .= " The following employees were already assigned: " . implode(', ', $alreadyAssigned);
+        }
+
+        return redirect()->back()
+            ->with('success', $message);
+    }
+
+    /**
+     * Complete employee's job in project.
+     */
+    public function completeEmployeeJob(Project $project, ProjectEmployee $assignment)
+    {
+        // Verify the assignment belongs to this project
+        if ($assignment->ProjectID != $project->ProjectID) {
+            return redirect()->back()
+                ->with('error', 'Invalid assignment.');
+        }
+
+        // Check if job is already completed
+        if ($assignment->end_date) {
+            return redirect()->back()
+                ->with('error', 'Employee job is already completed.');
+        }
+
+        // Set end date to current date and update status
+        $assignment->update([
+            'end_date' => now()->toDateString(),
+            'status' => 'Inactive'
+        ]);
+
+        return redirect()->back()
+            ->with('success', 'Employee job marked as completed successfully.');
+    }
+
+    /**
+     * Remove employee from project.
+     */
+    public function removeEmployee(Project $project, ProjectEmployee $assignment)
+    {
+        // Verify the assignment belongs to this project
+        if ($assignment->ProjectID != $project->ProjectID) {
+            return redirect()->back()
+                ->with('error', 'Invalid assignment.');
+        }
+
+        $assignment->delete();
+
+        return redirect()->back()
+            ->with('success', 'Employee removed from project successfully.');
+    }
+
+    /**
      * Reactivate project from On Hold status.
      */
     public function reactivate(Project $project)
@@ -174,14 +313,4 @@ class ProjectController extends Controller
             ->with('success', 'Employees assigned to project successfully.');
     }
 
-    /**
-     * Remove employee from project.
-     */
-    public function removeEmployee(Project $project, Employee $employee)
-    {
-        $project->employees()->detach($employee->id);
-
-        return redirect()->route('projects.show', $project)
-            ->with('success', 'Employee removed from project successfully.');
-    }
 }

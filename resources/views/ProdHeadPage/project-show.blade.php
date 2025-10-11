@@ -7,16 +7,22 @@
     <div class="row">
         <div class="col-12">
             <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h3 class="card-title">
+                <div class="card-header" style="position: relative;">
+                    <h3 class="card-title mb-0" style="display: inline-block;">
                         <i class="fas fa-project-diagram mr-2"></i>
                         Project: {{ $project->ProjectName }}
                     </h3>
-                    <div>
-                        <a href="{{ route('projects.edit', $project) }}" class="btn btn-warning me-2">
+                    <div style="position: absolute; top: 50%; right: 20px; transform: translateY(-50%);">
+                        <a href="{{ route('projects.manage-employees', $project) }}" class="btn btn-primary me-2" 
+                           style="background-color: #52b788 !important; border: 2px solid #52b788 !important; color: white !important; opacity: 1 !important; visibility: visible !important; display: inline-block !important;">
+                            <i class="fas fa-users"></i> Manage Employees
+                        </a>
+                        <a href="{{ route('projects.edit', $project) }}" class="btn btn-warning me-2"
+                           style="background-color: #ffc107 !important; border: 2px solid #ffc107 !important; color: #212529 !important; opacity: 1 !important; visibility: visible !important; display: inline-block !important;">
                             <i class="fas fa-edit"></i> Edit Project
                         </a>
-                        <a href="{{ route('ProdHead.projects') }}" class="btn btn-secondary">
+                        <a href="{{ route('ProdHead.projects') }}" class="btn btn-secondary"
+                           style="background-color: #6c757d !important; border: 2px solid #6c757d !important; color: white !important; opacity: 1 !important; visibility: visible !important; display: inline-block !important;">
                             <i class="fas fa-arrow-left"></i> Back to Projects
                         </a>
                     </div>
@@ -122,47 +128,7 @@
                         </div>
                     @endif
 
-                    <!-- Assigned Employees -->
-                    <div class="row mt-4">
-                        <div class="col-12">
-                            <h5>Assigned Employees</h5>
-                            @if($project->employees->count() > 0)
-                                <div class="row">
-                                    @foreach($project->employees as $employee)
-                                        <div class="col-md-4 mb-3">
-                                            <div class="card">
-                                                <div class="card-body">
-                                                    <div class="d-flex align-items-center">
-                                                        <img src="{{ $employee->image_path }}" 
-                                                             alt="{{ $employee->full_name }}" 
-                                                             class="rounded-circle me-3" 
-                                                             width="50" height="50">
-                                                        <div>
-                                                            <h6 class="card-title mb-1">{{ $employee->full_name }}</h6>
-                                                            @if($employee->position)
-                                                                <small class="text-muted">{{ $employee->position }}</small>
-                                                            @endif
-                                                        </div>
-                                                    </div>
-                                                    @if($employee->employeeType)
-                                                        <span class="badge bg-info mt-2">{{ $employee->employeeType->EmployeeTypeName }}</span>
-                                                    @endif
-                                                </div>
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            @else
-                                <div class="alert alert-info">
-                                    <i class="fas fa-info-circle mr-2"></i>
-                                    No employees assigned to this project.
-                                    <a href="{{ route('projects.edit', $project) }}" class="btn btn-sm btn-primary ms-2">
-                                        <i class="fas fa-plus"></i> Assign Employees
-                                    </a>
-                                </div>
-                            @endif
-                        </div>
-                    </div>
+
 
                     <!-- Project Actions -->
                     <div class="row mt-4">
@@ -205,4 +171,5 @@
         </div>
     </div>
 @endsection
+
 

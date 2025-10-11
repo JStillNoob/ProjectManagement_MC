@@ -12,37 +12,29 @@ class Employee extends Model
         'last_name',
         'birthday',
         'age',
-        'address',
+        'house_number',
+        'street',
+        'barangay',
+        'city',
+        'province',
+        'postal_code',
+        'country',
         'status',
-        'position',
+        'PositionID',
+        'base_salary',
         'start_date',
         'image_name',
         'qr_code',
         'flag_deleted',
         'EmployeeTypeID',
-        'daily_salary',
-        'hourly_rate',
-        'monthly_salary',
-        'availability',
-        'contact_number',
-        'emergency_contact',
-        'emergency_phone',
-        'benefits',
-        'health_insurance',
-        'retirement_plan',
-        'vacation_days',
-        'sick_days'
+        'contact_number'
     ];
 
     protected $casts = [
         'birthday' => 'date',
         'start_date' => 'date',
         'flag_deleted' => 'boolean',
-        'daily_salary' => 'decimal:2',
-        'hourly_rate' => 'decimal:2',
-        'monthly_salary' => 'decimal:2',
-        'vacation_days' => 'integer',
-        'sick_days' => 'integer',
+        'base_salary' => 'decimal:2',
     ];
 
     // Scope to get only non-deleted employees
@@ -56,6 +48,38 @@ class Employee extends Model
     {
         $middleName = $this->middle_name ? ' ' . $this->middle_name . ' ' : ' ';
         return $this->first_name . $middleName . $this->last_name;
+    }
+
+    // Accessor for full address
+    public function getFullAddressAttribute()
+    {
+        $addressParts = array_filter([
+            $this->house_number,
+            $this->street,
+            $this->barangay,
+            $this->city,
+            $this->province,
+            $this->postal_code,
+            $this->country
+        ]);
+        
+        return implode(', ', $addressParts);
+    }
+
+    // Accessor for formatted salary
+    public function getFormattedSalaryAttribute()
+    {
+        if (!$this->base_salary) {
+            return 'Not set';
+        }
+        
+        return '₱' . number_format($this->base_salary, 2);
+    }
+
+    // Method to get monthly salary (same as base salary)
+    public function getMonthlySalaryAttribute()
+    {
+        return $this->base_salary ?? 0;
     }
 
     // Accessor for image path
@@ -95,6 +119,18 @@ class Employee extends Model
         return $this->belongsTo(EmployeeType::class, 'EmployeeTypeID', 'EmployeeTypeID');
     }
 
+    // Relationship with position
+    public function position()
+    {
+        return $this->belongsTo(Position::class, 'PositionID', 'PositionID');
+    }
+
+    // Accessor for position name (for backward compatibility)
+    public function getPositionAttribute()
+    {
+        return $this->position()->first()?->PositionName;
+    }
+
     // Relationship with projects (many-to-many through project_employees)
     public function projects()
     {
@@ -105,5 +141,63 @@ class Employee extends Model
     public function users()
     {
         return $this->hasMany(User::class, 'EmployeeID', 'id');
+    }
+
+    // Relationship with benefits through employee_benefits
+    public function benefits()
+    {
+        return $this->belongsToMany(Benefit::class, 'employee_benefits', 'EmployeeID', 'BenefitID')
+                    ->withPivot(['EffectiveDate', 'ExpiryDate', 'Amount', 'Percentage', 'IsActive'])
+                    ->withTimestamps();
+    }
+
+    // Relationship with employee_benefits
+    public function employeeBenefits()
+    {
+        return $this->hasMany(EmployeeBenefit::class, 'EmployeeID', 'id');
+    }
+
+    // Method to automatically assign benefits based on employee type
+    public function assignBenefitsBasedOnType()
+    {
+        if ($this->employeeType && $this->employeeType->hasBenefits) {
+            // Get all active benefits
+            $benefits = Benefit::active()->get();
+            
+            foreach ($benefits as $benefit) {
+                // Check if employee already has this benefit
+                $existingBenefit = $this->employeeBenefits()
+                    ->where('BenefitID', $benefit->BenefitID)
+                    ->where('IsActive', true)
+                    ->first();
+
+                if (!$existingBenefit) {
+                    // Assign the benefit
+                    $this->employeeBenefits()->create([
+                        'BenefitID' => $benefit->BenefitID,
+                        'EffectiveDate' => now(),
+                        'Amount' => $benefit->Amount,
+                        'Percentage' => $benefit->Percentage,
+                        'IsActive' => true,
+                    ]);
+                }
+            }
+        }
+    }
+
+    // Method to get current active benefits
+    public function getCurrentBenefits()
+    {
+        return $this->employeeBenefits()
+            ->with('benefit')
+            ->active()
+            ->current()
+            ->get();
+    }
+
+    // Method to check if employee is eligible for benefits
+    public function isEligibleForBenefits()
+    {
+        return $this->employeeType && $this->employeeType->hasBenefits;
     }
 }

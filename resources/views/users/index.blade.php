@@ -10,7 +10,8 @@
             <div class="card-header">
                 <h3 class="card-title">User Accounts</h3>
                 <div class="card-tools">
-                    <a href="{{ route('users.create') }}" class="btn btn-primary btn-sm">
+                    <a href="{{ route('users.create') }}" class="btn btn-primary btn-sm"
+                       style="background-color: #52b788 !important; border: 2px solid #52b788 !important; color: white !important; opacity: 1 !important; visibility: visible !important; display: inline-block !important;">
                         <i class="fas fa-plus"></i> Add New User
                     </a>
                 </div>
@@ -31,9 +32,8 @@
                             <tr>
                                 <th>ID</th>
                                 <th>Employee</th>
-                                <th>Username</th>
+                                <th>Email</th>
                                 <th>User Type</th>
-                                <th>Role</th>
                                 <th>Date Created</th>
                                 <th>Actions</th>
                             </tr>
@@ -44,32 +44,19 @@
                                     <td>{{ $user->id }}</td>
                                     <td>
                                         @if($user->employee)
-                                            <div class="d-flex align-items-center">
-                                                <img src="{{ $user->employee->image_path }}" 
-                                                     alt="{{ $user->employee->full_name }}" 
-                                                     class="rounded-circle me-2" 
-                                                     width="30" height="30">
-                                                <div>
-                                                    <strong>{{ $user->employee->full_name }}</strong>
-                                                    @if($user->employee->position)
-                                                        <br><small class="text-muted">{{ $user->employee->position }}</small>
-                                                    @endif
-                                                </div>
+                                            <div>
+                                                <strong>{{ $user->employee->full_name }}</strong>
+                                                @if($user->employee->position)
+                                                    <br><small class="text-muted">{{ $user->employee->position }}</small>
+                                                @endif
                                             </div>
                                         @else
                                             <span class="text-muted">No employee linked</span>
                                         @endif
                                     </td>
-                                    <td>{{ $user->Username }}</td>
+                                    <td>{{ $user->Email }}</td>
                                     <td>
                                         <span class="badge badge-info">{{ $user->userType->UserType ?? 'N/A' }}</span>
-                                    </td>
-                                    <td>
-                                        @if($user->role)
-                                            <span class="badge badge-success">{{ $user->role->RoleName }}</span>
-                                        @else
-                                            <span class="text-muted">No role assigned</span>
-                                        @endif
                                     </td>
                                     <td>{{ $user->created_at->format('M d, Y') }}</td>
                                     <td>
@@ -94,7 +81,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="text-center">No users found.</td>
+                                    <td colspan="6" class="text-center">No users found.</td>
                                 </tr>
                             @endforelse
                         </tbody>

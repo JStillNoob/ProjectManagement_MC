@@ -17,6 +17,15 @@ class ProjectEmployee extends Model
     protected $fillable = [
         'ProjectID',
         'EmployeeID',
+        'role_in_project',
+        'assigned_date',
+        'end_date',
+        'status'
+    ];
+
+    protected $casts = [
+        'assigned_date' => 'date',
+        'end_date' => 'date',
     ];
 
     // Relationship with project

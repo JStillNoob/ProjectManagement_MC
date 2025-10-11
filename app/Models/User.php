@@ -18,19 +18,13 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
-        'FirstName',
-        'MiddleName',
-        'LastName',
-        'Sex',
         'ContactNumber',
         'Email',
-        'Username',
         'Password',
         'UserTypeID',
         'Position',
         'FlagDeleted',
-        'EmployeeID',
-        'RoleID'
+        'EmployeeID'
     ];
 
     /**
@@ -57,12 +51,6 @@ class User extends Authenticatable
         ];
     }
 
-    // Accessor for full name
-    public function getFullNameAttribute()
-    {
-        $middleName = $this->MiddleName ? ' ' . $this->MiddleName . ' ' : ' ';
-        return $this->FirstName . $middleName . $this->LastName;
-    }
 
     // Scope to get only non-deleted users
     public function scopeActive($query)
@@ -107,10 +95,16 @@ class User extends Authenticatable
         return $this->belongsTo(Employee::class, 'EmployeeID', 'id');
     }
 
-    // Relationship with role
+    // Relationship with position
+    public function position()
+    {
+        return $this->belongsTo(Position::class, 'PositionID', 'PositionID');
+    }
+
+    // Keep role method for backward compatibility
     public function role()
     {
-        return $this->belongsTo(Role::class, 'RoleID', 'RoleID');
+        return $this->position();
     }
 
 }

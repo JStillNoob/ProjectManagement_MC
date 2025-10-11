@@ -54,6 +54,12 @@ class Project extends Model
         return $this->belongsToMany(Employee::class, 'project_employees', 'ProjectID', 'EmployeeID', 'ProjectID', 'id');
     }
 
+    // Relationship with project employees (direct relationship)
+    public function projectEmployees()
+    {
+        return $this->hasMany(ProjectEmployee::class, 'ProjectID', 'ProjectID');
+    }
+
     // Accessor for full address
     public function getFullAddressAttribute()
     {

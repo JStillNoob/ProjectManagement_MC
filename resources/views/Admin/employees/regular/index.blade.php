@@ -13,7 +13,12 @@
                         Regular Employees
                     </h3>
                     <div class="card-tools">
-                        <a href="{{ route('regular-employees.create') }}" class="btn btn-success btn-sm">
+                        <a href="{{ route('employees.index') }}" class="btn btn-secondary btn-sm me-2"
+                           style="background-color: #6c757d !important; border: 2px solid #6c757d !important; color: white !important; opacity: 1 !important; visibility: visible !important; display: inline-block !important;">
+                            <i class="fas fa-arrow-left"></i> Back to Employee Management
+                        </a>
+                        <a href="{{ route('regular-employees.create') }}" class="btn btn-success btn-sm"
+                           style="background-color: #28a745 !important; border: 2px solid #28a745 !important; color: white !important; opacity: 1 !important; visibility: visible !important; display: inline-block !important;">
                             <i class="fas fa-plus"></i> Add Regular Employee
                         </a>
                     </div>
@@ -37,6 +42,7 @@
                                     <th>Name</th>
                                     <th>Position</th>
                                     <th>Status</th>
+                                    <th>Benefits</th>
                                     <th>Start Date</th>
                                     <th>Actions</th>
                                 </tr>
@@ -64,22 +70,39 @@
                                                 {{ $employee->status }}
                                             </span>
                                         </td>
+                                        <td>
+                                            @php
+                                                $benefitCount = $employee->employeeBenefits()->where('IsActive', true)->count();
+                                            @endphp
+                                            @if($benefitCount > 0)
+                                                <span class="badge badge-success">
+                                                    <i class="fas fa-gift mr-1"></i>{{ $benefitCount }} Benefits
+                                                </span>
+                                            @else
+                                                <span class="badge badge-warning">
+                                                    <i class="fas fa-exclamation-triangle mr-1"></i>No Benefits
+                                                </span>
+                                            @endif
+                                        </td>
                                         <td>{{ $employee->start_date->format('M d, Y') }}</td>
                                         <td>
                                             <div class="btn-group" role="group">
-                                                <a href="{{ route('regular-employees.show', $employee) }}" class="btn btn-info btn-sm">
+                                                <a href="{{ route('regular-employees.show', $employee) }}" class="btn btn-info btn-sm" title="View Details">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
-                                                <a href="{{ route('regular-employees.edit', $employee) }}" class="btn btn-warning btn-sm">
+                                                <a href="{{ route('employees.benefits', $employee) }}" class="btn btn-success btn-sm" title="Manage Benefits">
+                                                    <i class="fas fa-gift"></i>
+                                                </a>
+                                                <a href="{{ route('regular-employees.edit', $employee) }}" class="btn btn-warning btn-sm" title="Edit">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
                                                 <form action="{{ route('regular-employees.destroy', $employee) }}" method="POST"
                                                     style="display: inline-block;"
-                                                    onsubmit="return confirm('Are you sure you want to delete this regular employee?')">
+                                                    onsubmit="return confirm('Are you sure you want to archive this regular employee?')">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button type="submit" class="btn btn-danger btn-sm">
-                                                        <i class="fas fa-trash"></i>
+                                                    <button type="submit" class="btn btn-danger btn-sm" title="Archive">
+                                                        <i class="fas fa-archive"></i>
                                                     </button>
                                                 </form>
                                             </div>
@@ -87,7 +110,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="7" class="text-center">No regular employees found.</td>
+                                        <td colspan="8" class="text-center">No regular employees found.</td>
                                     </tr>
                                 @endforelse
                             </tbody>

@@ -13,10 +13,10 @@ class EmployeeTypeSeeder extends Seeder
     public function run(): void
     {
         $employeeTypes = [
-            ['EmployeeTypeName' => 'Regular'],
-            ['EmployeeTypeName' => 'On-call'],
-            ['EmployeeTypeName' => 'Contract'],
-            ['EmployeeTypeName' => 'Part-time'],
+            ['EmployeeTypeName' => 'Regular', 'hasBenefits' => true],
+            ['EmployeeTypeName' => 'On-call', 'hasBenefits' => false],
+            ['EmployeeTypeName' => 'Contract', 'hasBenefits' => true],
+            ['EmployeeTypeName' => 'Part-time', 'hasBenefits' => false],
         ];
 
         foreach ($employeeTypes as $type) {

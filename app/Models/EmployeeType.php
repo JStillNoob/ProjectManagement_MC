@@ -16,6 +16,11 @@ class EmployeeType extends Model
 
     protected $fillable = [
         'EmployeeTypeName',
+        'hasBenefits',
+    ];
+
+    protected $casts = [
+        'hasBenefits' => 'boolean',
     ];
 
     // Relationship with employees

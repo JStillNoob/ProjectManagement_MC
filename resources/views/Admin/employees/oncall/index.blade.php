@@ -13,7 +13,12 @@
                         On-Call Employees
                     </h3>
                     <div class="card-tools">
-                        <a href="{{ route('oncall-employees.create') }}" class="btn btn-info btn-sm">
+                        <a href="{{ route('employees.index') }}" class="btn btn-secondary btn-sm me-2"
+                           style="background-color: #6c757d !important; border: 2px solid #6c757d !important; color: white !important; opacity: 1 !important; visibility: visible !important; display: inline-block !important;">
+                            <i class="fas fa-arrow-left"></i> Back to Employee Management
+                        </a>
+                        <a href="{{ route('oncall-employees.create') }}" class="btn btn-info btn-sm"
+                           style="background-color: #17a2b8 !important; border: 2px solid #17a2b8 !important; color: white !important; opacity: 1 !important; visibility: visible !important; display: inline-block !important;">
                             <i class="fas fa-plus"></i> Add On-Call Employee
                         </a>
                     </div>
@@ -36,7 +41,7 @@
                                     <th>Photo</th>
                                     <th>Name</th>
                                     <th>Position</th>
-                                    <th>Availability</th>
+                                    <th>Salary</th>
                                     <th>Contact</th>
                                     <th>Status</th>
                                     <th>Start Date</th>
@@ -62,10 +67,13 @@
                                         <td>{{ $employee->full_name }}</td>
                                         <td>{{ $employee->position }}</td>
                                         <td>
-                                            @if($employee->availability)
-                                                <span class="badge badge-info">{{ $employee->availability }}</span>
+                                            @if($employee->base_salary)
+                                                <small class="text-success">
+                                                    <i class="fas fa-money-bill-wave mr-1"></i>
+                                                    {{ $employee->formatted_salary }}
+                                                </small>
                                             @else
-                                                <span class="text-muted">Not specified</span>
+                                                <span class="text-muted">Not set</span>
                                             @endif
                                         </td>
                                         <td>
@@ -91,11 +99,11 @@
                                                 </a>
                                                 <form action="{{ route('oncall-employees.destroy', $employee) }}" method="POST"
                                                     style="display: inline-block;"
-                                                    onsubmit="return confirm('Are you sure you want to delete this on-call employee?')">
+                                                    onsubmit="return confirm('Are you sure you want to archive this on-call employee?')">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button type="submit" class="btn btn-danger btn-sm">
-                                                        <i class="fas fa-trash"></i>
+                                                    <button type="submit" class="btn btn-danger btn-sm" title="Archive">
+                                                        <i class="fas fa-archive"></i>
                                                     </button>
                                                 </form>
                                             </div>

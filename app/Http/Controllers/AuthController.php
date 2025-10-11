@@ -26,6 +26,8 @@ class AuthController extends Controller
                 return redirect()->route('showProdHead')->with('success', 'Login successful!');
             }elseif($user->UserTypeID == 2){
                 return redirect()->route('showAdmin')->with('success', 'Login successful!');
+            }elseif($user->UserTypeID == 3){
+                return redirect()->route('attendance.index')->with('success', 'Login successful!');
             } else {
                 return redirect()->route('showAdmin')->with('success', 'Login successful!');
             }
@@ -66,7 +68,16 @@ class AuthController extends Controller
     public function showLogin()
     {
         if (Auth::check()) {
-            return redirect()->route('showAdmin');
+            $user = Auth::user();
+            if($user->UserTypeID == 1){
+                return redirect()->route('showProdHead');
+            }elseif($user->UserTypeID == 2){
+                return redirect()->route('showAdmin');
+            }elseif($user->UserTypeID == 3){
+                return redirect()->route('attendance.index');
+            } else {
+                return redirect()->route('showAdmin');
+            }
         }
         return view('LogInPage');
     }   

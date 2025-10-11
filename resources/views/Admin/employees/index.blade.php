@@ -34,13 +34,12 @@
                                     </h3>
                                 </div>
                                 <div class="card-body">
-                                    <p class="card-text">Full-time employees with complete benefits package including health insurance, retirement plan, vacation days, and sick leave.</p>
+                                    <p class="card-text">Full-time employees with comprehensive benefits package including health insurance, retirement plan, vacation days, sick leave, government contributions, and additional perks.</p>
                                     <ul class="list-unstyled">
-                                        <li><i class="fas fa-check text-success mr-1"></i> Health Insurance</li>
-                                        <li><i class="fas fa-check text-success mr-1"></i> Retirement Plan</li>
-                                        <li><i class="fas fa-check text-success mr-1"></i> Paid Vacation</li>
-                                        <li><i class="fas fa-check text-success mr-1"></i> Sick Leave</li>
-                                        <li><i class="fas fa-check text-success mr-1"></i> Monthly Salary</li>
+                                        <li><i class="fas fa-gift text-success mr-1"></i> SSS Contribution</li>
+                                        <li><i class="fas fa-gift text-success mr-1"></i> PhilHealth Coverage</li>
+                                        <li><i class="fas fa-gift text-success mr-1"></i> Pag-IBIG Fund</li>
+
                                     </ul>
                                     <div class="mt-3">
                                         <a href="{{ route('regular-employees.index') }}" class="btn btn-success">
@@ -67,8 +66,6 @@
                                     <ul class="list-unstyled">
                                         <li><i class="fas fa-clock text-info mr-1"></i> Flexible Schedule</li>
                                         <li><i class="fas fa-phone text-info mr-1"></i> Called as Needed</li>
-                                        <li><i class="fas fa-dollar-sign text-info mr-1"></i> Hourly Rate</li>
-                                        <li><i class="fas fa-calendar text-info mr-1"></i> No Fixed Hours</li>
                                         <li><i class="fas fa-exclamation-triangle text-warning mr-1"></i> No Benefits</li>
                                     </ul>
                                     <div class="mt-3">
@@ -85,71 +82,7 @@
                     </div>
 
                     <!-- Quick Stats -->
-                    <div class="row">
-                        <div class="col-md-3">
-                            <div class="info-box">
-                                <span class="info-box-icon bg-success">
-                                    <i class="fas fa-user-tie"></i>
-                                </span>
-                                <div class="info-box-content">
-                                    <span class="info-box-text">Regular Employees</span>
-                                    <span class="info-box-number">
-                                        {{ \App\Models\Employee::whereHas('employeeType', function($query) {
-                                            $query->where('EmployeeTypeName', 'Regular');
-                                        })->where('flag_deleted', 0)->count() }}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-3">
-                            <div class="info-box">
-                                <span class="info-box-icon bg-info">
-                                    <i class="fas fa-phone"></i>
-                                </span>
-                                <div class="info-box-content">
-                                    <span class="info-box-text">On-Call Employees</span>
-                                    <span class="info-box-number">
-                                        {{ \App\Models\Employee::whereHas('employeeType', function($query) {
-                                            $query->where('EmployeeTypeName', 'On-call');
-                                        })->where('flag_deleted', 0)->count() }}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-3">
-                            <div class="info-box">
-                                <span class="info-box-icon bg-warning">
-                                    <i class="fas fa-file-contract"></i>
-                                </span>
-                                <div class="info-box-content">
-                                    <span class="info-box-text">Contract Employees</span>
-                                    <span class="info-box-number">
-                                        {{ \App\Models\Employee::whereHas('employeeType', function($query) {
-                                            $query->where('EmployeeTypeName', 'Contract');
-                                        })->where('flag_deleted', 0)->count() }}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-3">
-                            <div class="info-box">
-                                <span class="info-box-icon bg-primary">
-                                    <i class="fas fa-clock"></i>
-                                </span>
-                                <div class="info-box-content">
-                                    <span class="info-box-text">Part-time Employees</span>
-                                    <span class="info-box-number">
-                                        {{ \App\Models\Employee::whereHas('employeeType', function($query) {
-                                            $query->where('EmployeeTypeName', 'Part-time');
-                                        })->where('flag_deleted', 0)->count() }}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    
 
                     <!-- All Employees Table -->
                     <div class="mt-4">
@@ -215,11 +148,11 @@
                                                     </a>
                                                     <form action="{{ route('employees.destroy', $employee) }}" method="POST"
                                                         style="display: inline-block;"
-                                                        onsubmit="return confirm('Are you sure you want to delete this employee?')">
+                                                        onsubmit="return confirm('Are you sure you want to archive this employee?')">
                                                         @csrf
                                                         @method('DELETE')
-                                                        <button type="submit" class="btn btn-danger btn-sm">
-                                                            <i class="fas fa-trash"></i>
+                                                        <button type="submit" class="btn btn-danger btn-sm" title="Archive">
+                                                            <i class="fas fa-archive"></i>
                                                         </button>
                                                     </form>
                                                 </div>

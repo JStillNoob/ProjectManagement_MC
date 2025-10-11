@@ -75,13 +75,75 @@
                             </div>
                         </div>
 
-                        <div class="form-group">
-                            <label for="address">Address <span class="text-danger">*</span></label>
-                            <textarea class="form-control @error('address') is-invalid @enderror" id="address"
-                                name="address" rows="3" required>{{ old('address') }}</textarea>
-                            @error('address')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                        <!-- Address Information -->
+                        <h5 class="text-primary mb-3 mt-4"><i class="fas fa-map-marker-alt mr-2"></i>Address Information</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="house_number">House Number</label>
+                                    <input type="text" class="form-control @error('house_number') is-invalid @enderror"
+                                        id="house_number" name="house_number" value="{{ old('house_number') }}">
+                                    @error('house_number')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="street">Street</label>
+                                    <input type="text" class="form-control @error('street') is-invalid @enderror"
+                                        id="street" name="street" value="{{ old('street') }}">
+                                    @error('street')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="barangay">Barangay <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control @error('barangay') is-invalid @enderror"
+                                        id="barangay" name="barangay" value="{{ old('barangay') }}" required>
+                                    @error('barangay')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="city">City <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control @error('city') is-invalid @enderror"
+                                        id="city" name="city" value="{{ old('city') }}" required>
+                                    @error('city')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="province">Province <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control @error('province') is-invalid @enderror"
+                                        id="province" name="province" value="{{ old('province') }}" required>
+                                    @error('province')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="postal_code">Postal Code</label>
+                                    <input type="text" class="form-control @error('postal_code') is-invalid @enderror"
+                                        id="postal_code" name="postal_code" value="{{ old('postal_code') }}">
+                                    @error('postal_code')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Employment Information -->
@@ -89,10 +151,17 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    <label for="position">Position <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control @error('position') is-invalid @enderror"
-                                        id="position" name="position" value="{{ old('position') }}" required>
-                                    @error('position')
+                                    <label for="PositionID">Position <span class="text-danger">*</span></label>
+                                    <select class="form-control @error('PositionID') is-invalid @enderror"
+                                        id="PositionID" name="PositionID" required>
+                                        <option value="">Select Position...</option>
+                                        @foreach(\App\Models\Position::active()->get() as $position)
+                                            <option value="{{ $position->PositionID }}" {{ old('PositionID') == $position->PositionID ? 'selected' : '' }}>
+                                                {{ $position->PositionName }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @error('PositionID')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
@@ -103,6 +172,38 @@
                                     <input type="date" class="form-control @error('start_date') is-invalid @enderror"
                                         id="start_date" name="start_date" value="{{ old('start_date') }}" required>
                                     @error('start_date')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Salary Information -->
+                        <h5 class="text-primary mb-3 mt-4"><i class="fas fa-money-bill-wave mr-2"></i>Salary Information</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="base_salary">Base Salary <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control @error('base_salary') is-invalid @enderror"
+                                        id="base_salary" name="base_salary" value="{{ old('base_salary') }}" 
+                                        step="0.01" min="0" required readonly>
+                                    @error('base_salary')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                    <small class="form-text text-muted">Salary is automatically set based on the selected position.</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Contact Information -->
+                        <h5 class="text-info mb-3 mt-4"><i class="fas fa-phone mr-2"></i>Contact Information</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="contact_number">Contact Number <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control @error('contact_number') is-invalid @enderror"
+                                        id="contact_number" name="contact_number" value="{{ old('contact_number') }}" required>
+                                    @error('contact_number')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
@@ -159,6 +260,26 @@
                         <h6><i class="fas fa-info-circle mr-2"></i>Employment Type</h6>
                         <p class="mb-0">Regular employees work full-time hours with standard employment terms and job security.</p>
                     </div>
+
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-gift mr-2"></i>Benefits Management</h6>
+                        <p class="mb-2">Regular employees are eligible for benefits. Available benefits include:</p>
+                        <ul class="list-unstyled mb-0 small">
+                            <li><i class="fas fa-circle text-primary mr-1"></i> SSS (Social Security System)</li>
+                            <li><i class="fas fa-circle text-primary mr-1"></i> PhilHealth</li>
+                            <li><i class="fas fa-circle text-primary mr-1"></i> Pag-IBIG Fund</li>
+                            <li><i class="fas fa-circle text-primary mr-1"></i> 13th Month Pay</li>
+                            <li><i class="fas fa-circle text-primary mr-1"></i> Health Insurance</li>
+                            <li><i class="fas fa-circle text-primary mr-1"></i> Life Insurance</li>
+                            <li><i class="fas fa-circle text-primary mr-1"></i> Retirement Plan</li>
+                            <li><i class="fas fa-circle text-primary mr-1"></i> Vacation & Sick Leave</li>
+                        </ul>
+                        <hr class="my-2">
+                        <small class="text-warning">
+                            <i class="fas fa-exclamation-triangle mr-1"></i>
+                            <strong>Admin Action Required:</strong> Benefits must be manually assigned by the administrator after creating the employee.
+                        </small>
+                    </div>
                 </div>
             </div>
         </div>
@@ -185,6 +306,31 @@
 
                 if (age >= 18 && age <= 100) {
                     document.getElementById('age').value = age;
+                }
+            });
+
+            // Auto-populate salary based on position
+            document.getElementById('PositionID').addEventListener('change', function () {
+                const positionId = this.value;
+                const salaryInput = document.getElementById('base_salary');
+                
+                if (positionId) {
+                    // Fetch position salary via AJAX
+                    fetch(`/api/position-salary/${positionId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.salary) {
+                                salaryInput.value = data.salary;
+                            } else {
+                                salaryInput.value = '';
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error fetching position salary:', error);
+                            salaryInput.value = '';
+                        });
+                } else {
+                    salaryInput.value = '';
                 }
             });
         </script>

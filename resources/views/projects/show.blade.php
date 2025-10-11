@@ -13,11 +13,13 @@
                         {{ $project->ProjectName }}
                     </h3>
                     <div class="card-tools">
-                        <a href="{{ route('projects.edit', $project) }}" class="btn btn-warning btn-sm">
+                        <a href="{{ route('projects.edit', $project) }}" class="btn btn-warning btn-sm"
+                           style="background-color: #ffc107 !important; border: 2px solid #ffc107 !important; color: #212529 !important; opacity: 1 !important; visibility: visible !important; display: inline-block !important;">
                             <i class="fas fa-edit mr-1"></i>
                             Edit Project
                         </a>
-                        <a href="{{ route('ProdHead.projects') }}" class="btn btn-secondary btn-sm">
+                        <a href="{{ route('ProdHead.projects') }}" class="btn btn-secondary btn-sm"
+                           style="background-color: #6c757d !important; border: 2px solid #6c757d !important; color: white !important; opacity: 1 !important; visibility: visible !important; display: inline-block !important;">
                             <i class="fas fa-arrow-left mr-1"></i>
                             Back to Projects
                         </a>

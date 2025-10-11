@@ -41,19 +41,6 @@
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="Username">Username <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control @error('Username') is-invalid @enderror" 
-                                       id="Username" name="Username" value="{{ old('Username', $user->Username) }}" required>
-                                @error('Username')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
                                 <label for="UserTypeID">User Type <span class="text-danger">*</span></label>
                                 <select class="form-control @error('UserTypeID') is-invalid @enderror" 
                                         id="UserTypeID" name="UserTypeID" required>
@@ -70,20 +57,15 @@
                                 @enderror
                             </div>
                         </div>
+                    </div>
+
+                    <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="RoleID">Role</label>
-                                <select class="form-control @error('RoleID') is-invalid @enderror" 
-                                        id="RoleID" name="RoleID">
-                                    <option value="">Select Role (Optional)</option>
-                                    @foreach($roles as $role)
-                                        <option value="{{ $role->RoleID }}" 
-                                                {{ old('RoleID', $user->RoleID) == $role->RoleID ? 'selected' : '' }}>
-                                            {{ $role->RoleName }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                @error('RoleID')
+                                <label for="Email">Email <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control @error('Email') is-invalid @enderror" 
+                                       id="Email" name="Email" value="{{ old('Email', $user->Email) }}" required>
+                                @error('Email')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
@@ -181,4 +163,5 @@ $(document).ready(function() {
 });
 </script>
 @endpush
+
 

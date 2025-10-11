@@ -16,7 +16,7 @@ class OnCallEmployeeController extends Controller
     public function index()
     {
         $onCallType = EmployeeType::where('EmployeeTypeName', 'On-call')->first();
-        $employees = Employee::with('employeeType')
+        $employees = Employee::with(['employeeType', 'position'])
             ->where('EmployeeTypeID', $onCallType->EmployeeTypeID)
             ->active()
             ->orderBy('created_at', 'desc')
@@ -43,13 +43,17 @@ class OnCallEmployeeController extends Controller
             'last_name' => 'required|string|max:255',
             'birthday' => 'required|date|before:today',
             'age' => 'required|integer|min:18|max:100',
-            'address' => 'required|string',
-            'position' => 'required|string|max:255',
+            'house_number' => 'nullable|string|max:255',
+            'street' => 'nullable|string|max:255',
+            'barangay' => 'required|string|max:255',
+            'city' => 'required|string|max:255',
+            'province' => 'required|string|max:255',
+            'postal_code' => 'nullable|string|max:10',
+            'country' => 'nullable|string|max:255',
+            'PositionID' => 'required|exists:positions,PositionID',
+            'base_salary' => 'required|numeric|min:0',
             'start_date' => 'required|date|after_or_equal:birthday',
-            'availability' => 'required|string',
             'contact_number' => 'required|string|max:20',
-            'emergency_contact' => 'required|string|max:255',
-            'emergency_phone' => 'required|string|max:20',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
@@ -73,10 +77,11 @@ class OnCallEmployeeController extends Controller
         }
 
         // Generate QR code data
+        $position = \App\Models\Position::find($data['PositionID']);
         $qrData = [
             'employee_id' => 'EMP-' . str_pad(rand(1, 999999), 6, '0', STR_PAD_LEFT),
             'name' => $data['first_name'] . ' ' . ($data['middle_name'] ?? '') . ' ' . $data['last_name'],
-            'position' => $data['position'],
+            'position' => $position ? $position->PositionName : 'Not assigned',
             'start_date' => $data['start_date'],
             'type' => 'On-call Employee'
         ];
@@ -96,7 +101,7 @@ class OnCallEmployeeController extends Controller
      */
     public function show(Employee $employee)
     {
-        $employee->load('employeeType');
+        $employee->load(['employeeType', 'position']);
         return view('Admin.employees.oncall.show', compact('employee'));
     }
 
@@ -119,13 +124,17 @@ class OnCallEmployeeController extends Controller
             'last_name' => 'required|string|max:255',
             'birthday' => 'required|date|before:today',
             'age' => 'integer|min:18|max:100',
-            'address' => 'required|string',
-            'position' => 'required|string|max:255',
+            'house_number' => 'nullable|string|max:255',
+            'street' => 'nullable|string|max:255',
+            'barangay' => 'required|string|max:255',
+            'city' => 'required|string|max:255',
+            'province' => 'required|string|max:255',
+            'postal_code' => 'nullable|string|max:10',
+            'country' => 'nullable|string|max:255',
+            'PositionID' => 'nullable|exists:positions,PositionID',
+            'base_salary' => 'nullable|numeric|min:0',
             'start_date' => 'required|date|after_or_equal:birthday',
-            'availability' => 'required|string',
             'contact_number' => 'required|string|max:20',
-            'emergency_contact' => 'required|string|max:255',
-            'emergency_phone' => 'required|string|max:20',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
         ]);
 

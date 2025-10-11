@@ -6,7 +6,6 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Employee;
 use App\Models\UserType;
-use App\Models\Role;
 
 class UserController extends Controller
 {
@@ -26,8 +25,7 @@ class UserController extends Controller
     {
         $userTypes = UserType::active()->get();
         $employees = Employee::active()->whereDoesntHave('users')->get(); // Only employees without existing user accounts
-        $roles = Role::all();
-        return view('users.create', compact('userTypes', 'employees', 'roles'));
+        return view('users.create', compact('userTypes', 'employees'));
     }
 
     /**
@@ -37,24 +35,19 @@ class UserController extends Controller
     {
         $request->validate([
             'EmployeeID' => 'required|exists:employees,id',
-            'Username' => 'required|string|max:255|unique:users,Username',
+            'Email' => 'required|email|unique:users,Email',
             'Password' => 'required|string|min:6',
-            'UserTypeID' => 'required|exists:user_types,UserTypeID',
-            'RoleID' => 'nullable|exists:roles,RoleID',
+            'UserTypeID' => 'required|exists:tblusertype,UserTypeID',
         ]);
 
         $user = new User();
         $user->EmployeeID = $request->EmployeeID;
-        $user->Username = $request->Username;
+        $user->Email = $request->Email;
         $user->Password = bcrypt($request->Password);
         $user->UserTypeID = $request->UserTypeID;
-        $user->RoleID = $request->RoleID;
         
         // Get employee details to populate user fields
         $employee = Employee::findOrFail($request->EmployeeID);
-        $user->FirstName = $employee->first_name;
-        $user->LastName = $employee->last_name;
-        $user->Email = $employee->email ?? null;
         $user->ContactNumber = $employee->contact_number ?? null;
         
         $user->save();
@@ -79,8 +72,7 @@ class UserController extends Controller
         $user = User::findOrFail($id);
         $userTypes = UserType::active()->get();
         $employees = Employee::active()->get();
-        $roles = Role::all();
-        return view('users.edit', compact('user', 'userTypes', 'employees', 'roles'));
+        return view('users.edit', compact('user', 'userTypes', 'employees'));
     }
 
     /**
@@ -92,15 +84,13 @@ class UserController extends Controller
         
         $request->validate([
             'EmployeeID' => 'required|exists:employees,id',
-            'Username' => 'required|string|max:255|unique:users,Username,' . $id,
-            'UserTypeID' => 'required|exists:user_types,UserTypeID',
-            'RoleID' => 'nullable|exists:roles,RoleID',
+            'Email' => 'required|email|unique:users,Email,' . $id,
+            'UserTypeID' => 'required|exists:tblusertype,UserTypeID',
         ]);
 
         $user->EmployeeID = $request->EmployeeID;
-        $user->Username = $request->Username;
+        $user->Email = $request->Email;
         $user->UserTypeID = $request->UserTypeID;
-        $user->RoleID = $request->RoleID;
         
         // Update password if provided
         if ($request->filled('Password')) {
@@ -110,9 +100,6 @@ class UserController extends Controller
         
         // Get employee details to update user fields
         $employee = Employee::findOrFail($request->EmployeeID);
-        $user->FirstName = $employee->first_name;
-        $user->LastName = $employee->last_name;
-        $user->Email = $employee->email ?? null;
         $user->ContactNumber = $employee->contact_number ?? null;
         
         $user->save();

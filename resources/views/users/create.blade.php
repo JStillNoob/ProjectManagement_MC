@@ -43,10 +43,10 @@
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="Username">Username <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control @error('Username') is-invalid @enderror" 
-                                       id="Username" name="Username" value="{{ old('Username') }}" required>
-                                @error('Username')
+                                <label for="Password">Password <span class="text-danger">*</span></label>
+                                <input type="password" class="form-control @error('Password') is-invalid @enderror" 
+                                       id="Password" name="Password" required>
+                                @error('Password')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
@@ -56,10 +56,10 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="Password">Password <span class="text-danger">*</span></label>
-                                <input type="password" class="form-control @error('Password') is-invalid @enderror" 
-                                       id="Password" name="Password" required>
-                                @error('Password')
+                                <label for="Email">Email <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control @error('Email') is-invalid @enderror" 
+                                       id="Email" name="Email" value="{{ old('Email') }}" required>
+                                @error('Email')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
@@ -84,26 +84,6 @@
                         </div>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="RoleID">Role</label>
-                                <select class="form-control @error('RoleID') is-invalid @enderror" 
-                                        id="RoleID" name="RoleID">
-                                    <option value="">Select Role (Optional)</option>
-                                    @foreach($roles as $role)
-                                        <option value="{{ $role->RoleID }}" 
-                                                {{ old('RoleID') == $role->RoleID ? 'selected' : '' }}>
-                                            {{ $role->RoleName }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                @error('RoleID')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-                    </div>
 
                     <!-- Employee Information Preview -->
                     <div class="alert alert-info" id="employee-info" style="display: none;">
@@ -132,10 +112,9 @@
             <div class="card-body">
                 <ol>
                     <li><strong>Select Employee:</strong> Choose from the list of employees who don't have user accounts yet.</li>
-                    <li><strong>Set Username:</strong> Create a unique username for system access.</li>
+                    <li><strong>Set Email:</strong> Enter a unique email address for the user account.</li>
                     <li><strong>Set Password:</strong> Create a secure password for the user.</li>
                     <li><strong>Choose User Type:</strong> Select the appropriate user type (Admin, Production Head, etc.).</li>
-                    <li><strong>Assign Role:</strong> Optionally assign a specific role to the user.</li>
                 </ol>
                 <div class="alert alert-warning">
                     <i class="fas fa-info-circle"></i>
