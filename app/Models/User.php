@@ -22,7 +22,6 @@ class User extends Authenticatable
         'Email',
         'Password',
         'UserTypeID',
-        'Position',
         'FlagDeleted',
         'EmployeeID'
     ];
@@ -82,6 +81,12 @@ class User extends Authenticatable
         return $this->belongsTo(UserType::class, 'UserTypeID', 'UserTypeID');
     }
 
+    // Alias for backward compatibility
+    public function type()
+    {
+        return $this->userType();
+    }
+
     public function scopeVoters($query)
     {
         return $query->whereHas('userType', function($q) {
@@ -105,6 +110,20 @@ class User extends Authenticatable
     public function role()
     {
         return $this->position();
+    }
+
+    // Accessor for formatted created at
+    public function getFormattedCreatedAtAttribute()
+    {
+        if (!$this->created_at) {
+            return 'N/A';
+        }
+        
+        try {
+            return $this->created_at->format('M d, Y');
+        } catch (\Exception $e) {
+            return 'N/A';
+        }
     }
 
 }

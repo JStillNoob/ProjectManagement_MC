@@ -3,8 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Employee;
-use App\Models\EmployeeType;
-use App\Services\EmployeeBenefitService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -16,12 +14,10 @@ class RegularEmployeeController extends Controller
      */
     public function index()
     {
-        $regularType = EmployeeType::where('EmployeeTypeName', 'Regular')->first();
-        $employees = Employee::with(['employeeType', 'employeeBenefits', 'position'])
-            ->where('EmployeeTypeID', $regularType->EmployeeTypeID)
+        $employees = Employee::with(['position'])
             ->active()
             ->orderBy('created_at', 'desc')
-            ->paginate(10);
+            ->paginate(15);
         return view('Admin.employees.regular.index', compact('employees'));
     }
 
@@ -43,7 +39,6 @@ class RegularEmployeeController extends Controller
             'middle_name' => 'nullable|string|max:255',
             'last_name' => 'required|string|max:255',
             'birthday' => 'required|date|before:today',
-            'age' => 'required|integer|min:18|max:100',
             'house_number' => 'nullable|string|max:255',
             'street' => 'nullable|string|max:255',
             'barangay' => 'required|string|max:255',
@@ -65,10 +60,6 @@ class RegularEmployeeController extends Controller
         }
 
         $data = $request->all();
-        
-        // Set employee type to Regular
-        $regularType = EmployeeType::where('EmployeeTypeName', 'Regular')->first();
-        $data['EmployeeTypeID'] = $regularType->EmployeeTypeID;
         $data['status'] = 'Active';
 
         // Handle image upload
@@ -87,45 +78,48 @@ class RegularEmployeeController extends Controller
             'type' => 'Regular Employee'
         ];
 
-        $qrDataString = json_encode($qrData);
-        $qrCodeUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' . urlencode($qrDataString);
-        $data['qr_code'] = $qrCodeUrl;
-
+        // Don't set qr_code here - let the model generate it automatically
         $employee = Employee::create($data);
 
         return redirect()->route('regular-employees.index')
-            ->with('success', 'Regular employee created successfully. You can now assign benefits manually.');
+            ->with('success', 'Regular employee created successfully.')
+            ->with('show_qr_modal', true)
+            ->with('employee_data', [
+                'id' => $employee->id,
+                'full_name' => $employee->full_name,
+                'position' => $employee->position,
+                'qr_code' => $employee->qr_code
+            ]);
     }
 
     /**
      * Display the specified regular employee.
      */
-    public function show(Employee $employee)
+    public function show(Employee $regular_employee)
     {
-        $employee->load(['employeeType', 'employeeBenefits.benefit', 'position']);
-        return view('Admin.employees.regular.show', compact('employee'));
+        $regular_employee->load(['position']);
+        return view('Admin.employees.regular.show', compact('regular_employee'));
     }
 
     /**
      * Show the form for editing the specified regular employee.
      */
-    public function edit(Employee $employee)
+    public function edit(Employee $regular_employee)
     {
-        $employee->load(['employeeType', 'position']);
-        return view('Admin.employees.regular.edit', compact('employee'));
+        $regular_employee->load(['position']);
+        return view('Admin.employees.regular.edit', compact('regular_employee'));
     }
 
     /**
      * Update the specified regular employee.
      */
-    public function update(Request $request, Employee $employee)
+    public function update(Request $request, Employee $regular_employee)
     {
         $validator = Validator::make($request->all(), [
             'first_name' => 'required|string|max:255',
             'middle_name' => 'nullable|string|max:255',
             'last_name' => 'required|string|max:255',
             'birthday' => 'required|date|before:today',
-            'age' => 'integer|min:18|max:100',
             'house_number' => 'nullable|string|max:255',
             'street' => 'nullable|string|max:255',
             'barangay' => 'required|string|max:255',
@@ -150,14 +144,14 @@ class RegularEmployeeController extends Controller
 
         // Handle image upload
         if ($request->hasFile('image')) {
-            if ($employee->image_name) {
-                Storage::delete('public/' . $employee->image_name);
+            if ($regular_employee->image_name) {
+                Storage::delete('public/' . $regular_employee->image_name);
             }
             $imagePath = $request->file('image')->store('employee_images', 'public');
             $data['image_name'] = $imagePath;
         }
 
-        $employee->update($data);
+        $regular_employee->update($data);
 
         return redirect()->route('regular-employees.index')
             ->with('success', 'Regular employee updated successfully.');
@@ -166,9 +160,9 @@ class RegularEmployeeController extends Controller
     /**
      * Remove the specified regular employee.
      */
-    public function destroy(Employee $employee)
+    public function destroy(Employee $regular_employee)
     {
-        $employee->update(['flag_deleted' => 1]);
+        $regular_employee->update(['flag_deleted' => 1]);
         return redirect()->route('regular-employees.index')
             ->with('success', 'Regular employee deleted successfully.');
     }

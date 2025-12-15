@@ -20,8 +20,8 @@ class Attendance extends Model
 
     protected $casts = [
         'attendance_date' => 'date',
-        'time_in' => 'datetime:H:i:s',
-        'time_out' => 'datetime:H:i:s',
+        'time_in' => 'datetime',
+        'time_out' => 'datetime',
         'is_active' => 'boolean',
     ];
 
@@ -58,30 +58,83 @@ class Attendance extends Model
     // Accessor for formatted time in
     public function getFormattedTimeInAttribute()
     {
-        return $this->time_in ? $this->time_in->format('H:i A') : 'N/A';
+        if (!$this->time_in) {
+            return 'N/A';
+        }
+        
+        try {
+            return $this->time_in->format('H:i A');
+        } catch (\Exception $e) {
+            return 'N/A';
+        }
     }
 
     // Accessor for formatted time out
     public function getFormattedTimeOutAttribute()
     {
-        return $this->time_out ? $this->time_out->format('H:i A') : 'N/A';
+        if (!$this->time_out) {
+            return 'N/A';
+        }
+        
+        try {
+            return $this->time_out->format('H:i A');
+        } catch (\Exception $e) {
+            return 'N/A';
+        }
     }
 
     // Accessor for formatted date
     public function getFormattedDateAttribute()
     {
-        return $this->attendance_date->format('M d, Y');
+        if (!$this->attendance_date) {
+            return 'N/A';
+        }
+        
+        try {
+            return $this->attendance_date->format('M d, Y');
+        } catch (\Exception $e) {
+            return 'N/A';
+        }
     }
 
-    // Method to check if employee is late (assuming 9:00 AM is standard time)
+    // Method to check if employee is late (assuming 8:30 AM is standard time)
     public function isLate()
     {
         if (!$this->time_in) {
             return false;
         }
         
-        $standardTime = \Carbon\Carbon::createFromTime(9, 0, 0);
+        $standardTime = \Carbon\Carbon::createFromTime(8, 30, 0);
         return $this->time_in->format('H:i:s') > $standardTime->format('H:i:s');
+    }
+
+    // Method to check if employee worked overtime (after 5:30 PM)
+    public function isOvertime()
+    {
+        if (!$this->time_out) {
+            return false;
+        }
+        
+        $standardEndTime = \Carbon\Carbon::createFromTime(17, 30, 0); // 5:30 PM
+        return $this->time_out->format('H:i:s') > $standardEndTime->format('H:i:s');
+    }
+
+    // Method to calculate overtime hours
+    public function getOvertimeHoursAttribute()
+    {
+        if (!$this->time_out || !$this->isOvertime()) {
+            return '00:00';
+        }
+        
+        $standardEndTime = \Carbon\Carbon::createFromTime(17, 30, 0); // 5:30 PM
+        $timeOut = \Carbon\Carbon::parse($this->time_out);
+        
+        // Calculate overtime minutes (time_out - standard_end_time)
+        $overtimeMinutes = $timeOut->diffInMinutes($standardEndTime);
+        $hours = floor($overtimeMinutes / 60);
+        $minutes = $overtimeMinutes % 60;
+        
+        return sprintf('%02d:%02d', $hours, $minutes);
     }
 
     // Method to calculate working hours

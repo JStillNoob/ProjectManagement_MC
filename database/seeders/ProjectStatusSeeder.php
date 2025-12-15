@@ -14,7 +14,8 @@ class ProjectStatusSeeder extends Seeder
     public function run(): void
     {
         $statuses = [
-            ['StatusName' => 'Upcoming'],
+            ['StatusName' => 'Pending'],
+            ['StatusName' => 'Pre-Construction'],
             ['StatusName' => 'On Going'],
             ['StatusName' => 'Under Warranty'],
             ['StatusName' => 'Completed'],

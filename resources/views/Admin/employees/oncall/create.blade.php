@@ -57,18 +57,9 @@
                                 <div class="form-group">
                                     <label for="birthday">Birthday <span class="text-danger">*</span></label>
                                     <input type="date" class="form-control @error('birthday') is-invalid @enderror"
-                                        id="birthday" name="birthday" value="{{ old('birthday') }}" required>
+                                        id="birthday" name="birthday" value="{{ old('birthday') }}"
+                                        max="{{ now()->subYears(18)->format('Y-m-d') }}" required>
                                     @error('birthday')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="age">Age <span class="text-danger">*</span></label>
-                                    <input type="number" class="form-control @error('age') is-invalid @enderror" id="age"
-                                        name="age" value="{{ old('age') }}" min="18" max="100" required>
-                                    @error('age')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
@@ -76,7 +67,8 @@
                         </div>
 
                         <!-- Address Information -->
-                        <h5 class="text-primary mb-3 mt-4"><i class="fas fa-map-marker-alt mr-2"></i>Address Information</h5>
+                        <h5 class="text-primary mb-3 mt-4"><i class="fas fa-map-marker-alt mr-2"></i>Address Information
+                        </h5>
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
@@ -114,8 +106,8 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="city">City <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control @error('city') is-invalid @enderror"
-                                        id="city" name="city" value="{{ old('city') }}" required>
+                                    <input type="text" class="form-control @error('city') is-invalid @enderror" id="city"
+                                        name="city" value="{{ old('city') }}" required>
                                     @error('city')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -152,8 +144,8 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="PositionID">Position <span class="text-danger">*</span></label>
-                                    <select class="form-control @error('PositionID') is-invalid @enderror"
-                                        id="PositionID" name="PositionID" required>
+                                    <select class="form-control @error('PositionID') is-invalid @enderror" id="PositionID"
+                                        name="PositionID" required>
                                         <option value="">Select Position...</option>
                                         @foreach(\App\Models\Position::active()->get() as $position)
                                             <option value="{{ $position->PositionID }}" {{ old('PositionID') == $position->PositionID ? 'selected' : '' }}>
@@ -179,18 +171,20 @@
                         </div>
 
                         <!-- Salary Information -->
-                        <h5 class="text-primary mb-3 mt-4"><i class="fas fa-money-bill-wave mr-2"></i>Salary Information</h5>
+                        <h5 class="text-primary mb-3 mt-4"><i class="fas fa-money-bill-wave mr-2"></i>Salary Information
+                        </h5>
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="base_salary">Base Salary <span class="text-danger">*</span></label>
                                     <input type="number" class="form-control @error('base_salary') is-invalid @enderror"
-                                        id="base_salary" name="base_salary" value="{{ old('base_salary') }}" 
-                                        step="0.01" min="0" required readonly>
+                                        id="base_salary" name="base_salary" value="{{ old('base_salary') }}" step="0.01"
+                                        min="0" required readonly>
                                     @error('base_salary')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
-                                    <small class="form-text text-muted">Salary is automatically set based on the selected position.</small>
+                                    <small class="form-text text-muted">Salary is automatically set based on the selected
+                                        position.</small>
                                 </div>
                             </div>
                         </div>
@@ -202,7 +196,8 @@
                                 <div class="form-group">
                                     <label for="contact_number">Contact Number <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control @error('contact_number') is-invalid @enderror"
-                                        id="contact_number" name="contact_number" value="{{ old('contact_number') }}" required>
+                                        id="contact_number" name="contact_number" value="{{ old('contact_number') }}"
+                                        required>
                                     @error('contact_number')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
@@ -214,14 +209,15 @@
                         <div class="form-group">
                             <label for="image">Employee Photo</label>
                             <div class="custom-file">
-                                <input type="file" class="custom-file-input @error('image') is-invalid @enderror"
-                                    id="image" name="image" accept="image/*">
+                                <input type="file" class="custom-file-input @error('image') is-invalid @enderror" id="image"
+                                    name="image" accept="image/*">
                                 <label class="custom-file-label" for="image">Choose file</label>
                             </div>
                             @error('image')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
-                            <small class="form-text text-muted">Max file size: 2MB. Allowed formats: JPEG, PNG, JPG, GIF</small>
+                            <small class="form-text text-muted">Max file size: 2MB. Allowed formats: JPEG, PNG, JPG,
+                                GIF</small>
                         </div>
 
                         <div class="form-group">
@@ -236,7 +232,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-4">
             <div class="card">
                 <div class="card-header">
@@ -255,7 +251,7 @@
                             <li><i class="fas fa-handshake text-success mr-1"></i> Project-Based Work</li>
                         </ul>
                     </div>
-                    
+
                     <div class="alert alert-success">
                         <h6><i class="fas fa-check-circle mr-2"></i>Advantages</h6>
                         <ul class="list-unstyled mb-0">
@@ -277,27 +273,12 @@
                 e.target.nextElementSibling.textContent = fileName;
             });
 
-            // Age calculation based on birthday
-            document.getElementById('birthday').addEventListener('change', function () {
-                const birthday = new Date(this.value);
-                const today = new Date();
-                const age = today.getFullYear() - birthday.getFullYear();
-                const monthDiff = today.getMonth() - birthday.getMonth();
-
-                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthday.getDate())) {
-                    age--;
-                }
-
-                if (age >= 18 && age <= 100) {
-                    document.getElementById('age').value = age;
-                }
-            });
 
             // Auto-populate salary based on position
             document.getElementById('PositionID').addEventListener('change', function () {
                 const positionId = this.value;
                 const salaryInput = document.getElementById('base_salary');
-                
+
                 if (positionId) {
                     // Fetch position salary via AJAX
                     fetch(`/api/position-salary/${positionId}`)

@@ -23,13 +23,19 @@
                                         id="EmployeeID" name="EmployeeID" required>
                                     <option value="">Choose an employee...</option>
                                     @foreach($employees as $employee)
+                                        @php
+                                            $position = $employee->relationLoaded('position') 
+                                                ? $employee->getRelation('position') 
+                                                : $employee->position()->first();
+                                            $positionName = $position ? $position->PositionName : null;
+                                        @endphp
                                         <option value="{{ $employee->id }}" 
                                                 {{ old('EmployeeID', $user->EmployeeID) == $employee->id ? 'selected' : '' }}
                                                 data-name="{{ $employee->full_name }}"
-                                                data-position="{{ $employee->position }}">
+                                                data-position="{{ $positionName }}">
                                             {{ $employee->full_name }} 
-                                            @if($employee->position)
-                                                - {{ $employee->position }}
+                                            @if($positionName)
+                                                - {{ $positionName }}
                                             @endif
                                         </option>
                                     @endforeach
@@ -88,11 +94,16 @@
 
                     <!-- Current Employee Information -->
                     @if($user->employee)
+                        @php
+                            $currentPosition = $user->employee->relationLoaded('position') 
+                                ? $user->employee->getRelation('position') 
+                                : $user->employee->position()->first();
+                        @endphp
                         <div class="alert alert-info">
                             <h6><i class="fas fa-user mr-2"></i>Current Employee Information</h6>
                             <strong>Name:</strong> {{ $user->employee->full_name }}<br>
-                            @if($user->employee->position)
-                                <strong>Position:</strong> {{ $user->employee->position }}
+                            @if($currentPosition)
+                                <strong>Position:</strong> {{ $currentPosition->PositionName }}
                             @endif
                         </div>
                     @endif
@@ -135,7 +146,7 @@
                     </tr>
                     <tr>
                         <td><strong>Created:</strong></td>
-                        <td>{{ $user->created_at->format('M d, Y') }}</td>
+                        <td>{{ $user->formatted_created_at }}</td>
                     </tr>
                 </table>
             </div>

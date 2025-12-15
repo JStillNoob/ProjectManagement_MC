@@ -12,7 +12,7 @@ class ClientController extends Controller
      */
     public function index()
     {
-        $clients = Client::with('projects')->paginate(10);
+        $clients = Client::with('projects')->paginate(15);
         return view('clients.index', compact('clients'));
     }
 
@@ -31,7 +31,8 @@ class ClientController extends Controller
     {
         $request->validate([
             'ClientName' => 'required|string|max:255',
-            'ContactPerson' => 'nullable|string|max:255',
+            'FirstName' => 'nullable|string|max:255',
+            'LastName' => 'nullable|string|max:255',
             'ContactNumber' => 'nullable|string|max:20',
             'Email' => 'nullable|email|max:255',
         ]);
@@ -66,7 +67,8 @@ class ClientController extends Controller
     {
         $request->validate([
             'ClientName' => 'required|string|max:255',
-            'ContactPerson' => 'nullable|string|max:255',
+            'FirstName' => 'nullable|string|max:255',
+            'LastName' => 'nullable|string|max:255',
             'ContactNumber' => 'nullable|string|max:20',
             'Email' => 'nullable|email|max:255',
         ]);

@@ -16,9 +16,9 @@ class AttendanceController extends Controller
     }
 
     /**
-     * Display the attendance dashboard
+     * Display the attendance dashboard for a specific project
      */
-    public function index(Request $request)
+    public function index(Request $request, $projectId = null)
     {
         // Check if user is Attendant Officer (UserTypeID = 3)
         if (Auth::user()->UserTypeID != 3) {
@@ -32,10 +32,45 @@ class AttendanceController extends Controller
         $status = $request->get('status');
         $department = $request->get('department');
         
-        // Build query
+        // Get project information
+        $project = null;
+        if ($projectId) {
+            $project = \App\Models\Project::find($projectId);
+            if (!$project) {
+                abort(404, 'Project not found.');
+            }
+        } else {
+            // Auto-detect user's assigned project
+            $currentUser = Auth::user();
+            if ($currentUser->EmployeeID) {
+                $employee = Employee::find($currentUser->EmployeeID);
+                if ($employee) {
+                    // Get the first active project the employee is assigned to
+                    $userProject = $employee->projects()
+                        ->where('project_employees.status', 'Active')
+                        ->first();
+                    
+                    if ($userProject) {
+                        $project = $userProject;
+                    }
+                }
+            }
+        }
+        
+        // Build query - only show employees assigned to the current project
         $query = Attendance::with('employee')
             ->where('attendance_date', $date)
             ->active();
+
+        // Filter by project if project is specified
+        if ($project) {
+            $query->whereHas('employee', function($q) use ($project) {
+                $q->whereHas('projects', function($pq) use ($project) {
+                    $pq->where('projects.ProjectID', $project->ProjectID)
+                       ->where('project_employees.status', 'Active');
+                });
+            });
+        }
 
         if ($status) {
             $query->where('status', $status);
@@ -43,17 +78,29 @@ class AttendanceController extends Controller
 
         if ($department) {
             $query->whereHas('employee', function($q) use ($department) {
-                $q->where('position', 'like', '%' . $department . '%');
+                $q->whereHas('position', function($positionQuery) use ($department) {
+                    $positionQuery->where('PositionName', 'like', '%' . $department . '%');
+                });
             });
         }
 
         $attendanceRecords = $query->orderBy('time_in', 'asc')->get();
 
         // Dashboard statistics
-        $stats = $this->getDashboardStats($date);
+        $stats = $this->getDashboardStats($date, $project);
 
-        // Get all employees for comparison
-        $allEmployees = Employee::active()->get();
+        // Get all employees for comparison - only project employees if project is specified
+        if ($project) {
+            $allEmployees = Employee::active()
+                ->whereHas('projects', function($q) use ($project) {
+                    $q->where('projects.ProjectID', $project->ProjectID)
+                      ->where('project_employees.status', 'Active');
+                })
+                ->get();
+        } else {
+            $allEmployees = Employee::active()->get();
+        }
+        
         $presentEmployees = $attendanceRecords->where('status', 'Present')->pluck('employee_id')->toArray();
         $absentEmployees = $allEmployees->whereNotIn('id', $presentEmployees);
 
@@ -64,28 +111,74 @@ class AttendanceController extends Controller
             'status', 
             'department',
             'allEmployees',
-            'absentEmployees'
+            'absentEmployees',
+            'project'
         ));
     }
 
     /**
-     * Get dashboard statistics for a specific date
+     * Get dashboard statistics for a specific date and project
      */
-    private function getDashboardStats($date)
+    private function getDashboardStats($date, $project = null)
     {
-        $totalEmployees = Employee::active()->count();
-        $present = Attendance::where('attendance_date', $date)
-            ->where('status', 'Present')
-            ->count();
-        $late = Attendance::where('attendance_date', $date)
-            ->where('status', 'Late')
-            ->count();
+        // Get total employees - project-specific if project is specified
+        if ($project) {
+            $totalEmployees = Employee::active()
+                ->whereHas('projects', function($q) use ($project) {
+                    $q->where('projects.ProjectID', $project->ProjectID)
+                      ->where('project_employees.status', 'Active');
+                })
+                ->count();
+            
+            $present = Attendance::where('attendance_date', $date)
+                ->where('status', 'Present')
+                ->whereHas('employee', function($q) use ($project) {
+                    $q->whereHas('projects', function($pq) use ($project) {
+                        $pq->where('projects.ProjectID', $project->ProjectID)
+                           ->where('project_employees.status', 'Active');
+                    });
+                })
+                ->count();
+                
+            $late = Attendance::where('attendance_date', $date)
+                ->where('status', 'Late')
+                ->whereHas('employee', function($q) use ($project) {
+                    $q->whereHas('projects', function($pq) use ($project) {
+                        $pq->where('projects.ProjectID', $project->ProjectID)
+                           ->where('project_employees.status', 'Active');
+                    });
+                })
+                ->count();
+                
+            $overtime = Attendance::where('attendance_date', $date)
+                ->where('status', 'Overtime')
+                ->whereHas('employee', function($q) use ($project) {
+                    $q->whereHas('projects', function($pq) use ($project) {
+                        $pq->where('projects.ProjectID', $project->ProjectID)
+                           ->where('project_employees.status', 'Active');
+                    });
+                })
+                ->count();
+        } else {
+            $totalEmployees = Employee::active()->count();
+            $present = Attendance::where('attendance_date', $date)
+                ->where('status', 'Present')
+                ->count();
+            $late = Attendance::where('attendance_date', $date)
+                ->where('status', 'Late')
+                ->count();
+            $overtime = Attendance::where('attendance_date', $date)
+                ->where('status', 'Overtime')
+                ->count();
+        }
+        
         $absent = $totalEmployees - $present;
 
         return [
             'total' => $totalEmployees,
             'present' => $present,
             'late' => $late,
+            'overtime' => $overtime,
             'absent' => $absent,
             'present_percentage' => $totalEmployees > 0 ? round(($present / $totalEmployees) * 100, 1) : 0
         ];
@@ -124,7 +217,32 @@ class AttendanceController extends Controller
                 'remarks' => $remarks
             ]);
         } else {
-            // Update existing record
+            // Check for duplicate actions
+            if ($action === 'time_in' && !is_null($attendance->time_in)) {
+                // Employee already clocked in today
+                if ($request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Employee has already clocked in today at ' . $attendance->time_in->format('H:i A')
+                    ], 400);
+                }
+                return redirect()->route('attendance.index', ['date' => $date])
+                    ->with('error', 'Employee has already clocked in today at ' . $attendance->time_in->format('H:i A'));
+            }
+            
+            if ($action === 'time_out' && !is_null($attendance->time_out)) {
+                // Employee already clocked out today
+                if ($request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Employee has already clocked out today at ' . $attendance->time_out->format('H:i A')
+                    ], 400);
+                }
+                return redirect()->route('attendance.index', ['date' => $date])
+                    ->with('error', 'Employee has already clocked out today at ' . $attendance->time_out->format('H:i A'));
+            }
+            
+            // Update existing record (only if not duplicate)
             if ($action === 'time_in') {
                 $attendance->update([
                     'time_in' => now()->format('H:i:s'),
@@ -134,16 +252,24 @@ class AttendanceController extends Controller
             } else {
                 $attendance->update([
                     'time_out' => now()->format('H:i:s'),
+                    'status' => $this->determineStatus($action, now()),
                     'remarks' => $remarks
                 ]);
             }
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Attendance marked successfully',
-            'attendance' => $attendance->load('employee')
-        ]);
+        // Check if this is an AJAX request
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Attendance marked successfully',
+                'attendance' => $attendance->load('employee')
+            ]);
+        }
+        
+        // For form submission (like native PHP), redirect back with success message
+        return redirect()->route('attendance.index', ['date' => $date])
+            ->with('success', 'Attendance marked successfully!');
     }
 
     /**
@@ -152,10 +278,19 @@ class AttendanceController extends Controller
     private function determineStatus($action, $time)
     {
         if ($action === 'time_in') {
-            // Check if employee is late (after 9:00 AM)
-            $standardTime = Carbon::createFromTime(9, 0, 0);
+            // Check if employee is late (after 8:30 AM)
+            $standardTime = Carbon::createFromTime(8, 30, 0);
             if ($time->format('H:i:s') > $standardTime->format('H:i:s')) {
                 return 'Late';
+            }
+            return 'Present';
+        }
+        
+        if ($action === 'time_out') {
+            // Check if employee worked overtime (after 5:30 PM)
+            $standardEndTime = Carbon::createFromTime(17, 30, 0); // 5:30 PM
+            if ($time->format('H:i:s') > $standardEndTime->format('H:i:s')) {
+                return 'Overtime';
             }
             return 'Present';
         }
@@ -269,6 +404,289 @@ class AttendanceController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Attendance record deleted successfully'
+        ]);
+    }
+
+    /**
+     * Show QR codes for all employees
+     */
+    public function showQrCodes()
+    {
+        $employees = Employee::active()->with('position')->get();
+        
+        return view('attendance.qr-codes', compact('employees'));
+    }
+
+    /**
+     * Show attendance overview for Production Head
+     */
+    public function prodHeadOverview(Request $request)
+    {
+        // Check if user is Production Head (UserTypeID = 1) or HR Admin (UserTypeID = 2)
+        if (!in_array(Auth::user()->UserTypeID, [1, 2])) {
+            abort(403, 'Access denied. Only Production Heads and HR Admins can access this page.');
+        }
+        
+        // Get filter parameters
+        $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
+        $endDate = $request->get('end_date', Carbon::now()->endOfMonth()->format('Y-m-d'));
+        
+        // Get all active projects
+        $projects = \App\Models\Project::active()->get();
+        
+        // Get attendance data grouped by project
+        $projectAttendanceData = [];
+        $overallSummary = [
+            'total_employees' => 0,
+            'total_days' => Carbon::parse($startDate)->diffInDays(Carbon::parse($endDate)) + 1,
+            'total_attendance_records' => 0,
+            'present_count' => 0,
+            'late_count' => 0,
+            'overtime_count' => 0,
+            'absent_count' => 0,
+            'attendance_rate' => 0
+        ];
+        
+        foreach ($projects as $project) {
+            // Get employees assigned to this project
+            $projectEmployees = $project->employees()
+                ->where('project_employees.status', 'Active')
+                ->get();
+            
+            if ($projectEmployees->isEmpty()) {
+                continue; // Skip projects with no active employees
+            }
+            
+            // Get attendance records for this project
+            $projectAttendance = Attendance::with('employee')
+                ->whereHas('employee.projects', function($q) use ($project) {
+                    $q->where('projects.ProjectID', $project->ProjectID)
+                      ->where('project_employees.status', 'Active');
+                })
+                ->whereBetween('attendance_date', [$startDate, $endDate])
+                ->orderBy('attendance_date', 'desc')
+                ->orderBy('employee_id')
+                ->get();
+            
+            // Calculate project-specific summary
+            $projectSummary = $this->calculateProjectAttendanceSummary($projectAttendance, $projectEmployees, $startDate, $endDate);
+            
+            // Add to project data
+            $projectAttendanceData[] = [
+                'project' => $project,
+                'employees' => $projectEmployees,
+                'attendance' => $projectAttendance,
+                'summary' => $projectSummary
+            ];
+            
+            // Add to overall summary
+            $overallSummary['total_employees'] += $projectEmployees->count();
+            $overallSummary['total_attendance_records'] += $projectAttendance->count();
+            $overallSummary['present_count'] += $projectSummary['present_count'];
+            $overallSummary['late_count'] += $projectSummary['late_count'];
+            $overallSummary['overtime_count'] += $projectSummary['overtime_count'];
+            $overallSummary['absent_count'] += $projectSummary['absent_count'];
+        }
+        
+        // Calculate overall attendance rate
+        $totalPossibleAttendance = $overallSummary['total_employees'] * $overallSummary['total_days'];
+        if ($totalPossibleAttendance > 0) {
+            $overallSummary['attendance_rate'] = round(($overallSummary['total_attendance_records'] / $totalPossibleAttendance) * 100, 1);
+        }
+        
+        return view('ProdHeadPage.attendance-overview', compact(
+            'projectAttendanceData', 
+            'projects', 
+            'startDate', 
+            'endDate',
+            'overallSummary'
+        ));
+    }
+    
+    /**
+     * Calculate project-specific attendance summary statistics
+     */
+    private function calculateProjectAttendanceSummary($attendanceRecords, $projectEmployees, $startDate, $endDate)
+    {
+        $totalDays = Carbon::parse($startDate)->diffInDays(Carbon::parse($endDate)) + 1;
+        
+        $summary = [
+            'total_employees' => $projectEmployees->count(),
+            'total_days' => $totalDays,
+            'total_attendance_records' => $attendanceRecords->count(),
+            'present_count' => $attendanceRecords->where('status', 'Present')->count(),
+            'late_count' => $attendanceRecords->where('status', 'Late')->count(),
+            'overtime_count' => $attendanceRecords->where('status', 'Overtime')->count(),
+            'absent_count' => 0,
+            'attendance_rate' => 0
+        ];
+        
+        // Calculate absent days for each employee in this project
+        foreach ($projectEmployees as $employee) {
+            $employeeAttendance = $attendanceRecords->where('employee_id', $employee->id);
+            $attendedDays = $employeeAttendance->count();
+            $absentDays = $totalDays - $attendedDays;
+            $summary['absent_count'] += $absentDays;
+        }
+        
+        // Calculate attendance rate for this project
+        $totalPossibleAttendance = $projectEmployees->count() * $totalDays;
+        if ($totalPossibleAttendance > 0) {
+            $summary['attendance_rate'] = round(($summary['total_attendance_records'] / $totalPossibleAttendance) * 100, 1);
+        }
+        
+        return $summary;
+    }
+
+    /**
+     * Calculate attendance summary statistics (legacy method)
+     */
+    private function calculateAttendanceSummary($attendanceRecords, $startDate, $endDate, $projectId = null)
+    {
+        $totalDays = Carbon::parse($startDate)->diffInDays(Carbon::parse($endDate)) + 1;
+        
+        // Get all employees for the selected project/period
+        $employeeQuery = Employee::active();
+        if ($projectId) {
+            $employeeQuery->whereHas('projects', function($q) use ($projectId) {
+                $q->where('projects.ProjectID', $projectId)
+                  ->where('project_employees.status', 'Active');
+            });
+        }
+        $allEmployees = $employeeQuery->get();
+        
+        $summary = [
+            'total_employees' => $allEmployees->count(),
+            'total_days' => $totalDays,
+            'total_attendance_records' => $attendanceRecords->count(),
+            'present_count' => $attendanceRecords->where('status', 'Present')->count(),
+            'late_count' => $attendanceRecords->where('status', 'Late')->count(),
+            'overtime_count' => $attendanceRecords->where('status', 'Overtime')->count(),
+            'absent_count' => 0, // Will be calculated below
+            'attendance_rate' => 0 // Will be calculated below
+        ];
+        
+        // Calculate absent days for each employee
+        $employeeAbsentDays = [];
+        foreach ($allEmployees as $employee) {
+            $employeeAttendance = $attendanceRecords->where('employee_id', $employee->id);
+            $attendedDays = $employeeAttendance->count();
+            $absentDays = $totalDays - $attendedDays;
+            $employeeAbsentDays[$employee->id] = $absentDays;
+            $summary['absent_count'] += $absentDays;
+        }
+        
+        // Calculate attendance rate
+        $totalPossibleAttendance = $allEmployees->count() * $totalDays;
+        if ($totalPossibleAttendance > 0) {
+            $summary['attendance_rate'] = round(($summary['total_attendance_records'] / $totalPossibleAttendance) * 100, 1);
+        }
+        
+        return $summary;
+    }
+    
+    /**
+     * Export attendance data to PDF for Production Head
+     */
+    public function exportAttendancePdf(Request $request)
+    {
+        // Check if user is Production Head (UserTypeID = 1) or HR Admin (UserTypeID = 2)
+        if (!in_array(Auth::user()->UserTypeID, [1, 2])) {
+            abort(403, 'Access denied. Only Production Heads and HR Admins can access this page.');
+        }
+        
+        $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
+        $endDate = $request->get('end_date', Carbon::now()->endOfMonth()->format('Y-m-d'));
+        
+        // Get all active projects
+        $projects = \App\Models\Project::active()->get();
+        
+        // Get attendance data grouped by project (same logic as overview)
+        $projectAttendanceData = [];
+        $overallSummary = [
+            'total_employees' => 0,
+            'total_days' => Carbon::parse($startDate)->diffInDays(Carbon::parse($endDate)) + 1,
+            'total_attendance_records' => 0,
+            'present_count' => 0,
+            'late_count' => 0,
+            'overtime_count' => 0,
+            'absent_count' => 0,
+            'attendance_rate' => 0
+        ];
+        
+        foreach ($projects as $project) {
+            // Get employees assigned to this project
+            $projectEmployees = $project->employees()
+                ->where('project_employees.status', 'Active')
+                ->get();
+            
+            if ($projectEmployees->isEmpty()) {
+                continue; // Skip projects with no active employees
+            }
+            
+            // Get attendance records for this project
+            $projectAttendance = Attendance::with('employee')
+                ->whereHas('employee.projects', function($q) use ($project) {
+                    $q->where('projects.ProjectID', $project->ProjectID)
+                      ->where('project_employees.status', 'Active');
+                })
+                ->whereBetween('attendance_date', [$startDate, $endDate])
+                ->orderBy('attendance_date', 'desc')
+                ->orderBy('employee_id')
+                ->get();
+            
+            // Calculate project-specific summary
+            $projectSummary = $this->calculateProjectAttendanceSummary($projectAttendance, $projectEmployees, $startDate, $endDate);
+            
+            // Add to project data
+            $projectAttendanceData[] = [
+                'project' => $project,
+                'employees' => $projectEmployees,
+                'attendance' => $projectAttendance,
+                'summary' => $projectSummary
+            ];
+            
+            // Add to overall summary
+            $overallSummary['total_employees'] += $projectEmployees->count();
+            $overallSummary['total_attendance_records'] += $projectAttendance->count();
+            $overallSummary['present_count'] += $projectSummary['present_count'];
+            $overallSummary['late_count'] += $projectSummary['late_count'];
+            $overallSummary['overtime_count'] += $projectSummary['overtime_count'];
+            $overallSummary['absent_count'] += $projectSummary['absent_count'];
+        }
+        
+        // Calculate overall attendance rate
+        $totalPossibleAttendance = $overallSummary['total_employees'] * $overallSummary['total_days'];
+        if ($totalPossibleAttendance > 0) {
+            $overallSummary['attendance_rate'] = round(($overallSummary['total_attendance_records'] / $totalPossibleAttendance) * 100, 1);
+        }
+        
+        // For now, we'll return the HTML view. In production, you'd use a PDF library like DomPDF
+        return view('ProdHeadPage.attendance-pdf', compact(
+            'projectAttendanceData', 
+            'startDate', 
+            'endDate', 
+            'overallSummary'
+        ));
+    }
+
+    /**
+     * Generate QR code for a specific employee
+     */
+    public function generateQrCode($employeeId)
+    {
+        $employee = Employee::findOrFail($employeeId);
+        
+        // Generate QR code data
+        $qrData = $employee->qr_code_data;
+        
+        // For now, we'll return the data as JSON
+        // In a real implementation, you might want to generate an actual QR code image
+        return response()->json([
+            'success' => true,
+            'employee' => $employee,
+            'qr_data' => $qrData,
+            'qr_url' => $employee->generateQrCodeUrl()
         ]);
     }
 }

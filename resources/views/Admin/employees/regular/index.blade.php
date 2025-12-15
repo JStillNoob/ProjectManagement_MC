@@ -37,20 +37,16 @@
                         <table class="table table-bordered table-striped">
                             <thead>
                                 <tr>
-                                    <th>ID</th>
                                     <th>Photo</th>
                                     <th>Name</th>
                                     <th>Position</th>
                                     <th>Status</th>
-                                    <th>Benefits</th>
-                                    <th>Start Date</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse($employees as $employee)
                                     <tr>
-                                        <td>{{ $employee->id }}</td>
                                         <td>
                                             @if($employee->image_path)
                                                 <img src="{{ $employee->image_path }}" alt="{{ $employee->full_name }}"
@@ -64,34 +60,23 @@
                                             @endif
                                         </td>
                                         <td>{{ $employee->full_name }}</td>
-                                        <td>{{ $employee->position }}</td>
+                                        <td>
+                                            @php
+                                                $position = $employee->relationLoaded('position') 
+                                                    ? $employee->getRelation('position') 
+                                                    : $employee->position()->first();
+                                            @endphp
+                                            {{ $position ? $position->PositionName : 'N/A' }}
+                                        </td>
                                         <td>
                                             <span class="badge badge-{{ $employee->status == 'Active' ? 'success' : 'danger' }}">
                                                 {{ $employee->status }}
                                             </span>
                                         </td>
                                         <td>
-                                            @php
-                                                $benefitCount = $employee->employeeBenefits()->where('IsActive', true)->count();
-                                            @endphp
-                                            @if($benefitCount > 0)
-                                                <span class="badge badge-success">
-                                                    <i class="fas fa-gift mr-1"></i>{{ $benefitCount }} Benefits
-                                                </span>
-                                            @else
-                                                <span class="badge badge-warning">
-                                                    <i class="fas fa-exclamation-triangle mr-1"></i>No Benefits
-                                                </span>
-                                            @endif
-                                        </td>
-                                        <td>{{ $employee->start_date->format('M d, Y') }}</td>
-                                        <td>
                                             <div class="btn-group" role="group">
                                                 <a href="{{ route('regular-employees.show', $employee) }}" class="btn btn-info btn-sm" title="View Details">
                                                     <i class="fas fa-eye"></i>
-                                                </a>
-                                                <a href="{{ route('employees.benefits', $employee) }}" class="btn btn-success btn-sm" title="Manage Benefits">
-                                                    <i class="fas fa-gift"></i>
                                                 </a>
                                                 <a href="{{ route('regular-employees.edit', $employee) }}" class="btn btn-warning btn-sm" title="Edit">
                                                     <i class="fas fa-edit"></i>
@@ -110,7 +95,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="8" class="text-center">No regular employees found.</td>
+                                        <td colspan="5" class="text-center">No regular employees found.</td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -125,4 +110,19 @@
             </div>
         </div>
     </div>
+
+    <!-- Include QR Code Modal -->
+    @include('components.qr-code-modal')
+
+    @if(session('show_qr_modal') && session('employee_data'))
+        @push('scripts')
+        <script>
+        $(document).ready(function() {
+            // Show QR code modal after employee creation
+            const employeeData = @json(session('employee_data'));
+            showQrCodeModal(employeeData);
+        });
+        </script>
+        @endpush
+    @endif
 @endsection

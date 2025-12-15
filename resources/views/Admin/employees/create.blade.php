@@ -5,15 +5,22 @@
 
 @section('content')
     <div class="row">
-        <div class="col-md-8">
+        <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">Employee Information</h3>
+                    <h3 class="card-title">
+                        <i class="fas fa-user-plus mr-2"></i>
+                        Add New Employee
+                    </h3>
                 </div>
                 <div class="card-body">
                     <form action="{{ route('employees.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
 
+                        <!-- Personal Information Section -->
+                        <h5 class="mb-3 text-primary"><i class="fas fa-user mr-2"></i>Personal Information</h5>
+                        <hr>
+                        
                         <div class="row">
                             <div class="col-md-4">
                                 <div class="form-group">
@@ -48,97 +55,28 @@
                         </div>
 
                         <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="birthday">Birthday <span class="text-danger">*</span></label>
                                     <input type="date" class="form-control @error('birthday') is-invalid @enderror"
-                                        id="birthday" name="birthday" value="{{ old('birthday') }}" required>
+                                        id="birthday" name="birthday" value="{{ old('birthday') }}" 
+                                        max="{{ now()->subYears(18)->format('Y-m-d') }}" required>
                                     @error('birthday')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="form-group">
-                                    <label for="age">Age <span class="text-danger">*</span></label>
-                                    <input type="number" class="form-control @error('age') is-invalid @enderror" id="age"
-                                        name="age" value="{{ old('age') }}" min="18" max="100" required>
-                                    @error('age')
+                                    <label for="contact_number">Contact Number</label>
+                                    <input type="text" class="form-control @error('contact_number') is-invalid @enderror"
+                                        id="contact_number" name="contact_number" value="{{ old('contact_number') }}" placeholder="e.g., 09123456789">
+                                    @error('contact_number')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="address">Address <span class="text-danger">*</span></label>
-                            <textarea class="form-control @error('address') is-invalid @enderror" id="address"
-                                name="address" rows="3" required>{{ old('address') }}</textarea>
-                            @error('address')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="position">Position <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control @error('position') is-invalid @enderror"
-                                        id="position" name="position" value="{{ old('position') }}" required>
-                                    @error('position')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="EmployeeTypeID">Employee Type <span class="text-danger">*</span></label>
-                                    <select class="form-control @error('EmployeeTypeID') is-invalid @enderror" 
-                                            id="EmployeeTypeID" name="EmployeeTypeID" required>
-                                        <option value="">Select Employee Type</option>
-                                        @foreach($employeeTypes as $employeeType)
-                                            <option value="{{ $employeeType->EmployeeTypeID }}" 
-                                                    {{ old('EmployeeTypeID') == $employeeType->EmployeeTypeID ? 'selected' : '' }}>
-                                                {{ $employeeType->EmployeeTypeName }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    @error('EmployeeTypeID')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="start_date">Start Date <span class="text-danger">*</span></label>
-                                    <input type="date" class="form-control @error('start_date') is-invalid @enderror"
-                                        id="start_date" name="start_date" value="{{ old('start_date') }}" required>
-                                    @error('start_date')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="status">Status <span class="text-danger">*</span></label>
-                                    <select class="form-control @error('status') is-invalid @enderror" id="status"
-                                        name="status" required>
-                                        <option value="">Select Status</option>
-                                        <option value="Active" {{ old('status') == 'Active' ? 'selected' : '' }}>Active</option>
-                                        <option value="Inactive" {{ old('status') == 'Inactive' ? 'selected' : '' }}>Inactive</option>
-                                    </select>
-                                    @error('status')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="form-group">
                                     <label for="image">Employee Photo</label>
                                     <div class="custom-file">
@@ -149,50 +87,127 @@
                                     @error('image')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
-                                    <small class="form-text text-muted">Max file size: 2MB. Allowed formats: JPEG, PNG, JPG, GIF</small>
+                                    <small class="form-text text-muted">Max: 2MB (JPEG, PNG, JPG, GIF)</small>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="form-group">
-                            <button type="submit" class="btn btn-primary">
+                        <!-- Address Information Section -->
+                        <h5 class="mb-3 mt-4 text-primary"><i class="fas fa-map-marker-alt mr-2"></i>Address Information</h5>
+                        <hr>
+                        
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="house_number">House/Unit Number</label>
+                                    <input type="text" class="form-control @error('house_number') is-invalid @enderror"
+                                        id="house_number" name="house_number" value="{{ old('house_number') }}" placeholder="e.g., 123">
+                                    @error('house_number')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                            <div class="col-md-5">
+                                <div class="form-group">
+                                    <label for="street">Street <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control @error('street') is-invalid @enderror"
+                                        id="street" name="street" value="{{ old('street') }}" placeholder="e.g., Main Street" required>
+                                    @error('street')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="barangay">Barangay <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control @error('barangay') is-invalid @enderror"
+                                        id="barangay" name="barangay" value="{{ old('barangay') }}" placeholder="e.g., Barangay San Jose" required>
+                                    @error('barangay')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="city">City/Municipality <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control @error('city') is-invalid @enderror"
+                                        id="city" name="city" value="{{ old('city') }}" placeholder="e.g., Manila" required>
+                                    @error('city')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="province">Province <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control @error('province') is-invalid @enderror"
+                                        id="province" name="province" value="{{ old('province') }}" placeholder="e.g., Metro Manila" required>
+                                    @error('province')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="postal_code">Postal Code</label>
+                                    <input type="text" class="form-control @error('postal_code') is-invalid @enderror"
+                                        id="postal_code" name="postal_code" value="{{ old('postal_code') }}" placeholder="e.g., 1000">
+                                    @error('postal_code')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Employment Information Section -->
+                        <h5 class="mb-3 mt-4 text-primary"><i class="fas fa-briefcase mr-2"></i>Employment Information</h5>
+                        <hr>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="PositionID">Position <span class="text-danger">*</span></label>
+                                    <select class="form-control @error('PositionID') is-invalid @enderror" 
+                                            id="PositionID" name="PositionID" required>
+                                        <option value="">Select Position</option>
+                                        @foreach(\App\Models\Position::all() as $position)
+                                            <option value="{{ $position->PositionID }}" 
+                                                    {{ old('PositionID') == $position->PositionID ? 'selected' : '' }}>
+                                                {{ $position->PositionName }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @error('PositionID')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="start_date">Start Date <span class="text-danger">*</span></label>
+                                    <input type="date" class="form-control @error('start_date') is-invalid @enderror"
+                                        id="start_date" name="start_date" value="{{ old('start_date') }}" required>
+                                    @error('start_date')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="mt-4">
+                        <div class="form-group mb-0 text-right">
+                            <a href="{{ route('employees.index') }}" class="btn btn-secondary mr-2">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-success"
+                                    style="background-color: #87A96B !important; border-color: #87A96B !important;">
                                 <i class="fas fa-save"></i> Create Employee
                             </button>
-                            <a href="{{ route('employees.index') }}" class="btn btn-secondary">
-                                <i class="fas fa-arrow-left"></i> Back to List
-                            </a>
                         </div>
                     </form>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Employee Types</h3>
-                </div>
-                <div class="card-body">
-                    <div class="list-group">
-                        @foreach($employeeTypes as $employeeType)
-                            <div class="list-group-item">
-                                <div class="d-flex w-100 justify-content-between">
-                                    <h6 class="mb-1">{{ $employeeType->EmployeeTypeName }}</h6>
-                                </div>
-                                <p class="mb-1">
-                                    @if($employeeType->EmployeeTypeName == 'Regular')
-                                        <small class="text-success">Full-time employees with regular benefits</small>
-                                    @elseif($employeeType->EmployeeTypeName == 'On-call')
-                                        <small class="text-info">Part-time employees called as needed</small>
-                                    @elseif($employeeType->EmployeeTypeName == 'Contract')
-                                        <small class="text-warning">Fixed-term contract employees</small>
-                                    @elseif($employeeType->EmployeeTypeName == 'Part-time')
-                                        <small class="text-primary">Part-time employees with limited hours</small>
-                                    @endif
-                                </p>
-                            </div>
-                        @endforeach
-                    </div>
                 </div>
             </div>
         </div>
@@ -204,28 +219,6 @@
             document.getElementById('image').addEventListener('change', function (e) {
                 var fileName = e.target.files[0] ? e.target.files[0].name : 'Choose file';
                 e.target.nextElementSibling.textContent = fileName;
-            });
-
-            // Age calculation based on birthday
-            document.getElementById('birthday').addEventListener('change', function () {
-                const birthday = new Date(this.value);
-                const today = new Date();
-                const age = today.getFullYear() - birthday.getFullYear();
-                const monthDiff = today.getMonth() - birthday.getMonth();
-
-                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthday.getDate())) {
-                    age--;
-                }
-
-                if (age >= 18 && age <= 100) {
-                    document.getElementById('age').value = age;
-                }
-            });
-
-            // Employee type selection effects
-            document.getElementById('EmployeeTypeID').addEventListener('change', function() {
-                const selectedType = this.options[this.selectedIndex].text;
-                console.log('Selected employee type:', selectedType);
             });
         </script>
     @endpush

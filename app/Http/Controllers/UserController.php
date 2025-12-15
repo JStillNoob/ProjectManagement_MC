@@ -12,10 +12,23 @@ class UserController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::with(['userType', 'employee', 'role'])->orderBy('created_at', 'desc')->paginate(10);
-        return view('users.index', compact('users'));
+        $showDeactivated = $request->has('show_deactivated') && $request->show_deactivated == '1';
+        
+        if ($showDeactivated) {
+            // Show all users including deactivated
+            $users = User::with(['userType', 'employee', 'role'])->orderBy('created_at', 'desc')->get();
+        } else {
+            // Show only active users
+            $users = User::with(['userType', 'employee', 'role'])->active()->orderBy('created_at', 'desc')->get();
+        }
+        
+        // Get data for create modal
+        $userTypes = UserType::active()->get();
+        $employees = Employee::active()->whereDoesntHave('users')->get(); // Only employees without existing user accounts
+        
+        return view('users.index', compact('users', 'showDeactivated', 'userTypes', 'employees'));
     }
 
     /**
@@ -108,14 +121,27 @@ class UserController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified resource from storage (Deactivate).
      */
     public function destroy(string $id)
     {
         $user = User::findOrFail($id);
-        $user->delete();
+        $user->FlagDeleted = 1;
+        $user->save();
 
-        return redirect()->route('users.index')->with('success', 'User deleted successfully.');
+        return redirect()->route('users.index')->with('success', 'User deactivated successfully.');
+    }
+
+    /**
+     * Reactivate the specified user.
+     */
+    public function reactivate(string $id)
+    {
+        $user = User::findOrFail($id);
+        $user->FlagDeleted = 0;
+        $user->save();
+
+        return redirect()->route('users.index', ['show_deactivated' => '1'])->with('success', 'User reactivated successfully.');
     }
 
     public function showProdHead()
@@ -125,12 +151,51 @@ class UserController extends Controller
 
     public function showAdminEmployeeFunction()
     {
-        $employees = Employee::active()->orderBy('created_at', 'desc')->paginate(10);
+        $employees = Employee::active()->orderBy('created_at', 'desc')->paginate(15);
         return view('Admin.employees.index', compact('employees'));
     }
 
     public function showAdmin()
     {
-        return view('AdminIndex');
+        // Summary card counts
+        $pendingRequests = \App\Models\InventoryRequest::where('Status', 'Pending')->count();
+        
+        $inProgressProjects = \App\Models\Project::whereHas('status', function($q) {
+            $q->where('StatusName', 'On Going');
+        })->count();
+        
+        $employeeCount = \App\Models\Employee::active()->count();
+        
+        $pendingNTPProjects = \App\Models\Project::whereHas('status', function($q) {
+            $q->where('StatusName', 'Pending');
+        })->whereNull('NTPStartDate')->count();
+        
+        // Active projects for progress bars
+        $activeProjects = \App\Models\Project::with(['status', 'milestones', 'client'])
+            ->whereHas('status', function($q) {
+                $q->whereIn('StatusName', ['On Going', 'Pre-Construction']);
+            })
+            ->orderBy('created_at', 'desc')
+            ->take(10)
+            ->get();
+        
+        // Equipment assignments - currently assigned equipment
+        $equipmentAssignments = \App\Models\ProjectMilestoneEquipment::with([
+                'item.resourceCatalog', 
+                'milestone.project'
+            ])
+            ->where('Status', 'Assigned')
+            ->orderBy('DateAssigned', 'desc')
+            ->take(10)
+            ->get();
+        
+        return view('AdminIndex', compact(
+            'pendingRequests',
+            'inProgressProjects', 
+            'employeeCount',
+            'pendingNTPProjects',
+            'activeProjects',
+            'equipmentAssignments'
+        ));
     }
 }

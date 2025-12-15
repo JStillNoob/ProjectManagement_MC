@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Employee;
-use App\Models\EmployeeType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
@@ -15,12 +14,10 @@ class OnCallEmployeeController extends Controller
      */
     public function index()
     {
-        $onCallType = EmployeeType::where('EmployeeTypeName', 'On-call')->first();
-        $employees = Employee::with(['employeeType', 'position'])
-            ->where('EmployeeTypeID', $onCallType->EmployeeTypeID)
+        $employees = Employee::with(['position'])
             ->active()
             ->orderBy('created_at', 'desc')
-            ->paginate(10);
+            ->paginate(15);
         return view('Admin.employees.oncall.index', compact('employees'));
     }
 
@@ -42,7 +39,6 @@ class OnCallEmployeeController extends Controller
             'middle_name' => 'nullable|string|max:255',
             'last_name' => 'required|string|max:255',
             'birthday' => 'required|date|before:today',
-            'age' => 'required|integer|min:18|max:100',
             'house_number' => 'nullable|string|max:255',
             'street' => 'nullable|string|max:255',
             'barangay' => 'required|string|max:255',
@@ -64,10 +60,6 @@ class OnCallEmployeeController extends Controller
         }
 
         $data = $request->all();
-        
-        // Set employee type to On-call
-        $onCallType = EmployeeType::where('EmployeeTypeName', 'On-call')->first();
-        $data['EmployeeTypeID'] = $onCallType->EmployeeTypeID;
         $data['status'] = 'Active';
 
         // Handle image upload
@@ -86,44 +78,47 @@ class OnCallEmployeeController extends Controller
             'type' => 'On-call Employee'
         ];
 
-        $qrDataString = json_encode($qrData);
-        $qrCodeUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' . urlencode($qrDataString);
-        $data['qr_code'] = $qrCodeUrl;
-
-        Employee::create($data);
+        // Don't set qr_code here - let the model generate it automatically
+        $employee = Employee::create($data);
 
         return redirect()->route('oncall-employees.index')
-            ->with('success', 'On-call employee created successfully.');
+            ->with('success', 'On-call employee created successfully.')
+            ->with('show_qr_modal', true)
+            ->with('employee_data', [
+                'id' => $employee->id,
+                'full_name' => $employee->full_name,
+                'position' => $employee->position,
+                'qr_code' => $employee->qr_code
+            ]);
     }
 
     /**
      * Display the specified on-call employee.
      */
-    public function show(Employee $employee)
+    public function show(Employee $oncall_employee)
     {
-        $employee->load(['employeeType', 'position']);
-        return view('Admin.employees.oncall.show', compact('employee'));
+        $oncall_employee->load(['position']);
+        return view('Admin.employees.oncall.show', compact('oncall_employee'));
     }
 
     /**
      * Show the form for editing the specified on-call employee.
      */
-    public function edit(Employee $employee)
+    public function edit(Employee $oncall_employee)
     {
-        return view('Admin.employees.oncall.edit', compact('employee'));
+        return view('Admin.employees.oncall.edit', compact('oncall_employee'));
     }
 
     /**
      * Update the specified on-call employee.
      */
-    public function update(Request $request, Employee $employee)
+    public function update(Request $request, Employee $oncall_employee)
     {
         $validator = Validator::make($request->all(), [
             'first_name' => 'required|string|max:255',
             'middle_name' => 'nullable|string|max:255',
             'last_name' => 'required|string|max:255',
             'birthday' => 'required|date|before:today',
-            'age' => 'integer|min:18|max:100',
             'house_number' => 'nullable|string|max:255',
             'street' => 'nullable|string|max:255',
             'barangay' => 'required|string|max:255',
@@ -148,14 +143,14 @@ class OnCallEmployeeController extends Controller
 
         // Handle image upload
         if ($request->hasFile('image')) {
-            if ($employee->image_name) {
-                Storage::delete('public/' . $employee->image_name);
+            if ($oncall_employee->image_name) {
+                Storage::delete('public/' . $oncall_employee->image_name);
             }
             $imagePath = $request->file('image')->store('employee_images', 'public');
             $data['image_name'] = $imagePath;
         }
 
-        $employee->update($data);
+        $oncall_employee->update($data);
 
         return redirect()->route('oncall-employees.index')
             ->with('success', 'On-call employee updated successfully.');
@@ -164,9 +159,9 @@ class OnCallEmployeeController extends Controller
     /**
      * Remove the specified on-call employee.
      */
-    public function destroy(Employee $employee)
+    public function destroy(Employee $oncall_employee)
     {
-        $employee->update(['flag_deleted' => 1]);
+        $oncall_employee->update(['flag_deleted' => 1]);
         return redirect()->route('oncall-employees.index')
             ->with('success', 'On-call employee deleted successfully.');
     }

@@ -46,7 +46,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background-image: 
+            background-image:
                 radial-gradient(circle at 20% 80%, rgba(82, 183, 136, 0.1) 0%, transparent 50%),
                 radial-gradient(circle at 80% 20%, rgba(136, 216, 163, 0.1) 0%, transparent 50%),
                 radial-gradient(circle at 40% 40%, rgba(127, 176, 105, 0.05) 0%, transparent 50%);
@@ -404,8 +404,13 @@
         }
 
         @keyframes spin {
-            0% { transform: translate(-50%, -50%) rotate(0deg); }
-            100% { transform: translate(-50%, -50%) rotate(360deg); }
+            0% {
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
+
+            100% {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
         }
     </style>
 </head>
@@ -416,10 +421,10 @@
             <!-- Left Side - Branding -->
             <div class="branding-section">
                 <div class="logo-container">
-                    <img src="{{ asset('images/Screenshot_2025-06-23_082305-removebg-preview.png') }}" alt="Project Management Logo" class="logo-img">
+                    <img src="{{ asset('images/Screenshot_2025-06-23_082305-removebg-preview.png') }}"
+                        alt="Project Management Logo" class="logo-img">
                 </div>
-                <h1 class="brand-title">Project Management</h1>
-                <p class="brand-subtitle">Streamline your projects with our comprehensive management system</p>
+                <h1 class="brand-title">Project Monitoring</h1>
                 <ul class="features-list">
                     <li>
                         <i class="bi bi-people-fill"></i>
@@ -449,7 +454,7 @@
 
                 <form action="{{ route('login_now') }}" method="POST" id="loginForm">
                     @csrf
-                    
+
                     @if ($errors->any())
                         <div class="alert alert-danger">
                             <ul class="mb-0">
@@ -469,14 +474,16 @@
                     <div class="form-group">
                         <div class="input-wrapper">
                             <i class="bi bi-envelope input-icon"></i>
-                            <input type="email" name="email" class="form-control" placeholder="Enter your email" required>
+                            <input type="email" name="email" class="form-control" placeholder="Enter your email"
+                                required>
                         </div>
                     </div>
 
                     <div class="form-group">
                         <div class="input-wrapper">
                             <i class="bi bi-lock input-icon"></i>
-                            <input type="password" name="password" id="passwordInput" class="form-control" placeholder="Enter your password" required>
+                            <input type="password" name="password" id="passwordInput" class="form-control"
+                                placeholder="Enter your password" required>
                             <button type="button" id="togglePassword" class="password-toggle">
                                 <i class="bi bi-eye"></i>
                             </button>
@@ -491,13 +498,9 @@
                     </button>
                 </form>
 
-                <div class="forgot-password">
-                    <a href="#" onclick="alert('Forgot password functionality coming soon!')">Forgot your password?</a>
-                </div>
 
-                <div class="signup-link">
-                    <p>Don't have an account? <a href="#" onclick="alert('Sign up functionality coming soon!')">Create one here</a></p>
-                </div>
+
+
             </div>
         </div>
     </div>
@@ -520,17 +523,17 @@
         });
 
         // Form submission with loading state
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
+        document.getElementById('loginForm').addEventListener('submit', function (e) {
             const loginBtn = document.getElementById('loginBtn');
             const btnText = loginBtn.querySelector('.btn-text');
-            
+
             // Add loading state
             loginBtn.classList.add('loading');
             btnText.style.display = 'none';
-            
+
             // Disable button to prevent double submission
             loginBtn.disabled = true;
-            
+
             // Optional: Add a timeout to reset if something goes wrong
             setTimeout(() => {
                 if (loginBtn.classList.contains('loading')) {
@@ -543,11 +546,11 @@
 
         // Input focus effects
         document.querySelectorAll('.form-control').forEach(input => {
-            input.addEventListener('focus', function() {
+            input.addEventListener('focus', function () {
                 this.parentElement.classList.add('focused');
             });
-            
-            input.addEventListener('blur', function() {
+
+            input.addEventListener('blur', function () {
                 if (!this.value) {
                     this.parentElement.classList.remove('focused');
                 }
@@ -555,13 +558,13 @@
         });
 
         // Add some interactive animations
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             // Animate elements on load
             const elements = document.querySelectorAll('.branding-section > *, .login-section > *');
             elements.forEach((element, index) => {
                 element.style.opacity = '0';
                 element.style.transform = 'translateY(20px)';
-                
+
                 setTimeout(() => {
                     element.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
                     element.style.opacity = '1';

@@ -22,13 +22,19 @@
                                         id="EmployeeID" name="EmployeeID" required>
                                     <option value="">Choose an employee...</option>
                                     @foreach($employees as $employee)
+                                        @php
+                                            $position = $employee->relationLoaded('position') 
+                                                ? $employee->getRelation('position') 
+                                                : $employee->position()->first();
+                                            $positionName = $position ? $position->PositionName : null;
+                                        @endphp
                                         <option value="{{ $employee->id }}" 
                                                 {{ old('EmployeeID') == $employee->id ? 'selected' : '' }}
                                                 data-name="{{ $employee->full_name }}"
-                                                data-position="{{ $employee->position }}">
+                                                data-position="{{ $positionName }}">
                                             {{ $employee->full_name }} 
-                                            @if($employee->position)
-                                                - {{ $employee->position }}
+                                            @if($positionName)
+                                                - {{ $positionName }}
                                             @endif
                                         </option>
                                     @endforeach

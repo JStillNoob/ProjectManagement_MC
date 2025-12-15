@@ -65,7 +65,14 @@
                                             @endif
                                         </td>
                                         <td>{{ $employee->full_name }}</td>
-                                        <td>{{ $employee->position }}</td>
+                                        <td>
+                                            @php
+                                                $position = $employee->relationLoaded('position') 
+                                                    ? $employee->getRelation('position') 
+                                                    : $employee->position()->first();
+                                            @endphp
+                                            {{ $position ? $position->PositionName : 'N/A' }}
+                                        </td>
                                         <td>
                                             @if($employee->base_salary)
                                                 <small class="text-success">
@@ -88,7 +95,7 @@
                                                 {{ $employee->status }}
                                             </span>
                                         </td>
-                                        <td>{{ $employee->start_date->format('M d, Y') }}</td>
+                                        <td>{{ $employee->formatted_start_date }}</td>
                                         <td>
                                             <div class="btn-group" role="group">
                                                 <a href="{{ route('oncall-employees.show', $employee) }}" class="btn btn-info btn-sm">
@@ -126,4 +133,19 @@
             </div>
         </div>
     </div>
+
+    <!-- Include QR Code Modal -->
+    @include('components.qr-code-modal')
+
+    @if(session('show_qr_modal') && session('employee_data'))
+        @push('scripts')
+        <script>
+        $(document).ready(function() {
+            // Show QR code modal after employee creation
+            const employeeData = @json(session('employee_data'));
+            showQrCodeModal(employeeData);
+        });
+        </script>
+        @endpush
+    @endif
 @endsection

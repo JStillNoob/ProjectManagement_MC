@@ -23,8 +23,6 @@ class DatabaseSeeder extends Seeder
         // Seed project statuses and new tables
         $this->call([
             ProjectStatusSeeder::class,
-            EmployeeTypeSeeder::class,
-            BenefitSeeder::class,
             RoleSeeder::class,
             ClientSeeder::class,
         ]);

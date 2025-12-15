@@ -25,8 +25,17 @@
                     {{ $user->employee ? $user->employee->full_name : $user->full_name }}
                 </h3>
                 <p class="text-muted text-center">
-                    @if($user->employee && $user->employee->position)
-                        {{ $user->employee->position }}
+                    @if($user->employee)
+                        @php
+                            $position = $user->employee->relationLoaded('position') 
+                                ? $user->employee->getRelation('position') 
+                                : $user->employee->position()->first();
+                        @endphp
+                        @if($position)
+                            {{ $position->PositionName }}
+                        @else
+                            {{ $user->Position ?? 'N/A' }}
+                        @endif
                     @else
                         {{ $user->Position ?? 'N/A' }}
                     @endif
@@ -56,22 +65,13 @@
                         </span>
                     </li>
                     <li class="list-group-item">
-                        <b>Date Created</b> <a class="float-right">{{ $user->created_at->format('M d, Y') }}</a>
+                        <b>Date Created</b> <a class="float-right">{{ $user->formatted_created_at }}</a>
                     </li>
                 </ul>
 
-                <div class="row">
-                    <div class="col-6">
-                        <a href="{{ route('users.edit', $user) }}" class="btn btn-warning btn-block">
-                            <i class="fas fa-edit"></i> Edit
-                        </a>
-                    </div>
-                    <div class="col-6">
-                        <a href="{{ route('users.index') }}" class="btn btn-secondary btn-block">
-                            <i class="fas fa-arrow-left"></i> Back
-                        </a>
-                    </div>
-                </div>
+                <a href="{{ route('users.index') }}" class="btn btn-secondary btn-block">
+                    <i class="fas fa-arrow-left"></i> Back to List
+                </a>
             </div>
         </div>
     </div>
@@ -101,7 +101,12 @@
                                 </div>
                                 <div class="col-md-6">
                                     <strong><i class="fas fa-briefcase mr-1"></i> Position</strong>
-                                    <p class="text-muted">{{ $user->employee->position ?? 'N/A' }}</p>
+                                    @php
+                                        $position = $user->employee->relationLoaded('position') 
+                                            ? $user->employee->getRelation('position') 
+                                            : $user->employee->position()->first();
+                                    @endphp
+                                    <p class="text-muted">{{ $position ? $position->PositionName : 'N/A' }}</p>
                                 </div>
                             </div>
                             <hr>
@@ -121,11 +126,11 @@
                             <div class="row">
                                 <div class="col-md-6">
                                     <strong><i class="fas fa-calendar mr-1"></i> Date Hired</strong>
-                                    <p class="text-muted">{{ $user->employee->start_date ? $user->employee->start_date->format('M d, Y') : 'N/A' }}</p>
+                                    <p class="text-muted">{{ $user->employee->formatted_start_date }}</p>
                                 </div>
                                 <div class="col-md-6">
-                                    <strong><i class="fas fa-tag mr-1"></i> Employee Type</strong>
-                                    <p class="text-muted">{{ $user->employee->employeeType->EmployeeTypeName ?? 'N/A' }}</p>
+                                    <strong><i class="fas fa-toggle-on mr-1"></i> Status</strong>
+                                    <p class="text-muted">{{ $user->employee->status ?? 'N/A' }}</p>
                                 </div>
                             </div>
                         @else

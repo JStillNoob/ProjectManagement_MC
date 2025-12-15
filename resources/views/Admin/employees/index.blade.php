@@ -1,179 +1,339 @@
-@extends('layouts.app')
+                    @extends('layouts.app')
 
-@section('title', 'Employee Management')
-@section('page-title', 'Employee Management')
+                    @section('title', 'Employee Management')
+                    @section('page-title', 'Employee Management')
 
-@section('content')
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-users mr-2"></i>
-                        Employee Management
-                    </h3>
-                </div>
-                <div class="card-body">
-                    @if(session('success'))
-                        <div class="alert alert-success alert-dismissible fade show" role="alert">
-                            {{ session('success') }}
-                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
-                        </div>
-                    @endif
-
-                    <!-- Employee Type Selection Cards -->
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <div class="card card-success">
-                                <div class="card-header">
-                                    <h3 class="card-title">
-                                        <i class="fas fa-user-tie mr-2"></i>
-                                        Regular Employees
-                                    </h3>
-                                </div>
-                                <div class="card-body">
-                                    <p class="card-text">Full-time employees with comprehensive benefits package including health insurance, retirement plan, vacation days, sick leave, government contributions, and additional perks.</p>
-                                    <ul class="list-unstyled">
-                                        <li><i class="fas fa-gift text-success mr-1"></i> SSS Contribution</li>
-                                        <li><i class="fas fa-gift text-success mr-1"></i> PhilHealth Coverage</li>
-                                        <li><i class="fas fa-gift text-success mr-1"></i> Pag-IBIG Fund</li>
-
-                                    </ul>
-                                    <div class="mt-3">
-                                        <a href="{{ route('regular-employees.index') }}" class="btn btn-success">
-                                            <i class="fas fa-users"></i> Manage Regular Employees
-                                        </a>
-                                        <a href="{{ route('regular-employees.create') }}" class="btn btn-outline-success">
-                                            <i class="fas fa-plus"></i> Add Regular Employee
-                                        </a>
+                    @section('content')
+                    <div class="container-fluid">
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h3 class="card-title">
+                                            <i class="fas fa-list mr-2"></i>
+                                            All Employees Overview
+                                        </h3>
+                                        <div class="card-tools">
+                                            <a href="{{ route('employees.create') }}" class="btn btn-success btn-sm"
+                                            style="background-color: #87A96B !important; border: 2px solid #87A96B !important; color: white !important; opacity: 1 !important; visibility: visible !important; display: inline-block !important;">
+                                                <i class="fas fa-plus"></i> Add Employee
+                                            </a>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="col-md-6">
-                            <div class="card card-info">
-                                <div class="card-header">
-                                    <h3 class="card-title">
-                                        <i class="fas fa-phone mr-2"></i>
-                                        On-Call Employees
-                                    </h3>
-                                </div>
-                                <div class="card-body">
-                                    <p class="card-text">Part-time employees called as needed with flexible scheduling and hourly compensation. No benefits package.</p>
-                                    <ul class="list-unstyled">
-                                        <li><i class="fas fa-clock text-info mr-1"></i> Flexible Schedule</li>
-                                        <li><i class="fas fa-phone text-info mr-1"></i> Called as Needed</li>
-                                        <li><i class="fas fa-exclamation-triangle text-warning mr-1"></i> No Benefits</li>
-                                    </ul>
-                                    <div class="mt-3">
-                                        <a href="{{ route('oncall-employees.index') }}" class="btn btn-info">
-                                            <i class="fas fa-users"></i> Manage On-Call Employees
-                                        </a>
-                                        <a href="{{ route('oncall-employees.create') }}" class="btn btn-outline-info">
-                                            <i class="fas fa-plus"></i> Add On-Call Employee
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                                    <div class="card-body p-0">
+                                        @if(session('success'))
+                                            <div class="alert alert-success alert-dismissible fade show m-3" role="alert">
+                                                {{ session('success') }}
+                                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                                    <span aria-hidden="true">&times;</span>
+                                                </button>
+                                            </div>
+                                        @endif
 
-                    <!-- Quick Stats -->
-                    
-
-                    <!-- All Employees Table -->
-                    <div class="mt-4">
-                        <h5><i class="fas fa-list mr-2"></i>All Employees Overview</h5>
-                        <div class="table-responsive">
-                            <table class="table table-bordered table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Photo</th>
-                                        <th>Name</th>
-                                        <th>Position</th>
-                                        <th>Employee Type</th>
-                                        <th>Status</th>
-                                        <th>Start Date</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @forelse($employees as $employee)
-                                        <tr>
-                                            <td>{{ $employee->id }}</td>
-                                            <td>
-                                                @if($employee->image_path)
-                                                    <img src="{{ $employee->image_path }}" alt="{{ $employee->full_name }}"
-                                                        class="img-circle elevation-2"
-                                                        style="width: 40px; height: 40px; object-fit: cover;">
-                                                @else
-                                                    <div class="img-circle elevation-2 bg-secondary d-flex align-items-center justify-content-center text-white"
-                                                         style="width: 40px; height: 40px;">
-                                                        <i class="fas fa-user"></i>
-                                                    </div>
-                                                @endif
-                                            </td>
-                                            <td>{{ $employee->full_name }}</td>
-                                            <td>{{ $employee->position }}</td>
-                                            <td>
-                                                @if($employee->employeeType)
-                                                    <span class="badge badge-{{ 
-                                                        $employee->employeeType->EmployeeTypeName == 'Regular' ? 'success' : 
-                                                        ($employee->employeeType->EmployeeTypeName == 'On-call' ? 'info' : 
-                                                        ($employee->employeeType->EmployeeTypeName == 'Contract' ? 'warning' : 'primary')) 
-                                                    }}">
-                                                        {{ $employee->employeeType->EmployeeTypeName }}
-                                                    </span>
-                                                @else
-                                                    <span class="text-muted">No type assigned</span>
-                                                @endif
-                                            </td>
-                                            <td>
-                                                <span class="badge badge-{{ $employee->status == 'Active' ? 'success' : 'danger' }}">
-                                                    {{ $employee->status }}
-                                                </span>
-                                            </td>
-                                            <td>{{ $employee->start_date->format('M d, Y') }}</td>
-                                            <td>
-                                                <div class="btn-group" role="group">
-                                                    <a href="{{ route('employees.show', $employee) }}" class="btn btn-info btn-sm">
-                                                        <i class="fas fa-eye"></i>
-                                                    </a>
-                                                    <a href="{{ route('employees.edit', $employee) }}" class="btn btn-warning btn-sm">
-                                                        <i class="fas fa-edit"></i>
-                                                    </a>
-                                                    <form action="{{ route('employees.destroy', $employee) }}" method="POST"
-                                                        style="display: inline-block;"
-                                                        onsubmit="return confirm('Are you sure you want to archive this employee?')">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="btn btn-danger btn-sm" title="Archive">
-                                                            <i class="fas fa-archive"></i>
-                                                        </button>
-                                                    </form>
+                                        <!-- Filter Section -->
+                                        <div class="row mx-3 my-3">
+                                            <div class="col-md-4">
+                                                <div class="form-group mb-0">
+                                                    <label for="filterPosition" class="small text-muted mb-1">Filter by Position</label>
+                                                    <select id="filterPosition" class="form-control form-control-sm">
+                                                        <option value="">All Positions</option>
+                                                        @foreach(\App\Models\Position::all() as $position)
+                                                            <option value="{{ $position->PositionName }}">{{ $position->PositionName }}</option>
+                                                        @endforeach
+                                                    </select>
                                                 </div>
-                                            </td>
-                                        </tr>
-                                    @empty
-                                        <tr>
-                                            <td colspan="8" class="text-center">No employees found.</td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="form-group mb-0">
+                                                    <label for="filterStatus" class="small text-muted mb-1">Filter by Status</label>
+                                                    <select id="filterStatus" class="form-control form-control-sm">
+                                                        <option value="">All Statuses</option>
+                                                        @foreach(\App\Models\EmployeeStatus::all() as $status)
+                                                            <option value="{{ $status->StatusName }}">{{ $status->StatusName }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4 d-flex align-items-end">
+                                                <button type="button" id="clearFilters" class="btn btn-outline-secondary btn-sm">
+                                                    <i class="fas fa-times mr-1"></i> Clear Filters
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- All Employees Table -->
+                                        <div class="table-responsive">
+                                            <table id="employeesTable" class="table table-bordered table-striped">
+                                            <thead>
+                                                <tr>
+                                                    <th class="text-center">Photo</th>
+                                                    <th>Name</th>
+                                                    <th>Position</th>
+                                                    <th>Status</th>
+                                                    <th class="text-center">Actions</th>
+                                                </tr>
+                                            </thead>
+                                                <tbody>
+                                                    @forelse($employees as $employee)
+                                                        <tr>
+                                                            <td>
+                                                                @if($employee->image_path)
+                                                                    <img src="{{ $employee->image_path }}" alt="{{ $employee->full_name }}"
+                                                                        class="img-circle elevation-2"
+                                                                        style="width: 40px; height: 40px; object-fit: cover;">
+                                                                @else
+                                                                    <div class="img-circle elevation-2 bg-secondary d-flex align-items-center justify-content-center text-white"
+                                                                        style="width: 40px; height: 40px;">
+                                                                        <i class="fas fa-user"></i>
+                                                                    </div>
+                                                                @endif
+                                                            </td>
+                                                            <td>{{ $employee->full_name }}</td>
+                                                            <td>
+                                                                @php
+                                                                    $position = $employee->relationLoaded('position') 
+                                                                        ? $employee->getRelation('position') 
+                                                                        : $employee->position()->first();
+                                                                @endphp
+                                                                {{ $position ? $position->PositionName : 'N/A' }}
+                                                            </td>
+                                                            <td>
+                                                                @php
+                                                                    $statusColor = '#6c757d'; // Default gray for Inactive
+                                                                    if ($employee->employee_status_id == \App\Models\EmployeeStatus::ACTIVE) {
+                                                                        $statusColor = '#28a745'; // Green for Active
+                                                                    } elseif ($employee->employee_status_id == \App\Models\EmployeeStatus::ARCHIVED) {
+                                                                        $statusColor = '#dc3545'; // Red for Archived
+                                                                    }
+                                                                @endphp
+                                                                <div class="d-flex align-items-center">
+                                                                    <span class="mr-2" style="width: 8px; height: 8px; border-radius: 50%; background-color: {{ $statusColor }};"></span>
+                                                                    <span>{{ $employee->status_name }}</span>
+                                                                </div>
+                                                            </td>
+                                                            <td style="white-space: nowrap;">
+                                                                <a href="{{ route('employees.show', $employee) }}" class="text-info mr-3" style="text-decoration: underline; cursor: pointer;">
+                                                                    <i class="fas fa-eye mr-1"></i> View Details
+                                                                </a>
+                                                                @if($employee->employee_status_id == \App\Models\EmployeeStatus::ARCHIVED)
+                                                                    <form action="{{ route('employees.unarchive', $employee) }}" method="POST"
+                                                                        style="display: inline-block;"
+                                                                        onsubmit="return confirm('Are you sure you want to unarchive this employee?')">
+                                                                        @csrf
+                                                                        @method('PATCH')
+                                                                        <button type="submit" class="btn btn-link text-success p-0" style="text-decoration: underline; border: none; background: none; cursor: pointer;">
+                                                                            <i class="fas fa-undo mr-1"></i> Unarchive
+                                                                        </button>
+                                                                    </form>
+                                                                @else
+                                                                    <form action="{{ route('employees.destroy', $employee) }}" method="POST"
+                                                                        style="display: inline-block;"
+                                                                        onsubmit="return confirm('Are you sure you want to archive this employee?')">
+                                                                        @csrf
+                                                                        @method('DELETE')
+                                                                        <button type="submit" class="btn btn-link text-danger p-0" style="text-decoration: underline; border: none; background: none; cursor: pointer;">
+                                                                            <i class="fas fa-archive mr-1"></i> Archive
+                                                                        </button>
+                                                                    </form>
+                                                                @endif
+                                                            </td>
+                                                        </tr>
+                                                    @empty
+                                                        <tr>
+                                                            <td colspan="5" class="text-center">No employees found.</td>
+                                                        </tr>
+                                                    @endforelse
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        <!-- Pagination -->
-                        <div class="d-flex justify-content-center">
-                            {{ $employees->links() }}
+                        @push('styles')
+                        <style>
+                            /* DataTables Borderline Styling - Only horizontal borders between rows */
+                            #employeesTable {
+                                border: none !important;
+                            }
+
+                            #employeesTable thead th {
+                                border: none !important;
+                                border-bottom: 1px solid #dee2e6 !important;
+                            }
+
+                            #employeesTable tbody td {
+                                border: none !important;
+                                border-bottom: 1px solid #dee2e6 !important;
+                            }
+
+                            #employeesTable tbody tr:last-child td {
+                                border-bottom: none !important;
+                            }
+
+                            /* Center Photo and Actions columns */
+                            #employeesTable thead th:first-child,
+                            #employeesTable thead th:last-child,
+                            #employeesTable tbody td:first-child,
+                            #employeesTable tbody td:last-child {
+                                text-align: center !important;
+                            }
+
+                            /* Center Photo content */
+                            #employeesTable tbody td:first-child {
+                                vertical-align: middle !important;
+                            }
+
+                            #employeesTable tbody td:first-child img,
+                            #employeesTable tbody td:first-child div {
+                                margin: 0 auto !important;
+                            }
+
+                            /* Remove margins from DataTable wrapper */
+                            #employeesTable_wrapper {
+                                margin-left: 0 !important;
+                                margin-right: 0 !important;
+                            }
+
+                            #employeesTable_wrapper .dataTables_length,
+                            #employeesTable_wrapper .dataTables_filter {
+                                margin-left: 0 !important;
+                                margin-right: 0 !important;
+                                margin-top: 0.5rem !important;
+                                margin-bottom: 0.25rem !important;
+                                padding-left: 1rem !important;
+                                padding-right: 1rem !important;
+                                padding-top: 0 !important;
+                                padding-bottom: 0 !important;
+                            }
+
+                            #employeesTable_wrapper .dataTables_length {
+                                display: flex !important;
+                                align-items: center !important;
+                            }
+
+                            #employeesTable_wrapper .dataTables_length label {
+                                display: flex !important;
+                                align-items: center !important;
+                                margin-bottom: 0 !important;
+                            }
+
+                            #employeesTable_wrapper .dataTables_length label::before {
+                                content: "Show entries" !important;
+                                margin-right: 0.5rem !important;
+                                font-weight: normal !important;
+                            }
+
+                            #employeesTable_wrapper .dataTables_length label select {
+                                margin: 0 !important;
+                            }
+
+
+                            #employeesTable_wrapper .dataTables_info,
+                            #employeesTable_wrapper .dataTables_paginate {
+                                margin-left: 0 !important;
+                                margin-right: 0 !important;
+                                margin-top: 0.5rem !important;
+                                padding-left: 1rem !important;
+                                padding-right: 1rem !important;
+                                padding-top: 0 !important;
+                                padding-bottom: 1rem !important;
+                            }
+
+                            #employeesTable_wrapper .dataTables_paginate .paginate_button {
+                                background: none !important;
+                                border: none !important;
+                                padding: 0.25rem 0.5rem !important;
+                                text-decoration: underline !important;
+                                color: #007bff !important;
+                            }
+
+                            #employeesTable_wrapper .dataTables_paginate .paginate_button.current {
+                                background: none !important;
+                                border: none !important;
+                                color: #007bff !important;
+                                text-decoration: underline !important;
+                                font-weight: bold !important;
+                            }
+
+                            #employeesTable_wrapper .dataTables_paginate .paginate_button:hover:not(.disabled) {
+                                background: none !important;
+                                border: none !important;
+                                text-decoration: underline !important;
+                            }
+
+                            #employeesTable_wrapper .dataTables_paginate .paginate_button.disabled {
+                                background: none !important;
+                                border: none !important;
+                                text-decoration: none !important;
+                                color: #6c757d !important;
+                                opacity: 0.5 !important;
+                            }
+
+                            /* Filter section styling */
+                            #filterPosition, #filterStatus {
+                                border: 1px solid #ced4da;
+                                border-radius: 4px;
+                            }
+
+                            #filterPosition:focus, #filterStatus:focus {
+                                border-color: #87A96B;
+                                box-shadow: 0 0 0 0.2rem rgba(135, 169, 107, 0.25);
+                            }
+                        </style>
+                        @endpush
+
+                        @push('scripts')
+                        <script>
+                            $(document).ready(function() {
+                                // Initialize DataTables
+                                var table = $('#employeesTable').DataTable({
+                                    "responsive": true,
+                                    "lengthChange": true,
+                                    "autoWidth": false,
+                                    "pageLength": 10,
+                                    "order": [[1, 'asc']],
+                                    "columnDefs": [
+                                        { "orderable": false, "targets": [0, 4] }, // Disable sorting on Photo and Actions
+                                        { "className": "text-center", "targets": [0, 4] } // Center Photo and Actions columns
+                                    ],
+                                    "language": {
+                                        "search": "Search:",
+                                        "lengthMenu": "_MENU_",
+                                        "info": "Showing _START_ to _END_ of _TOTAL_ entries",
+                                        "infoEmpty": "Showing 0 to 0 of 0 entries",
+                                        "infoFiltered": "(filtered from _MAX_ total entries)",
+                                        "paginate": {
+                                            "first": "First",
+                                            "last": "Last",
+                                            "next": "Next",
+                                            "previous": "Previous"
+                                        }
+                                    }
+                                });
+
+                                // Filter by Position
+                                $('#filterPosition').on('change', function() {
+                                    var val = $(this).val();
+                                    table.column(2).search(val ? '^' + val + '$' : '', true, false).draw();
+                                });
+
+                                // Filter by Status
+                                $('#filterStatus').on('change', function() {
+                                    var val = $(this).val();
+                                    table.column(3).search(val ? val : '', true, false).draw();
+                                });
+
+                                // Clear all filters
+                                $('#clearFilters').on('click', function() {
+                                    $('#filterPosition').val('');
+                                    $('#filterStatus').val('');
+                                    table.search('').columns().search('').draw();
+                                });
+                            });
+                        </script>
+                        @endpush
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
-@endsection
+                    @endsection

@@ -1,243 +1,334 @@
 @extends('layouts.app')
 
-@section('title', 'Regular Employee Details')
-@section('page-title', 'Regular Employee Details')
+@section('title', 'Regular Employee Profile')
+@section('page-title', 'Regular Employee Profile')
 
 @section('content')
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-user-tie text-success mr-2"></i>
-                        Employee Information
-                    </h3>
-                    <div class="card-tools">
-                        <a href="{{ route('regular-employees.index') }}" class="btn btn-sm btn-secondary"
-                           style="background-color: #6c757d !important; border: 2px solid #6c757d !important; color: white !important; opacity: 1 !important; visibility: visible !important; display: inline-block !important;">
-                            <i class="fas fa-arrow-left"></i> Back to List
+<div class="row">
+    <div class="col-md-4">
+        <!-- Employee Card -->
+        <div class="card card-primary card-outline">
+            <div class="card-body box-profile">
+                <div class="text-center">
+                    <img class="profile-user-img img-fluid img-circle" 
+                         src="{{ $regular_employee->image_path }}" 
+                         alt="{{ $regular_employee->full_name }}">
+                </div>
+
+                <h3 class="profile-username text-center">{{ $regular_employee->full_name }}</h3>
+                @php
+                    $position = $regular_employee->relationLoaded('position') 
+                        ? $regular_employee->getRelation('position') 
+                        : $regular_employee->position()->first();
+                @endphp
+                <p class="text-muted text-center">{{ $position ? $position->PositionName : 'N/A' }}</p>
+
+                <ul class="list-group list-group-unbordered mb-3">
+                    <li class="list-group-item">
+                        <b>Employee ID</b> <a class="float-right">{{ $regular_employee->id }}</a>
+                    </li>
+                    <li class="list-group-item">
+                        <b>Status</b> 
+                        <span class="float-right">
+                            <span class="badge badge-{{ $regular_employee->status == 'Active' ? 'success' : 'danger' }}">
+                                {{ $regular_employee->status }}
+                            </span>
+                        </span>
+                    </li>
+                    <li class="list-group-item">
+                        <b>Start Date</b> <a class="float-right">{{ $regular_employee->formatted_start_date }}</a>
+                    </li>
+                    <li class="list-group-item">
+                        <b>Age</b> <a class="float-right">{{ $regular_employee->age ? $regular_employee->age . ' years old' : 'N/A' }}</a>
+                    </li>
+                </ul>
+
+                <div class="row">
+                    <div class="col-6">
+                        <a href="{{ route('regular-employees.edit', $regular_employee) }}" class="btn btn-warning btn-block">
+                            <i class="fas fa-edit"></i> Edit
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="{{ route('regular-employees.index') }}" class="btn btn-secondary btn-block">
+                            <i class="fas fa-arrow-left"></i> Back
                         </a>
                     </div>
                 </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-4 text-center">
-                            @if($employee->image_path)
-                                <img src="{{ $employee->image_path }}" alt="{{ $employee->full_name }}"
-                                    class="img-circle elevation-2 mb-3"
-                                    style="width: 150px; height: 150px; object-fit: cover;">
-                            @else
-                                <div class="img-circle elevation-2 bg-secondary d-flex align-items-center justify-content-center text-white mb-3 mx-auto"
-                                     style="width: 150px; height: 150px;">
-                                    <i class="fas fa-user fa-3x"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <!-- Employee Details -->
+        <div class="card">
+            <div class="card-header p-2">
+                <ul class="nav nav-pills">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#personal" data-toggle="tab">Personal Information</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#employment" data-toggle="tab">Employment Details</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#qrcode" data-toggle="tab">QR Code</a>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content">
+                    <!-- Personal Information Tab -->
+                    <div class="active tab-pane" id="personal">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong><i class="fas fa-user mr-1"></i> First Name</strong>
+                                <p class="text-muted">{{ $regular_employee->first_name }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <strong><i class="fas fa-user mr-1"></i> Last Name</strong>
+                                <p class="text-muted">{{ $regular_employee->last_name }}</p>
+                            </div>
+                        </div>
+                        <hr>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong><i class="fas fa-user mr-1"></i> Middle Name</strong>
+                                <p class="text-muted">{{ $regular_employee->middle_name ?: 'Not provided' }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <strong><i class="fas fa-birthday-cake mr-1"></i> Birthday</strong>
+                                <p class="text-muted">{{ $regular_employee->formatted_birthday }}</p>
+                            </div>
+                        </div>
+                        <hr>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong><i class="fas fa-calendar mr-1"></i> Age</strong>
+                                <p class="text-muted">{{ $regular_employee->age ? $regular_employee->age . ' years old' : 'N/A' }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <strong><i class="fas fa-map-marker-alt mr-1"></i> Address</strong>
+                                <p class="text-muted">{{ $regular_employee->address }}</p>
+                            </div>
+                        </div>
+                        <hr>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong><i class="fas fa-phone mr-1"></i> Contact Number</strong>
+                                <p class="text-muted">{{ $regular_employee->contact_number ?: 'Not provided' }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <strong><i class="fas fa-clock mr-1"></i> Date Created</strong>
+                                <p class="text-muted">{{ $regular_employee->formatted_created_at }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Employment Details Tab -->
+                    <div class="tab-pane" id="employment">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong><i class="fas fa-briefcase mr-1"></i> Position</strong>
+                                @php
+                                    $position = $regular_employee->relationLoaded('position') 
+                                        ? $regular_employee->getRelation('position') 
+                                        : $regular_employee->position()->first();
+                                @endphp
+                                <p class="text-muted">{{ $position ? $position->PositionName : 'N/A' }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <strong><i class="fas fa-dollar-sign mr-1"></i> Base Salary</strong>
+                                <p class="text-muted">{{ $regular_employee->formatted_salary }}</p>
+                            </div>
+                        </div>
+                        <hr>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong><i class="fas fa-calendar-check mr-1"></i> Start Date</strong>
+                                <p class="text-muted">{{ $regular_employee->formatted_start_date }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <strong><i class="fas fa-toggle-on mr-1"></i> Status</strong>
+                                <p class="text-muted">
+                                    <span class="badge badge-{{ $regular_employee->status == 'Active' ? 'success' : 'danger' }}">
+                                        {{ $regular_employee->status }}
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                        <hr>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong><i class="fas fa-calendar-alt mr-1"></i> Employment Duration</strong>
+                                <p class="text-muted">
+                                    @php
+                                        if ($regular_employee->start_date) {
+                                            $startDate = $regular_employee->start_date;
+                                            $today = now();
+                                            $duration = $startDate->diffInDays($today);
+                                            $years = floor($duration / 365);
+                                            $months = floor(($duration % 365) / 30);
+                                            $days = $duration % 30;
+                                            echo $years . ' year(s), ' . $months . ' month(s), ' . $days . ' day(s)';
+                                        } else {
+                                            echo 'N/A';
+                                        }
+                                    @endphp
+                                </p>
+                            </div>
+                        </div>
+                        <hr>
+
+                        @if($regular_employee->image_name)
+                        <div class="row">
+                            <div class="col-12">
+                                <strong><i class="fas fa-image mr-1"></i> Employee Photo</strong>
+                                <div class="mt-2">
+                                    <img src="{{ $regular_employee->image_path }}" alt="{{ $regular_employee->full_name }}" 
+                                         class="img-thumbnail" style="max-width: 200px;">
                                 </div>
-                            @endif
-                            
-                            <h4>{{ $employee->full_name }}</h4>
-                            <p class="text-muted">{{ $employee->position }}</p>
-                            
-                            <div class="mt-3">
-                                <span class="badge badge-{{ $employee->status == 'Active' ? 'success' : 'danger' }} badge-lg">
-                                    {{ $employee->status }}
-                                </span>
-                                <span class="badge badge-info badge-lg">
-                                    {{ $employee->employeeType->EmployeeTypeName }}
-                                </span>
                             </div>
                         </div>
-                        
-                        <div class="col-md-8">
-                            <h5 class="text-primary mb-3"><i class="fas fa-user mr-2"></i>Personal Information</h5>
-                            <table class="table table-borderless">
-                                <tr>
-                                    <td width="30%"><strong>Full Name:</strong></td>
-                                    <td>{{ $employee->full_name }}</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Birthday:</strong></td>
-                                    <td>{{ $employee->birthday->format('F d, Y') }}</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Age:</strong></td>
-                                    <td>{{ $employee->age }} years old</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Address:</strong></td>
-                                    <td>{{ $employee->full_address }}</td>
-                                </tr>
-                            </table>
-
-                            <h5 class="text-primary mb-3 mt-4"><i class="fas fa-briefcase mr-2"></i>Employment Information</h5>
-                            <table class="table table-borderless">
-                                <tr>
-                                    <td width="30%"><strong>Position:</strong></td>
-                                    <td>{{ $employee->position->PositionName ?? 'Not assigned' }}</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Employee Type:</strong></td>
-                                    <td>
-                                        {{ $employee->employeeType->EmployeeTypeName }}
-                                        @if($employee->employeeType->hasBenefits)
-                                            <span class="badge badge-success ml-2">Eligible for Benefits</span>
-                                        @else
-                                            <span class="badge badge-warning ml-2">Not Eligible for Benefits</span>
-                                        @endif
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Start Date:</strong></td>
-                                    <td>{{ $employee->start_date->format('F d, Y') }}</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Employment Duration:</strong></td>
-                                    <td>{{ $employee->start_date->diffForHumans() }}</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Status:</strong></td>
-                                    <td>
-                                        <span class="badge badge-{{ $employee->status == 'Active' ? 'success' : 'danger' }}">
-                                            {{ $employee->status }}
-                                        </span>
-                                    </td>
-                                </tr>
-                            </table>
-
-                            @if($employee->base_salary)
-                                <h5 class="text-primary mb-3 mt-4"><i class="fas fa-money-bill-wave mr-2"></i>Salary Information</h5>
-                                <table class="table table-borderless">
-                                    <tr>
-                                        <td width="30%"><strong>Base Salary:</strong></td>
-                                        <td>{{ $employee->formatted_salary }}</td>
-                                    </tr>
-                                </table>
-                            @endif
-
-                            <h5 class="text-info mb-3 mt-4"><i class="fas fa-phone mr-2"></i>Contact Information</h5>
-                            <table class="table table-borderless">
-                                <tr>
-                                    <td width="30%"><strong>Contact Number:</strong></td>
-                                    <td>{{ $employee->contact_number ?? 'Not provided' }}</td>
-                                </tr>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-footer">
-                    <div class="btn-group" role="group">
-                        <a href="{{ route('employees.benefits', $employee) }}" class="btn btn-success">
-                            <i class="fas fa-gift"></i> Manage Benefits
-                        </a>
-                        <a href="{{ route('regular-employees.edit', $employee) }}" class="btn btn-warning">
-                            <i class="fas fa-edit"></i> Edit Employee
-                        </a>
-                        <a href="{{ route('regular-employees.index') }}" class="btn btn-secondary">
-                            <i class="fas fa-list"></i> Back to List
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-md-4">
-            <!-- Benefits Summary Card -->
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-gift text-success mr-2"></i>
-                        Benefits Summary
-                    </h3>
-                </div>
-                <div class="card-body">
-                    @if($employee->employeeType->hasBenefits)
-                        @php
-                            $currentBenefits = $employee->getCurrentBenefits();
-                        @endphp
-                        
-                        @if($currentBenefits->count() > 0)
-                            <div class="alert alert-success">
-                                <h6><i class="fas fa-check-circle mr-2"></i>Assigned Benefits</h6>
-                                <p class="mb-2">This employee has <strong>{{ $currentBenefits->count() }}</strong> benefits assigned by admin:</p>
-                                <ul class="list-unstyled mb-0 small">
-                                    @foreach($currentBenefits->take(5) as $employeeBenefit)
-                                        <li><i class="fas fa-check text-success mr-1"></i> {{ $employeeBenefit->benefit->BenefitName }}</li>
-                                    @endforeach
-                                    @if($currentBenefits->count() > 5)
-                                        <li class="text-muted">... and {{ $currentBenefits->count() - 5 }} more</li>
-                                    @endif
-                                </ul>
-                            </div>
-                            
-                            <a href="{{ route('employees.benefits', $employee) }}" class="btn btn-success btn-block">
-                                <i class="fas fa-gift"></i> Manage Benefits
-                            </a>
-                        @else
-                            <div class="alert alert-warning">
-                                <h6><i class="fas fa-exclamation-triangle mr-2"></i>No Benefits Assigned</h6>
-                                <p class="mb-0">This employee is eligible for benefits but none have been assigned by admin yet.</p>
-                            </div>
-                            
-                            <a href="{{ route('employees.benefits', $employee) }}" class="btn btn-primary btn-block">
-                                <i class="fas fa-plus"></i> Assign Benefits
-                            </a>
                         @endif
-                    @else
-                        <div class="alert alert-info">
-                            <h6><i class="fas fa-info-circle mr-2"></i>Not Eligible for Benefits</h6>
-                            <p class="mb-0">This employee type is not eligible for company benefits.</p>
-                        </div>
-                    @endif
-                </div>
-            </div>
+                    </div>
 
-            <!-- Quick Actions Card -->
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-bolt text-warning mr-2"></i>
-                        Quick Actions
-                    </h3>
-                </div>
-                <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <a href="{{ route('employees.benefits', $employee) }}" class="btn btn-success">
-                            <i class="fas fa-gift"></i> Manage Benefits
-                        </a>
-                        <a href="{{ route('regular-employees.edit', $employee) }}" class="btn btn-warning">
-                            <i class="fas fa-edit"></i> Edit Employee
-                        </a>
-                        @if($employee->qr_code)
-                            <button type="button" class="btn btn-info" data-toggle="modal" data-target="#qrModal">
-                                <i class="fas fa-qrcode"></i> View QR Code
-                            </button>
-                        @endif
+                    <!-- QR Code Tab -->
+                    <div class="tab-pane" id="qrcode">
+                        <div class="row">
+                            <div class="col-12 text-center">
+                                <h4><i class="fas fa-qrcode mr-2"></i>Employee QR Code</h4>
+                                <hr>
+                                
+                                @if($regular_employee->qr_code)
+                                    <div class="mb-4">
+                                        <!-- QR Code Display -->
+                                        <div id="qr-code-display" style="width: 300px; height: 300px; margin: 0 auto; border: 2px solid #dee2e6; border-radius: 8px; background: #fff; display: flex; align-items: center; justify-content: center;">
+                                            <img id="qr-code-image" src="{{ $regular_employee->generateQrCodeImageUrl(300) }}" alt="Employee QR Code" class="img-fluid" style="max-width: 100%; height: auto; display: none;">
+                                            <div id="qr-code-placeholder" class="text-center">
+                                                <i class="fas fa-qrcode fa-4x text-muted mb-3"></i>
+                                                <div class="text-muted">QR Code: {{ $regular_employee->qr_code }}</div>
+                                                <div class="mt-2">
+                                                    <button class="btn btn-sm btn-outline-primary" onclick="showQrCodeImage()">
+                                                        <i class="fas fa-eye"></i> Show QR Code
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="alert alert-info">
+                                        <h5><i class="fas fa-info-circle"></i> QR Code Information</h5>
+                                        <p class="mb-2">This QR code contains the following employee information:</p>
+                                        <ul class="list-unstyled text-left">
+                                            <li><strong>Name:</strong> {{ $regular_employee->full_name }}</li>
+                                            <li><strong>Position:</strong> 
+                                                @php
+                                                    $position = $regular_employee->relationLoaded('position') 
+                                                        ? $regular_employee->getRelation('position') 
+                                                        : $regular_employee->position()->first();
+                                                @endphp
+                                                {{ $position ? $position->PositionName : 'N/A' }}
+                                            </li>
+                                            <li><strong>Status:</strong> {{ $regular_employee->status }}</li>
+                                            <li><strong>Start Date:</strong> {{ $regular_employee->formatted_start_date }}</li>
+                                            <li><strong>QR Code:</strong> {{ $regular_employee->qr_code }}</li>
+                                        </ul>
+                                    </div>
+                                    
+                                    <div class="mt-3">
+                                        <button class="btn btn-primary" onclick="copyQrCode('{{ $regular_employee->qr_code }}')">
+                                            <i class="fas fa-copy"></i> Copy QR Code
+                                        </button>
+                                        <button class="btn btn-success" onclick="generateQrImage('{{ $regular_employee->qr_code }}')">
+                                            <i class="fas fa-download"></i> Generate QR Image
+                                        </button>
+                                    </div>
+                                    
+                                    <div class="mt-3">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h6>QR Code Data (for manual QR generation)</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <code style="word-break: break-all; font-size: 12px;">{{ $regular_employee->qr_code }}</code>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @else
+                                    <div class="alert alert-warning">
+                                        <h5><i class="fas fa-exclamation-triangle"></i> No QR Code Available</h5>
+                                        <p>This employee doesn't have a QR code generated yet. Please contact the administrator.</p>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
-
-<!-- QR Code Modal -->
-@if($employee->qr_code)
-<div class="modal fade" id="qrModal" tabindex="-1" role="dialog" aria-labelledby="qrModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="qrModalLabel">Employee QR Code</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body text-center">
-                <img src="{{ $employee->qr_code }}" alt="Employee QR Code" class="img-fluid">
-                <p class="mt-3 text-muted">{{ $employee->full_name }}</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-            </div>
-        </div>
-    </div>
-</div>
-@endif
 @endsection
+
+@push('scripts')
+<script>
+function showQrCodeImage() {
+    const qrImage = document.getElementById('qr-code-image');
+    const placeholder = document.getElementById('qr-code-placeholder');
+    
+    if (qrImage && placeholder) {
+        qrImage.style.display = 'block';
+        placeholder.style.display = 'none';
+    }
+}
+
+function copyQrCode(qrCode) {
+    navigator.clipboard.writeText(qrCode).then(function() {
+        alert('QR Code copied to clipboard!');
+    }, function(err) {
+        console.error('Could not copy text: ', err);
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = qrCode;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        alert('QR Code copied to clipboard!');
+    });
+}
+
+function generateQrImage(qrCode) {
+    // Generate QR code image using online API
+    const qrImageUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(qrCode);
+    
+    // Create a temporary link to download the image
+    const link = document.createElement('a');
+    link.href = qrImageUrl;
+    link.download = 'employee_qr_code_' + qrCode.substring(0, 8) + '.png';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Also update the display to show the generated QR code
+    const qrDisplay = document.getElementById('qr-code-display');
+    if (qrDisplay) {
+        qrDisplay.innerHTML = '<img src="' + qrImageUrl + '" alt="Employee QR Code" class="img-fluid" style="max-width: 100%; height: auto;">';
+    }
+}
+
+// Auto-show QR code when tab is clicked
+$(document).ready(function() {
+    $('a[href="#qrcode"]').on('click', function() {
+        setTimeout(function() {
+            showQrCodeImage();
+        }, 100);
+    });
+});
+</script>
+@endpush

@@ -5,168 +5,220 @@
 
 @section('content')
 
+    <!-- Summary Cards Row -->
     <div class="row">
+        <!-- Card 1: Pending Inventory Requests -->
         <div class="col-lg-3 col-6">
-            <!-- small box -->
-            <div class="small-box bg-info">
-                <div class="inner">
-                    <h3>{{ \App\Models\Project::count() }}</h3>
-                    <p>Total Projects</p>
+            <a href="{{ route('inventory.requests.index') }}" class="text-decoration-none">
+                <div class="small-box" style="background-color: #f39c12; color: white;">
+                    <div class="inner">
+                        <h3>{{ $pendingRequests }}</h3>
+                        <p>Pending Inventory Requests</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-clipboard-list"></i>
+                    </div>
+                    <div class="small-box-footer" style="color: rgba(255,255,255,0.8);">
+                        View Requests <i class="fas fa-arrow-circle-right"></i>
+                    </div>
                 </div>
-                <div class="icon">
-                    <i class="ion ion-bag"></i>
-                </div>
-                <a href="{{ route('ProdHead.projects') }}" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
-            </div>
+            </a>
         </div>
-        <!-- ./col -->
+
+        <!-- Card 2: In-Progress Projects -->
         <div class="col-lg-3 col-6">
-            <!-- small box -->
-            <div class="small-box bg-success">
-                <div class="inner">
-                    <h3>{{ \App\Models\Client::count() }}</h3>
-                    <p>Total Clients</p>
+            <a href="{{ route('projects.index') }}" class="text-decoration-none">
+                <div class="small-box" style="background-color: #17a2b8; color: white;">
+                    <div class="inner">
+                        <h3>{{ $inProgressProjects }}</h3>
+                        <p>In-Progress Projects</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                    <div class="small-box-footer" style="color: rgba(255,255,255,0.8);">
+                        View Projects <i class="fas fa-arrow-circle-right"></i>
+                    </div>
                 </div>
-                <div class="icon">
-                    <i class="ion ion-person"></i>
-                </div>
-                <a href="{{ route('clients.index') }}" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
-            </div>
+            </a>
         </div>
-        <!-- ./col -->
+
+        <!-- Card 3: Total Employees -->
         <div class="col-lg-3 col-6">
-            <!-- small box -->
-            <div class="small-box bg-warning">
-                <div class="inner">
-                    <h3>{{ \App\Models\Employee::active()->count() }}</h3>
-                    <p>Active Employees</p>
+            <a href="{{ route('employees.index') }}" class="text-decoration-none">
+                <div class="small-box" style="background-color: #87A96B; color: white;">
+                    <div class="inner">
+                        <h3>{{ $employeeCount }}</h3>
+                        <p>Total Employees</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="small-box-footer" style="color: rgba(255,255,255,0.8);">
+                        View Employees <i class="fas fa-arrow-circle-right"></i>
+                    </div>
                 </div>
-                <div class="icon">
-                    <i class="ion ion-person-add"></i>
-                </div>
-                <a href="{{ route('admin.employees.index') }}" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
-            </div>
+            </a>
         </div>
-        <!-- ./col -->
+
+        <!-- Card 4: Projects Pending NTP -->
         <div class="col-lg-3 col-6">
-            <!-- small box -->
-            <div class="small-box bg-danger">
-                <div class="inner">
-                    <h3>{{ \App\Models\User::active()->count() }}</h3>
-                    <p>System Users</p>
+            <a href="{{ route('projects.index') }}" class="text-decoration-none">
+                <div class="small-box" style="background-color: #dc3545; color: white;">
+                    <div class="inner">
+                        <h3>{{ $pendingNTPProjects }}</h3>
+                        <p>Projects Pending NTP</p>
+                    </div>
+                    <div class="icon">
+                        <i class="fas fa-file-signature"></i>
+                    </div>
+                    <div class="small-box-footer" style="color: rgba(255,255,255,0.8);">
+                        View Pending <i class="fas fa-arrow-circle-right"></i>
+                    </div>
                 </div>
-                <div class="icon">
-                    <i class="ion ion-pie-graph"></i>
-                </div>
-                <a href="{{ route('users.index') }}" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
-            </div>
+            </a>
         </div>
-        <!-- ./col -->
     </div>
 
     <div class="row">
+        <!-- Projects Overview with Progress Bars -->
         <div class="col-md-8">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">Projects Overview</h3>
+                    <h3 class="card-title"><i class="fas fa-chart-line mr-2" style="color: #87A96B;"></i>Active Project
+                        Progress</h3>
                 </div>
                 <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-bordered">
-                            <thead>
-                                <tr>
-                                    <th>Project Name</th>
-                                    <th>Client</th>
-                                    <th>Status</th>
-                                    <th>Due Date</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse(\App\Models\Project::with(['client', 'status'])->latest()->take(5)->get() as $project)
-                                    <tr>
-                                        <td>{{ $project->ProjectName }}</td>
-                                        <td>{{ $project->client ? $project->client->ClientName : 'No Client' }}</td>
-                                        <td>
-                                            @php
-                                                $statusClass = $project->status->StatusName == 'Completed' ? 'success' :
-                                                    ($project->status->StatusName == 'On Going' ? 'primary' :
-                                                        ($project->status->StatusName == 'Under Warranty' ? 'warning' :
-                                                            ($project->status->StatusName == 'Upcoming' ? 'info' :
-                                                                ($project->status->StatusName == 'On Hold' ? 'secondary' : 'info'))));
-                                            @endphp
-                                            <span class="badge badge-{{ $statusClass }}">{{ $project->status->StatusName }}</span>
-                                        </td>
-                                        <td>{{ $project->EndDate->format('M d, Y') }}</td>
-                                        <td>
-                                            <a href="{{ route('projects.show', $project) }}" class="btn btn-sm btn-info">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="5" class="text-center">No projects found.</td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
+                    @forelse($activeProjects as $project)
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="font-weight-bold">
+                                    <a href="{{ route('projects.show', $project->ProjectID) }}"
+                                        style="color: #333; text-decoration: none;">
+                                        {{ $project->ProjectName }}
+                                    </a>
+                                </span>
+                                <span class="badge"
+                                    style="background-color: {{ $project->status->StatusName == 'On Going' ? '#17a2b8' : '#6c757d' }}; color: white;">
+                                    {{ $project->status->StatusName }}
+                                </span>
+                            </div>
+                            <div class="progress" style="height: 22px; border-radius: 4px;">
+                                <div class="progress-bar" role="progressbar"
+                                    style="width: {{ $project->progress_percentage }}%; background-color: #87A96B;"
+                                    aria-valuenow="{{ $project->progress_percentage }}" aria-valuemin="0" aria-valuemax="100">
+                                    <span style="font-weight: 600;">{{ $project->progress_percentage }}%</span>
+                                </div>
+                            </div>
+                            <small class="text-muted">
+                                <i class="fas fa-check-circle mr-1"></i>
+                                {{ $project->milestone_counts['completed'] }}/{{ $project->milestone_counts['total'] }}
+                                milestones completed
+                                @if($project->client)
+                                    <span class="ml-2">| <i
+                                            class="fas fa-building mr-1"></i>{{ $project->client->ClientName ?? 'N/A' }}</span>
+                                @endif
+                            </small>
+                        </div>
+                    @empty
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-folder-open fa-3x mb-3" style="color: #87A96B;"></i>
+                            <p class="mb-0">No active projects at the moment.</p>
+                        </div>
+                    @endforelse
                 </div>
+            </div>
+
+            <!-- Equipment Assignments Card -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-tools mr-2" style="color: #87A96B;"></i>Equipment Assignments
+                    </h3>
+                </div>
+                <div class="card-body p-0">
+                    @if($equipmentAssignments->count() > 0)
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover mb-0">
+                                <thead style="background-color: #f8f9fa;">
+                                    <tr>
+                                        <th>Equipment</th>
+                                        <th>Qty</th>
+                                        <th>Assigned To</th>
+                                        <th>Date Assigned</th>
+                                        <th class="text-center">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($equipmentAssignments as $assignment)
+                                        <tr>
+                                            <td>
+                                                <i class="fas fa-wrench mr-2" style="color: #87A96B;"></i>
+                                                <strong>{{ $assignment->item->resourceCatalog->ItemName ?? 'N/A' }}</strong>
+                                            </td>
+                                            <td>{{ number_format($assignment->QuantityAssigned, 0) }}</td>
+                                            <td>
+                                                @if($assignment->milestone && $assignment->milestone->project)
+                                                    <a href="{{ route('projects.show', $assignment->milestone->project->ProjectID) }}"
+                                                        style="color: #333;">
+                                                        {{ $assignment->milestone->project->ProjectName }}
+                                                    </a>
+                                                    <br>
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-flag mr-1"></i>{{ $assignment->milestone->milestone_name }}
+                                                    </small>
+                                                @else
+                                                    <span class="text-muted">N/A</span>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                <small>{{ $assignment->DateAssigned ? $assignment->DateAssigned->format('M d, Y') : 'N/A' }}</small>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge" style="background-color: #17a2b8; color: white;">
+                                                    {{ $assignment->Status }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @else
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-tools fa-3x mb-3" style="color: #87A96B;"></i>
+                            <p class="mb-0">No equipment currently assigned.</p>
+                        </div>
+                    @endif
+                </div>
+                @if($equipmentAssignments->count() > 0)
+                    <div class="card-footer text-center" style="background-color: #f8f9fa;">
+                        <a href="{{ route('equipment.returns.index') }}" style="color: #87A96B;">
+                            View All Equipment <i class="fas fa-arrow-right ml-1"></i>
+                        </a>
+                    </div>
+                @endif
             </div>
         </div>
 
+        <!-- Quick Actions -->
         <div class="col-md-4">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">Quick Actions</h3>
+                    <h3 class="card-title"><i class="fas fa-bolt mr-2" style="color: #87A96B;"></i>Quick Actions</h3>
                 </div>
                 <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <a href="{{ route('projects.create') }}" class="btn btn-primary btn-block">
-                            <i class="fas fa-plus"></i> New Project
-                        </a>
-                        <a href="{{ route('clients.create') }}" class="btn btn-success btn-block">
-                            <i class="fas fa-user-plus"></i> Add New Client
-                        </a>
-                        <a href="{{ route('clients.index') }}" class="btn btn-info btn-block">
-                            <i class="fas fa-users"></i> Manage Clients
-                        </a>
-                        <a href="{{ route('admin.employees.index') }}" class="btn btn-warning btn-block">
-                            <i class="fas fa-user-cog"></i> Manage Employees
-                        </a>
-                        <a href="{{ route('users.index') }}" class="btn btn-secondary btn-block">
-                            <i class="fas fa-users-cog"></i> Manage Users
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Recent Clients</h3>
-                </div>
-                <div class="card-body">
-                    @forelse(\App\Models\Client::latest()->take(3)->get() as $client)
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="flex-shrink-0">
-                                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                    <i class="fas fa-user text-white"></i>
-                                </div>
-                            </div>
-                            <div class="flex-grow-1 ms-3">
-                                <h6 class="mb-0">{{ $client->ClientName }}</h6>
-                                <small class="text-muted">{{ $client->created_at->diffForHumans() }}</small>
-                            </div>
-                            <div>
-                                <a href="{{ route('clients.show', $client) }}" class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                            </div>
-                        </div>
-                    @empty
-                        <p class="text-muted">No clients found.</p>
-                    @endforelse
+                    <a href="{{ route('employees.index') }}" class="btn btn-block mb-3"
+                        style="background-color: #87A96B; border-color: #87A96B; color: white;">
+                        <i class="fas fa-users mr-2"></i>Manage Employees
+                    </a>
+                    <a href="{{ route('inventory.index') }}" class="btn btn-block mb-3"
+                        style="background-color: #87A96B; border-color: #87A96B; color: white;">
+                        <i class="fas fa-boxes mr-2"></i>Manage Inventory
+                    </a>
+                    <a href="{{ route('projects.index') }}" class="btn btn-block"
+                        style="background-color: #87A96B; border-color: #87A96B; color: white;">
+                        <i class="fas fa-project-diagram mr-2"></i>Manage Projects
+                    </a>
                 </div>
             </div>
         </div>

@@ -14,11 +14,6 @@ class Position extends Model
 
     protected $fillable = [
         'PositionName',
-        'Salary',
-    ];
-
-    protected $casts = [
-        'Salary' => 'decimal:2',
     ];
 
     // Relationship with employees
@@ -37,6 +32,34 @@ class Position extends Model
     public function scopeActive($query)
     {
         return $query; // Return all records
+    }
+
+    // Accessor for formatted created at
+    public function getFormattedCreatedAtAttribute()
+    {
+        if (!$this->created_at) {
+            return 'N/A';
+        }
+        
+        try {
+            return $this->created_at->format('M d, Y g:i A');
+        } catch (\Exception $e) {
+            return 'N/A';
+        }
+    }
+
+    // Accessor for formatted updated at
+    public function getFormattedUpdatedAtAttribute()
+    {
+        if (!$this->updated_at) {
+            return 'N/A';
+        }
+        
+        try {
+            return $this->updated_at->format('M d, Y g:i A');
+        } catch (\Exception $e) {
+            return 'N/A';
+        }
     }
 
 }

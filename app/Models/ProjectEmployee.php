@@ -20,7 +20,8 @@ class ProjectEmployee extends Model
         'role_in_project',
         'assigned_date',
         'end_date',
-        'status'
+        'status',
+        'qr_code'
     ];
 
     protected $casts = [
@@ -38,5 +39,36 @@ class ProjectEmployee extends Model
     public function employee()
     {
         return $this->belongsTo(Employee::class, 'EmployeeID', 'id');
+    }
+
+    // Generate unique QR code for this project-employee combination
+    public function generateQrCode()
+    {
+        // Create a unique identifier combining project and employee
+        $uniqueId = 'PE_' . $this->ProjectID . '_' . $this->EmployeeID . '_' . uniqid();
+        $this->qr_code = $uniqueId;
+        $this->save();
+        return $this->qr_code;
+    }
+
+    // Get QR code data (generate if not exists)
+    public function getQrCodeDataAttribute()
+    {
+        if (!$this->qr_code) {
+            return $this->generateQrCode();
+        }
+        return $this->qr_code;
+    }
+
+    // Boot method to auto-generate QR code when created
+    protected static function boot()
+    {
+        parent::boot();
+        
+        static::created(function ($projectEmployee) {
+            if (!$projectEmployee->qr_code) {
+                $projectEmployee->generateQrCode();
+            }
+        });
     }
 }

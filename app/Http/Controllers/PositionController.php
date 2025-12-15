@@ -13,7 +13,7 @@ class PositionController extends Controller
      */
     public function index()
     {
-        $positions = Position::withCount('employees')->orderBy('PositionName')->paginate(10);
+        $positions = Position::withCount('employees')->orderBy('PositionName')->paginate(15);
         return view('Admin.positions.index', compact('positions'));
     }
 
@@ -32,7 +32,6 @@ class PositionController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'PositionName' => 'required|string|max:255|unique:positions,PositionName',
-            'Salary' => 'required|numeric|min:0',
         ]);
 
         if ($validator->fails()) {
@@ -41,7 +40,9 @@ class PositionController extends Controller
                 ->withInput();
         }
 
-        Position::create($request->all());
+        Position::create([
+            'PositionName' => $request->PositionName,
+        ]);
 
         return redirect()->route('positions.index')
             ->with('success', 'Position created successfully.');
@@ -52,7 +53,7 @@ class PositionController extends Controller
      */
     public function show(Position $position)
     {
-        $position->load(['employees.employeeType']);
+        $position->load(['employees']);
         return view('Admin.positions.show', compact('position'));
     }
 
@@ -71,7 +72,6 @@ class PositionController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'PositionName' => 'required|string|max:255|unique:positions,PositionName,' . $position->PositionID . ',PositionID',
-            'Salary' => 'required|numeric|min:0',
         ]);
 
         if ($validator->fails()) {
@@ -80,7 +80,9 @@ class PositionController extends Controller
                 ->withInput();
         }
 
-        $position->update($request->all());
+        $position->update([
+            'PositionName' => $request->PositionName,
+        ]);
 
         return redirect()->route('positions.index')
             ->with('success', 'Position updated successfully.');

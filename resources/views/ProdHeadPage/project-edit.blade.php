@@ -87,7 +87,7 @@
                                            class="form-control @error('StartDate') is-invalid @enderror" 
                                            id="StartDate" 
                                            name="StartDate" 
-                                           value="{{ old('StartDate', $project->StartDate->format('Y-m-d')) }}" 
+                                           value="{{ old('StartDate', $project->StartDate ? $project->StartDate->format('Y-m-d') : '') }}" 
                                            required>
                                     @error('StartDate')
                                         <div class="invalid-feedback">{{ $message }}</div>
@@ -101,7 +101,7 @@
                                            class="form-control @error('EndDate') is-invalid @enderror" 
                                            id="EndDate" 
                                            name="EndDate" 
-                                           value="{{ old('EndDate', $project->EndDate->format('Y-m-d')) }}" 
+                                           value="{{ old('EndDate', $project->EndDate ? $project->EndDate->format('Y-m-d') : '') }}" 
                                            required>
                                     @error('EndDate')
                                         <div class="invalid-feedback">{{ $message }}</div>
@@ -110,13 +110,15 @@
                             </div>
                             <div class="col-md-4">
                                 <div class="form-group">
-                                    <label for="WarrantyEndDate">Warranty End Date</label>
-                                    <input type="date" 
-                                           class="form-control @error('WarrantyEndDate') is-invalid @enderror" 
-                                           id="WarrantyEndDate" 
-                                           name="WarrantyEndDate" 
-                                           value="{{ old('WarrantyEndDate', $project->WarrantyEndDate ? $project->WarrantyEndDate->format('Y-m-d') : '') }}">
-                                    @error('WarrantyEndDate')
+                                    <label for="WarrantyDays">Warranty Days <span class="text-danger">*</span></label>
+                                    <input type="number" 
+                                           class="form-control @error('WarrantyDays') is-invalid @enderror" 
+                                           id="WarrantyDays" 
+                                           name="WarrantyDays" 
+                                           value="{{ old('WarrantyDays', $project->WarrantyDays ?? 0) }}"
+                                           min="0" step="1" required>
+                                    <small class="form-text text-muted">Number of days warranty will last after project ends</small>
+                                    @error('WarrantyDays')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
@@ -194,6 +196,59 @@
                             </div>
                         </div>
 
+                        <!-- Project Milestones -->
+                        <div class="form-group">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <label class="mb-0">
+                                    <i class="fas fa-flag-checkered mr-2"></i>Project Milestones
+                                </label>
+                                <a href="{{ route('projects.show', $project) }}" class="btn btn-sm text-white" style="background: #7fb069; border-color: #7fb069;">
+                                    <i class="fas fa-cog"></i> Manage Milestones
+                                </a>
+                            </div>
+                            @php
+                                $project->load('milestones');
+                                $milestoneCounts = $project->milestone_counts;
+                            @endphp
+                            @if($milestoneCounts['total'] > 0)
+                                <div class="card mb-3" style="border-left: 4px solid #7fb069;">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <span class="font-weight-bold">Overall Progress</span>
+                                            <span class="badge" style="background: #7fb069; color: white;">{{ $project->progress_percentage }}%</span>
+                                        </div>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar" role="progressbar" 
+                                                 style="width: {{ $project->progress_percentage }}%; background: linear-gradient(135deg, #7fb069 0%, #6fa05a 100%);" 
+                                                 aria-valuenow="{{ $project->progress_percentage }}" 
+                                                 aria-valuemin="0" 
+                                                 aria-valuemax="100">
+                                                {{ $project->progress_percentage }}%
+                                            </div>
+                                        </div>
+                                        <div class="mt-2">
+                                            <small class="text-muted">
+                                                <i class="fas fa-check-circle text-success"></i> {{ $milestoneCounts['completed'] }} Completed | 
+                                                <i class="fas fa-spinner text-warning"></i> {{ $milestoneCounts['in_progress'] }} In Progress | 
+                                                <i class="fas fa-clock text-secondary"></i> {{ $milestoneCounts['pending'] }} Pending
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle mr-2"></i>
+                                    <strong>{{ $milestoneCounts['total'] }} milestone(s)</strong> defined for this project. 
+                                    <a href="{{ route('projects.show', $project) }}#milestones">Click here to manage milestones</a>.
+                                </div>
+                            @else
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                                    No milestones have been added to this project yet. 
+                                    <a href="{{ route('projects.show', $project) }}">Add milestones on the project details page</a>.
+                                </div>
+                            @endif
+                        </div>
+
                         <!-- Employee Assignment -->
                         <div class="form-group">
                             <label>Assign Employees to Project</label>
@@ -251,19 +306,11 @@
         $('form').on('submit', function(e) {
             const startDate = new Date($('#StartDate').val());
             const endDate = new Date($('#EndDate').val());
-            const warrantyDate = $('#WarrantyEndDate').val() ? new Date($('#WarrantyEndDate').val()) : null;
             
             if (endDate <= startDate) {
                 e.preventDefault();
                 alert('End date must be after start date.');
                 $('#EndDate').focus();
-                return false;
-            }
-            
-            if (warrantyDate && warrantyDate <= endDate) {
-                e.preventDefault();
-                alert('Warranty end date must be after project end date.');
-                $('#WarrantyEndDate').focus();
                 return false;
             }
         });

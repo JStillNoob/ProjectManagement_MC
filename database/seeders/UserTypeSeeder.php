@@ -13,10 +13,10 @@ class UserTypeSeeder extends Seeder
     public function run(): void
     {
         $userTypes = [
-            ['UserType' => 'Admin', 'FlagDeleted' => 0],
-            ['UserType' => 'HR', 'FlagDeleted' => 0],
-            ['UserType' => 'Manager', 'FlagDeleted' => 0],
-            ['UserType' => 'Employee', 'FlagDeleted' => 0],
+            ['UserType' => 'Engineer', 'FlagDeleted' => 0],        // UserTypeID 1 (formerly Production Head)
+            ['UserType' => 'HR', 'FlagDeleted' => 0],              // UserTypeID 2
+            ['UserType' => 'Foreman', 'FlagDeleted' => 0],          // UserTypeID 3 (formerly Attendant Officer)
+            ['UserType' => 'Employee', 'FlagDeleted' => 0],         // UserTypeID 4
         ];
 
         foreach ($userTypes as $userType) {

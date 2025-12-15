@@ -4,6 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Project Management') | AdminLTE</title>
 
     <!-- Google Font: Source Sans Pro -->
@@ -18,26 +19,65 @@
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap4.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap4.min.css">
+    <!-- Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap4-theme@1.0.0/dist/select2-bootstrap4.min.css"
+        rel="stylesheet" />
 
     <style>
         /* Pastel Green Solid Theme */
         :root {
             --primary-green: rgb(255, 255, 255);
-            --secondary-green: rgb(240, 243, 235);
-            --accent-green: #88d8a3;
-            --dark-green: #7fb069;
-            --light-green: #f0f8f0;
-            --reseda-green: rgb(248, 252, 247);
+            --secondary-green: rgb(255, 255, 255);
+            --accent-green: rgba(99, 97, 97, 0.23);
+            --dark-green: rgb(255, 255, 255);
+            --light-green: rgb(255, 255, 255);
+            --reseda-green: rgb(7, 7, 7);
         }
 
-        /* Sidebar Styling */
+        /* Sidebar Styling - Green Theme */
         .main-sidebar {
-            background: var(--reseda-green) !important;
+            background: #ffffff !important;
+            z-index: 1020 !important;
+            transition: all 0.3s ease;
+        }
+
+        /* Remove pointer events on collapsed sidebar to prevent hover expansion */
+        .sidebar-collapse .main-sidebar:hover {
+            width: 4.6rem !important;
+        }
+
+        /* Adjust sidebar shadow to not overlap navbar - keep shadow but clip right edge */
+        @media (min-width: 992px) {
+            .main-sidebar.elevation-4 {
+                box-shadow: 4px 0 8px rgba(0, 0, 0, 0.15), 0 4px 8px rgba(0, 0, 0, 0.15), 0 -2px 4px rgba(0, 0, 0, 0.1) !important;
+                /* Enhanced shadow on left, top, and bottom - not on right where navbar is */
+            }
         }
 
         .main-sidebar .brand-link {
             background: white !important;
             border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            padding: 0.8125rem 0.5rem !important;
+            transition: all 0.3s ease;
+        }
+
+        .main-sidebar .brand-link .brand-image {
+            transition: all 0.3s ease;
+            max-height: 100px !important;
+            width: auto !important;
+        }
+
+        /* Brand logo when sidebar is collapsed */
+        .sidebar-collapse .main-sidebar .brand-link {
+            padding: 0.5rem !important;
+            text-align: center;
+        }
+
+        .sidebar-collapse .main-sidebar .brand-link .brand-image {
+            max-height: 50px !important;
+            margin: 0 auto !important;
+            float: none !important;
         }
 
         .main-sidebar .brand-link .brand-text {
@@ -54,28 +94,34 @@
         .main-sidebar .nav-sidebar .nav-link p {
             color: #2e2e2e !important;
             /* pastel black */
-            transition: color 0.3s ease;
-
+            transition: none;
         }
 
-        /* Sidebar link hover (text + p tag + icon) */
-        .main-sidebar .nav-sidebar>.nav-item>.nav-link:hover,
-        .main-sidebar .nav-sidebar>.nav-item>.nav-link:hover p {
-            background: #52b788 !important;
+        /* Sidebar link hover (text + p tag + icon) - only when NOT collapsed */
+        body:not(.sidebar-collapse) .main-sidebar .nav-sidebar>.nav-item>.nav-link:hover,
+        body:not(.sidebar-collapse) .main-sidebar .nav-sidebar>.nav-item>.nav-link:hover p {
+            background: #7fb069 !important;
             color: #ffffff !important;
-            /* white text */
             transform: translateX(5px);
+        }
 
+        body:not(.sidebar-collapse) .main-sidebar .nav-sidebar>.nav-item>.nav-link:hover .nav-icon {
+            color: white !important;
+            opacity: 1 !important;
         }
 
         /* Active link (text + p tag + icon) */
-        .main-sidebar .nav-sidebar>.nav-item>.nav-link.active,
-        .main-sidebar .nav-sidebar>.nav-item>.nav-link.active p {
-            background: #52b788 !important;
-            color: #ffffff !important;
-            /* white text */
-            font-weight: 600;
+        .main-sidebar .nav-sidebar>.nav-item>.nav-link.active {
+            background: rgba(127, 176, 105, 0.8) !important;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .main-sidebar .nav-sidebar>.nav-item>.nav-link.active p {
+            background: transparent !important;
+            /* No background on text */
+            color: #ffffff !important;
+            font-weight: 600;
+
         }
 
         /* Sidebar icons */
@@ -89,7 +135,38 @@
         .main-sidebar .nav-sidebar>.nav-item>.nav-link.active .nav-icon {
             color: white !important;
             opacity: 1;
+        }
 
+        /* Sidebar Header */
+        .sidebar-header {
+            padding: 1rem 1.25rem 0.5rem 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .sidebar-header-title {
+            color: #9ca3af !important;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin: 0;
+        }
+
+        /* Sidebar Section Headings */
+        .sidebar-section-heading {
+            color: #9ca3af !important;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0.25rem 1.25rem 0.5rem 1.25rem;
+            list-style: none;
+            pointer-events: none;
+        }
+
+        /* Hide section headings when sidebar is collapsed */
+        .sidebar-collapse .sidebar-section-heading {
+            display: none !important;
         }
 
         /* User Panel */
@@ -108,58 +185,202 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background: var(--reseda-green);
-            border-top: 1px solid rgba(0, 0, 0, 0.1);
-            padding: 1rem;
+            background: rgb(252, 255, 253);
+            padding: 1.25rem 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         /* Add padding to sidebar content to prevent overlap */
         .main-sidebar .sidebar {
-            padding-bottom: 200px;
+            padding-bottom: 180px;
         }
 
-        .sidebar-footer .user-panel {
-            border-bottom: none;
-            margin-bottom: 0.5rem;
-        }
-
-        .sidebar-footer .logout-section {
-            margin-top: 0.5rem;
-        }
-
-        .sidebar-footer .logout-link {
-            color: #2e2e2e !important;
-            transition: color 0.3s ease;
-            border-radius: 5px;
-            padding: 0.75rem 1.25rem;
+        /* User Info Section */
+        .sidebar-user-info {
             display: flex;
             align-items: center;
+            margin-bottom: 1rem;
         }
 
-        .sidebar-footer .logout-link:hover {
-            color: #dc3545 !important;
-        }
-
-
-        .sidebar-footer .logout-link .nav-icon {
-            color: #dc3545 !important;
-            transition: color 0.3s ease;
-            margin-right: 0.75rem;
-            font-size: 1.25rem;
-            line-height: 1;
-        }
-
-        .sidebar-footer .logout-link p {
-            margin: 0;
+        .sidebar-user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #7fb069;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
             font-size: 1.1rem;
-            line-height: 1.2;
+            margin-right: 0.75rem;
+            flex-shrink: 0;
+        }
+
+        .sidebar-user-details {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .sidebar-user-name {
+            color: rgb(15, 15, 15);
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .sidebar-user-email {
+            color: rgb(10, 10, 10);
+            font-size: 0.8rem;
+            opacity: 0.9;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Sign Out Button */
+        .sidebar-signout-btn {
+            width: 100%;
+            background: #7fb069;
+            color: #ffffff;
+            border: none;
+            border-radius: 0.375rem;
+            padding: 0.625rem 1rem;
+            font-size: 0.9rem;
             font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .sidebar-signout-btn:hover {
+            background: #6fa05a;
+        }
+
+        .sidebar-signout-btn:active {
+            background: #5f8f4a;
         }
 
         /* Header Styling */
         .main-header {
+            position: fixed !important;
+            top: 0;
+            z-index: 1031 !important;
+            /* Higher than sidebar to appear above shadow */
             background: var(--primary-green) !important;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin: 0 !important;
+            padding: 0 !important;
+            height: 57px !important;
+            min-height: 57px !important;
+            max-height: 57px !important;
+            line-height: 57px !important;
+        }
+
+        .main-header .navbar {
+            height: 57px !important;
+            min-height: 57px !important;
+            padding: 0.25rem 1rem !important;
+        }
+
+        /* Remove background panel behind navbar */
+        .wrapper {
+            background: transparent !important;
+        }
+
+        body>.wrapper {
+            background: transparent !important;
+        }
+
+        /* Remove any background from elements behind navbar */
+        .main-header::before,
+        .main-header::after {
+            display: none !important;
+        }
+
+        /* Adjust navbar when sidebar is visible - match sidebar width exactly */
+        @media (min-width: 992px) {
+
+            /* Sidebar expanded (default) */
+            body:not(.sidebar-collapse) .main-header,
+            body.sidebar-mini:not(.sidebar-collapse) .main-header,
+            .sidebar-mini:not(.sidebar-collapse) .main-header,
+            .wrapper:not(.sidebar-collapse)~.main-header {
+                left: 250px !important;
+                right: 0 !important;
+                margin-left: 0 !important;
+                padding-left: 0 !important;
+                border-left: none !important;
+                transition: left 0.3s ease !important;
+            }
+
+            /* Sidebar collapsed */
+            body.sidebar-collapse .main-header,
+            body.sidebar-mini.sidebar-collapse .main-header,
+            .sidebar-mini.sidebar-collapse .main-header,
+            .wrapper.sidebar-collapse~.main-header {
+                left: 78px !important;
+                right: 0 !important;
+                margin-left: 0 !important;
+                padding-left: 0 !important;
+                border-left: none !important;
+                transition: left 0.3s ease !important;
+            }
+        }
+
+        @media (max-width: 991.98px) {
+            .main-header {
+                left: 0 !important;
+                right: 0 !important;
+                width: 100% !important;
+                margin-left: 0 !important;
+                padding-left: 0 !important;
+            }
+        }
+
+        /* Add padding to content-wrapper to account for fixed navbar */
+        .content-wrapper {
+            margin-top: 57px !important;
+            background: transparent !important;
+        }
+
+        /* Remove any background panels */
+        .content-wrapper::before,
+        .content-wrapper::after {
+            display: none !important;
+        }
+
+        /* Ensure navbar items are visible */
+        .main-header .navbar {
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+
+        .main-header .navbar-nav {
+            margin: 0 !important;
+        }
+
+        .main-header .navbar-nav {
+            display: flex !important;
+            flex-direction: row !important;
+        }
+
+        .main-header .navbar-nav.ml-auto {
+            margin-left: auto !important;
+        }
+
+        .main-header .nav-item {
+            display: block !important;
+            visibility: visible !important;
+        }
+
+        .main-header .nav-item .nav-link {
+            white-space: nowrap !important;
+            overflow: visible !important;
         }
 
         .main-header .navbar-nav .nav-link {
@@ -169,6 +390,65 @@
         .main-header .navbar-nav .nav-link:hover {
             background: rgba(255, 255, 255, 0.2) !important;
             border-radius: 5px;
+        }
+
+        .main-header .page-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2d5a3d;
+            margin: 0;
+            padding: 0.5rem 0;
+        }
+
+        .main-header .user-info {
+            display: flex;
+            align-items: center;
+            color: #2d5a3d !important;
+            font-weight: 500;
+        }
+
+        .main-header .user-info i {
+            font-size: 1.5rem;
+            margin-right: 0.5rem;
+            color: #2d5a3d !important;
+        }
+
+        .main-header .user-info span {
+            color: #2d5a3d !important;
+            font-weight: 500;
+            display: inline-block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
+        /* User Dropdown Styling */
+        .main-header .dropdown-menu {
+            border-radius: 0.375rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            margin-top: 0.5rem;
+        }
+
+        .main-header .dropdown-item {
+            padding: 0.625rem 1rem;
+            transition: background-color 0.2s ease;
+        }
+
+        .main-header .dropdown-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .main-header .dropdown-item i {
+            width: 20px;
+            text-align: center;
+        }
+
+        .main-header .dropdown-divider {
+            margin: 0.5rem 0;
+        }
+
+        .main-header .user-info.dropdown-toggle::after {
+            display: none;
         }
 
         /* Content Header */
@@ -548,6 +828,271 @@
             border: 1px solid var(--accent-green) !important;
             color: #2d5a3d !important;
         }
+
+        /* Global DataTables Pagination Fixes */
+        .dataTables_paginate .paginate_button {
+            padding: 6px 12px !important;
+            margin: 0 2px !important;
+            border: 1px solid #dee2e6 !important;
+            border-radius: 4px !important;
+            background: white !important;
+            color: #007bff !important;
+            font-size: 0.875rem !important;
+            min-width: auto !important;
+            height: auto !important;
+            line-height: 1.5 !important;
+        }
+
+        .dataTables_paginate .paginate_button:hover {
+            background: #e9ecef !important;
+            border-color: #adb5bd !important;
+        }
+
+        .dataTables_paginate .paginate_button.current {
+            background: #007bff !important;
+            color: white !important;
+            border-color: #007bff !important;
+        }
+
+        .dataTables_paginate .paginate_button.disabled {
+            color: #6c757d !important;
+            background: #f8f9fa !important;
+            border-color: #dee2e6 !important;
+        }
+
+        /* Fix oversized pagination elements */
+        .dataTables_paginate .paginate_button.previous,
+        .dataTables_paginate .paginate_button.next {
+            padding: 6px 12px !important;
+            font-size: 0.875rem !important;
+            min-width: auto !important;
+            height: auto !important;
+        }
+
+        .dataTables_paginate .paginate_button.first,
+        .dataTables_paginate .paginate_button.last {
+            padding: 6px 12px !important;
+            font-size: 0.875rem !important;
+            min-width: auto !important;
+            height: auto !important;
+        }
+
+        /* Fix any oversized input fields in pagination */
+        .dataTables_paginate input,
+        .dataTables_paginate select {
+            padding: 4px 8px !important;
+            font-size: 0.875rem !important;
+            height: auto !important;
+            width: auto !important;
+            max-width: 60px !important;
+        }
+
+        /* Ensure pagination container has proper sizing */
+        .dataTables_paginate {
+            font-size: 0.875rem !important;
+            line-height: 1.5 !important;
+        }
+
+        /* Bootstrap Pagination Fixes */
+        .pagination .page-link {
+            padding: 6px 12px !important;
+            font-size: 0.875rem !important;
+            line-height: 1.5 !important;
+        }
+
+        .pagination .page-item .page-link {
+            min-width: auto !important;
+            height: auto !important;
+        }
+
+        /* General pagination fixes for any custom pagination */
+        .pagination,
+        .pagination-lg,
+        .pagination-sm {
+            font-size: 0.875rem !important;
+        }
+
+        .pagination-lg .page-link {
+            padding: 8px 16px !important;
+            font-size: 1rem !important;
+        }
+
+        .pagination-sm .page-link {
+            padding: 4px 8px !important;
+            font-size: 0.75rem !important;
+        }
+
+        /* Additional pagination improvements for consistency */
+        .pagination .page-item.active .page-link {
+            background-color: #007bff !important;
+            border-color: #007bff !important;
+            color: white !important;
+        }
+
+        .pagination .page-item.disabled .page-link {
+            color: #6c757d !important;
+            background-color: #fff !important;
+            border-color: #dee2e6 !important;
+        }
+
+        /* Ensure consistent spacing for pagination */
+        .pagination {
+            margin-bottom: 0 !important;
+        }
+
+        /* Fix for any custom pagination containers */
+        .d-flex.justify-content-center {
+            margin-top: 1rem !important;
+        }
+
+        .preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.95);
+            z-index: 9999;
+            display: flex;
+        }
+
+        .preloader.hidden {
+            display: none;
+        }
+
+        /* Global Margins and Spacing for All Pages */
+        .container-fluid {
+            padding: 10px !important;
+        }
+
+        /* Container Shadow */
+        .container-fluid .card {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+            border-radius: 8px;
+        }
+
+        .container-fluid .card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+        }
+
+        /* DataTables Modern Design */
+        .dataTables_wrapper {
+            padding: 20px 0;
+        }
+
+        .dataTables_filter {
+            margin-bottom: 20px;
+        }
+
+        .dataTables_filter input[type="search"] {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 8px 15px;
+            font-size: 0.9rem;
+            width: 300px;
+            transition: all 0.3s ease;
+        }
+
+        .dataTables_filter input[type="search"]:focus {
+            outline: none;
+            border-color: #7fb069;
+            box-shadow: 0 0 0 0.2rem rgba(127, 176, 105, 0.25);
+        }
+
+        .dataTables_length {
+            margin-bottom: 20px;
+        }
+
+        .dataTables_length select {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 0.9rem;
+            margin: 0 5px;
+            transition: all 0.3s ease;
+        }
+
+        .dataTables_length select:focus {
+            outline: none;
+            border-color: #7fb069;
+            box-shadow: 0 0 0 0.2rem rgba(127, 176, 105, 0.25);
+        }
+
+        .dataTables_wrapper .dataTables_paginate {
+            margin-top: 20px;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button {
+            border-radius: 6px;
+            padding: 6px 12px;
+            margin: 0 2px;
+            border: 1px solid #dee2e6;
+            background: white;
+            color: #495057;
+            transition: all 0.3s ease;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
+            background: #f8f9fa;
+            border-color: #7fb069;
+            color: #7fb069;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+            background: #7fb069;
+            border-color: #7fb069;
+            color: white;
+        }
+
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current:hover {
+            background: #6a9a5a;
+            border-color: #6a9a5a;
+            color: white;
+        }
+
+        .dataTables_wrapper .dataTables_info {
+            padding-top: 10px;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .dataTables_wrapper table.dataTable {
+            border-collapse: separate;
+            border-spacing: 0;
+            border: none !important;
+            width: 100% !important;
+        }
+
+        .dataTables_wrapper table.dataTable thead th {
+            background-color: transparent;
+            border: none !important;
+            font-weight: 600;
+            color: #495057;
+            padding: 12px 15px;
+            text-align: left;
+        }
+
+        .dataTables_wrapper table.dataTable tbody tr {
+            transition: background-color 0.2s ease;
+            border: none !important;
+        }
+
+        .dataTables_wrapper table.dataTable tbody tr:nth-child(odd) {
+            background-color: #ffffff;
+        }
+
+        .dataTables_wrapper table.dataTable tbody tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        .dataTables_wrapper table.dataTable tbody tr:hover {
+            background-color: #e9ecef !important;
+        }
+
+        .dataTables_wrapper table.dataTable tbody td {
+            padding: 12px 15px;
+            border: none !important;
+        }
     </style>
 
 
@@ -557,10 +1102,10 @@
 
 <body class="hold-transition sidebar-mini layout-fixed">
     <div class="wrapper">
-        <!-- Preloader -->
-        <div class="preloader flex-column justify-content-center align-items-center">
-            <img class="animation__shake" src="https://adminlte.io/themes/v3/dist/img/AdminLTELogo.png"
-                alt="AdminLTELogo" height="60" width="60">
+        <div class="preloader flex-column justify-content-center align-items-center"
+            style="background-color: rgba(255, 255, 255, 0.9); z-index: 9999;">
+            <i class="fas fa-spinner fa-spin fa-3x text-primary"></i>
+            <p class="mt-3 text-muted">Loading...</p>
         </div>
 
         <!-- Navbar -->
@@ -571,58 +1116,62 @@
                     <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
                 </li>
                 <li class="nav-item d-none d-sm-inline-block">
-                    @if(Auth::check())
-                        @if(Auth::user()->UserTypeID == 1)
-                            <a href="{{ route('showAdmin') }}" class="nav-link">Production Head Dashboard</a>
-                        @elseif(Auth::user()->UserTypeID == 2)
-                            <a href="{{ route('go_newPage') }}" class="nav-link">Admin Dashboard</a>
-                        @else
-                            <a href="{{ route('go_newPage') }}" class="nav-link">Home</a>
-                        @endif
-                    @else
-                        <a href="{{ route('go_newPage') }}" class="nav-link">Home</a>
-                    @endif
+                    <span class="page-title">@yield('page-title', 'Dashboard')</span>
                 </li>
             </ul>
 
             <!-- Right navbar links -->
             <ul class="navbar-nav ml-auto">
-                <!-- Notifications Dropdown Menu -->
-                <li class="nav-item dropdown">
-                    <a class="nav-link" data-toggle="dropdown" href="#">
-                        <i class="far fa-bell"></i>
-                        <span class="badge badge-warning navbar-badge">15</span>
-                    </a>
-                    <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
-                        <span class="dropdown-item dropdown-header">15 Notifications</span>
-                        <div class="dropdown-divider"></div>
-                        <a href="#" class="dropdown-item">
-                            <i class="fas fa-envelope mr-2"></i> 4 new messages
-                            <span class="float-right text-muted text-sm">3 mins</span>
+                @if(Auth::check())
+                    @php
+                        $user = Auth::user()->load('employee');
+                        $userName = 'User';
+                        $userEmail = $user->Email ?? '';
+                        $userImage = null;
+
+                        if ($user->employee) {
+                            $userName = $user->employee->full_name ?? 'User';
+                            $userImage = $user->employee->image_path ?? null;
+                        } else {
+                            // Extract name from email if no employee
+                            $emailParts = explode('@', $userEmail);
+                            $userName = ucfirst($emailParts[0]);
+                        }
+
+                        $initial = strtoupper(substr(trim($userName), 0, 1));
+                        if (empty($initial)) {
+                            $initial = 'U';
+                        }
+                    @endphp
+                    <!-- User Name with Dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link user-info dropdown-toggle" href="#" id="userDropdown" role="button"
+                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"
+                            style="padding: 0.5rem 0.75rem; cursor: pointer;">
+                            <i class="fas fa-user-circle"></i>
+                            <span style="text-decoration: underline;">{{ $userName }}</span>
                         </a>
-                        <div class="dropdown-divider"></div>
-                        <a href="#" class="dropdown-item">
-                            <i class="fas fa-users mr-2"></i> 8 friend requests
-                            <span class="float-right text-muted text-sm">12 hours</span>
-                        </a>
-                        <div class="dropdown-divider"></div>
-                        <a href="#" class="dropdown-item">
-                            <i class="fas fa-file mr-2"></i> 3 new reports
-                            <span class="float-right text-muted text-sm">2 days</span>
-                        </a>
-                        <div class="dropdown-divider"></div>
-                        <a href="#" class="dropdown-item dropdown-footer">See All Notifications</a>
-                    </div>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" data-widget="control-sidebar" data-controlsidebar-slide="true" href="#"
-                        role="button">
-                        <i class="fas fa-th-large"></i>
-                    </a>
-                </li>
+                        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userDropdown"
+                            style="min-width: 200px; margin-top: 0.5rem;">
+                            <a class="dropdown-item" href="#" data-toggle="modal" data-target="#accountInfoModal">
+                                <i class="fas fa-user mr-2"></i>Account Information
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="#"
+                                onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                            </a>
+                        </div>
+                    </li>
+                @endif
             </ul>
         </nav>
         <!-- /.navbar -->
+
+        <!-- Logout Form (for navbar dropdown) -->
+        <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+            @csrf
+        </form>
 
         <!-- Main Sidebar Container -->
         <aside class="main-sidebar sidebar-dark-primary elevation-4">
@@ -635,11 +1184,12 @@
 
             <!-- Sidebar -->
             <div class="sidebar">
+
                 <!-- Sidebar Menu -->
-                <nav class="mt-4">
+                <nav class="mt-2">
                     <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu"
                         data-accordion="false">
-
+                        <li class="sidebar-section-heading">Main</li>
                         <!-- Dashboard Link based on User Type (Admin and HR only) -->
                         <li class="nav-item">
                             @if(Auth::check())
@@ -658,19 +1208,58 @@
                                                 <p>Manage Projects</p>
                                             </a>
                                         </li>
+                                        <li class="nav-item">
+                                            <a href="{{ route('inventory.index') }}"
+                                                class="nav-link {{ request()->routeIs('inventory.index') || request()->routeIs('inventory.create') || request()->routeIs('inventory.show') || request()->routeIs('inventory.edit') ? 'active' : '' }}">
+                                                <i class="nav-icon fas fa-boxes"></i>
+                                                <p>Inventory</p>
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a href="{{ route('inventory.requests.index') }}"
+                                                class="nav-link {{ request()->routeIs('inventory.requests.*') ? 'active' : '' }}">
+                                                <i class="nav-icon fas fa-clipboard-list"></i>
+                                                <p>Inventory Requests</p>
+                                            </a>
+                                        </li>
+                                        <li class="nav-item">
+                                            <a href="{{ route('prodhead.attendance') }}"
+                                                class="nav-link {{ request()->routeIs('prodhead.attendance*') ? 'active' : '' }}">
+                                                <i class="nav-icon fas fa-chart-line"></i>
+                                                <p>Attendance Overview</p>
+                                            </a>
+                                        </li>
                                     @elseif(Auth::user()->UserTypeID == 2)
                                     <li class="nav-item">
                                         <a href="{{ route('go_newPage') }}"
                                             class="nav-link {{ request()->routeIs('go_newPage') ? 'active' : '' }}">
                                             <i class="nav-icon fas fa-tachometer-alt"></i>
-                                            <p>Admin Dashboard</p>
+                                            <p>Dashboard</p>
+                                        </a>
+                                    </li>
+
+                                    <!-- MANAGEMENT Section -->
+                                    <li class="sidebar-section-heading">MANAGEMENT</li>
+
+                                    <li class="nav-item">
+                                        <a href="{{ route('ProdHead.projects') }}"
+                                            class="nav-link {{ request()->routeIs('ProdHead.projects*') || request()->routeIs('projects.*') ? 'active' : '' }}">
+                                            <i class="nav-icon fas fa-project-diagram"></i>
+                                            <p>Projects</p>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a href="{{ route('clients.index') }}"
+                                            class="nav-link {{ request()->routeIs('clients.*') ? 'active' : '' }}">
+                                            <i class="nav-icon fas fa-handshake"></i>
+                                            <p>Clients</p>
                                         </a>
                                     </li>
                                     <li class="nav-item">
                                         <a href="{{ route('employees.index') }}"
                                             class="nav-link {{ request()->routeIs('employees.*') ? 'active' : '' }}">
                                             <i class="nav-icon fas fa-users"></i>
-                                            <p>Manage Employees</p>
+                                            <p>Employees</p>
                                         </a>
                                     </li>
                                     <li class="nav-item">
@@ -681,25 +1270,128 @@
                                         </a>
                                     </li>
                                     <li class="nav-item">
-                                        <a href="{{ route('clients.index') }}"
-                                            class="nav-link {{ request()->routeIs('clients.*') ? 'active' : '' }}">
-                                            <i class="nav-icon fas fa-handshake"></i>
-                                            <p>Manage Clients</p>
-                                        </a>
-                                    </li>
-                                    <li class="nav-item">
                                         <a href="{{ route('positions.index') }}"
                                             class="nav-link {{ request()->routeIs('positions.*') ? 'active' : '' }}">
                                             <i class="nav-icon fas fa-briefcase"></i>
-                                            <p>Manage Positions</p>
+                                            <p>Positions</p>
+                                        </a>
+                                    </li>
+
+                                    <!-- INVENTORY DATA Section -->
+                                    <li class="sidebar-section-heading">INVENTORY DATA</li>
+
+                                    <li class="nav-item">
+                                        <a href="{{ route('resource-catalog.index') }}"
+                                            class="nav-link {{ request()->routeIs('resource-catalog.*') ? 'active' : '' }}">
+                                            <i class="nav-icon fas fa-box-open"></i>
+                                            <p>Resource Catalog</p>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a href="{{ route('inventory.index') }}"
+                                            class="nav-link {{ request()->routeIs('inventory.index') || request()->routeIs('inventory.create') || request()->routeIs('inventory.show') || request()->routeIs('inventory.edit') ? 'active' : '' }}">
+                                            <i class="nav-icon fas fa-boxes"></i>
+                                            <p>Inventory Items</p>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a href="{{ route('suppliers.index') }}"
+                                            class="nav-link {{ request()->routeIs('suppliers.*') ? 'active' : '' }}">
+                                            <i class="nav-icon fas fa-truck"></i>
+                                            <p>Suppliers</p>
+                                        </a>
+                                    </li>
+
+                                    <!-- DAILY OPERATIONS Section -->
+                                    <li class="sidebar-section-heading">DAILY OPERATIONS</li>
+
+                                    <li class="nav-item">
+                                        <a href="{{ route('inventory.requests.index') }}"
+                                            class="nav-link {{ request()->routeIs('inventory.requests.*') ? 'active' : '' }}">
+                                            <i class="nav-icon fas fa-clipboard-list"></i>
+                                            <p>Inventory Requests</p>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a href="{{ route('purchase-orders.index') }}"
+                                            class="nav-link {{ request()->routeIs('purchase-orders.*') ? 'active' : '' }}">
+                                            <i class="nav-icon fas fa-file-invoice"></i>
+                                            <p>Purchase Orders</p>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a href="{{ route('receiving.index') }}"
+                                            class="nav-link {{ request()->routeIs('receiving.*') ? 'active' : '' }}">
+                                            <i class="nav-icon fas fa-dolly"></i>
+                                            <p>Receiving</p>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a href="{{ route('issuance.index') }}"
+                                            class="nav-link {{ request()->routeIs('issuance.*') ? 'active' : '' }}">
+                                            <i class="nav-icon fas fa-hand-holding"></i>
+                                            <p>Issuance</p>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a href="{{ route('equipment.returns.index') }}"
+                                            class="nav-link {{ request()->routeIs('equipment.returns.*') || request()->routeIs('equipment.incidents.*') ? 'active' : '' }}">
+                                            <i class="nav-icon fas fa-undo"></i>
+                                            <p>Equipment Returns</p>
+                                        </a>
+                                    </li>
+
+                                    <!-- REPORTS Section -->
+                                    <li class="sidebar-section-heading">REPORTS</li>
+
+                                    <li class="nav-item">
+                                        <a href="{{ route('reports.inventory.index') }}"
+                                            class="nav-link {{ request()->routeIs('reports.inventory.*') ? 'active' : '' }}">
+                                            <i class="nav-icon fas fa-chart-bar"></i>
+                                            <p>Inventory Reports</p>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a href="{{ route('prodhead.attendance') }}"
+                                            class="nav-link {{ request()->routeIs('prodhead.attendance*') || request()->routeIs('attendance.*') ? 'active' : '' }}">
+                                            <i class="nav-icon fas fa-chart-line"></i>
+                                            <p>Attendance Overview</p>
                                         </a>
                                     </li>
                                 @elseif(Auth::user()->UserTypeID == 3)
+                                    <li class="nav-item">
+                                        <a href="{{ route('foreman.projects') }}"
+                                            class="nav-link {{ request()->routeIs('foreman.*') ? 'active' : '' }}">
+                                            <i class="nav-icon fas fa-project-diagram"></i>
+                                            <p>My Projects</p>
+                                        </a>
+                                    </li>
                                     <li class="nav-item">
                                         <a href="{{ route('attendance.index') }}"
                                             class="nav-link {{ request()->routeIs('attendance.*') ? 'active' : '' }}">
                                             <i class="nav-icon fas fa-clock"></i>
                                             <p>Employee Attendance</p>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a href="{{ route('inventory.requests.index') }}"
+                                            class="nav-link {{ request()->routeIs('inventory.requests.*') ? 'active' : '' }}">
+                                            <i class="nav-icon fas fa-clipboard-list"></i>
+                                            <p>Inventory Requests</p>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a href="{{ route('issuance.index') }}"
+                                            class="nav-link {{ request()->routeIs('issuance.*') ? 'active' : '' }}">
+                                            <i class="nav-icon fas fa-dolly"></i>
+                                            <p>Issuance Records</p>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a href="{{ route('equipment.returns.index') }}"
+                                            class="nav-link {{ request()->routeIs('equipment.returns.*') ? 'active' : '' }}">
+                                            <i class="nav-icon fas fa-undo"></i>
+                                            <p>Equipment Returns</p>
                                         </a>
                                     </li>
                                 @else
@@ -724,32 +1416,6 @@
                 </nav>
                 <!-- /.sidebar-menu -->
 
-                <!-- Sidebar user panel and logout at bottom -->
-                <div class="sidebar-footer">
-                    <!-- User Panel -->
-                    <div class="user-panel mt-2 pb-2 mb-2 d-flex"
-                        style="background: rgba(113, 199, 124, 0.7); border-radius: 8px; padding: 10px;">
-                        <div class="image">
-                            <img src="https://adminlte.io/themes/v3/dist/img/user2-160x160.jpg"
-                                class="img-circle elevation-2" alt="User Image">
-                        </div>
-                        <div class="info">
-                            <a href="#" class="d-block">{{ Auth::user()->employee->full_name ?? 'User' }}</a>
-                        </div>
-                    </div>
-
-                    <!-- Logout Button -->
-                    <div class="logout-section">
-                        <a href="#" class="nav-link logout-link"
-                            onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                            <i class="nav-icon fas fa-sign-out-alt"></i>
-                            <p>Logout</p>
-                        </a>
-                        <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
-                            @csrf
-                        </form>
-                    </div>
-                </div>
             </div>
             <!-- /.sidebar -->
         </aside>
@@ -757,32 +1423,7 @@
         <!-- Content Wrapper. Contains page content -->
         <div class="content-wrapper">
             <!-- Content Header (Page header) -->
-            <div class="content-header">
-                <div class="container-fluid">
-                    <div class="row mb-2">
-                        <div class="col-sm-6">
-                            <h1 class="m-0">@yield('page-title', 'Dashboard')</h1>
-                        </div><!-- /.col -->
-                        <div class="col-sm-6">
-                            <ol class="breadcrumb float-sm-right">
-                                @if(Auth::check())
-                                    @if(Auth::user()->UserTypeID == 1)
-                                        <li class="breadcrumb-item"><a href="{{ route('showAdmin') }}">Production Head
-                                                Dashboard</a></li>
-                                    @elseif(Auth::user()->UserTypeID == 2)
-                                        <li class="breadcrumb-item"><a href="{{ route('go_newPage') }}">HR Dashboard</a></li>
-                                    @else
-                                        <li class="breadcrumb-item"><a href="{{ route('go_newPage') }}">Home</a></li>
-                                    @endif
-                                @else
-                                    <li class="breadcrumb-item"><a href="{{ route('go_newPage') }}">Home</a></li>
-                                @endif
-                                <li class="breadcrumb-item active">@yield('page-title', 'Dashboard')</li>
-                            </ol>
-                        </div><!-- /.col -->
-                    </div><!-- /.row -->
-                </div><!-- /.container-fluid -->
-            </div>
+
             <!-- /.content-header -->
 
             <!-- Main content -->
@@ -793,14 +1434,7 @@
             </section>
             <!-- /.content -->
         </div>
-        <!-- /.content-wrapper -->
-        <footer class="main-footer">
-            <strong>Copyright &copy; 2024 <a href="#">Project Management</a>.</strong>
-            All rights reserved.
-            <div class="float-right d-none d-sm-inline-block">
-                <b>Version</b> 1.0.0
-            </div>
-        </footer>
+
 
         <!-- Control Sidebar -->
         <aside class="control-sidebar control-sidebar-dark">
@@ -821,8 +1455,136 @@
     <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap4.min.js"></script>
     <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
     <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap4.min.js"></script>
+    <!-- Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     @stack('scripts')
+
+    <!-- Account Information Modal -->
+    <div class="modal fade" id="accountInfoModal" tabindex="-1" role="dialog" aria-labelledby="accountInfoModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="accountInfoModalLabel">
+                        <i class="fas fa-user mr-2"></i>Account Information
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    @if(Auth::check())
+                        @php
+                            $user = Auth::user()->load('employee');
+                            $userName = 'User';
+                            $userEmail = $user->Email ?? '';
+
+                            if ($user->employee) {
+                                $userName = $user->employee->full_name ?? 'User';
+                            } else {
+                                $emailParts = explode('@', $userEmail);
+                                $userName = ucfirst($emailParts[0]);
+                            }
+                        @endphp
+                        <div class="form-group">
+                            <label><strong>Full Name:</strong></label>
+                            <p>{{ $userName }}</p>
+                        </div>
+                        <div class="form-group">
+                            <label><strong>Email:</strong></label>
+                            <p>{{ $userEmail }}</p>
+                        </div>
+                        @if($user->employee)
+                            <div class="form-group">
+                                <label><strong>Position:</strong></label>
+                                <p>{{ $user->employee->position->PositionName ?? 'N/A' }}</p>
+                            </div>
+                        @endif
+                    @endif
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Fix navbar position when sidebar is toggled
+        (function () {
+            function updateNavbarPosition() {
+                const header = document.querySelector('.main-header');
+                if (!header) return;
+
+                const body = document.body;
+                const isCollapsed = body.classList.contains('sidebar-collapse');
+
+                if (window.innerWidth >= 992) {
+                    const newLeft = isCollapsed ? '78px' : '250px';
+                    header.style.setProperty('left', newLeft, 'important');
+                    header.style.setProperty('right', '0', 'important');
+                } else {
+                    header.style.setProperty('left', '0', 'important');
+                    header.style.setProperty('right', '0', 'important');
+                }
+            }
+
+            // Run immediately
+            updateNavbarPosition();
+
+            // Also run on DOM ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', updateNavbarPosition);
+            }
+
+            // Listen for sidebar toggle (AdminLTE pushmenu) - use event delegation with capture
+            document.addEventListener('click', function (e) {
+                const pushMenu = e.target.closest('[data-widget="pushmenu"]');
+                if (pushMenu) {
+                    // Wait for AdminLTE to toggle the class
+                    setTimeout(function () {
+                        updateNavbarPosition();
+                        // Also check again after a longer delay
+                        setTimeout(updateNavbarPosition, 300);
+                    }, 100);
+                }
+            }, true);
+
+            // Listen for window resize
+            window.addEventListener('resize', updateNavbarPosition);
+
+            // Use MutationObserver to watch for class changes on body
+            const observer = new MutationObserver(function (mutations) {
+                let shouldUpdate = false;
+                mutations.forEach(function (mutation) {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                        shouldUpdate = true;
+                    }
+                });
+                if (shouldUpdate) {
+                    setTimeout(updateNavbarPosition, 50);
+                }
+            });
+
+            observer.observe(document.body, {
+                attributes: true,
+                attributeFilter: ['class']
+            });
+
+            // Also observe wrapper if it exists
+            const wrapper = document.querySelector('.wrapper');
+            if (wrapper) {
+                observer.observe(wrapper, {
+                    attributes: true,
+                    attributeFilter: ['class']
+                });
+            }
+
+            // Periodic check as fallback
+            setInterval(updateNavbarPosition, 1000);
+        })();
+    </script>
 </body>
 
 </html>

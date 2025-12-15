@@ -46,15 +46,6 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="info-box">
-                                <span class="info-box-icon bg-warning"><i class="fas fa-money-bill-wave"></i></span>
-                                <div class="info-box-content">
-                                    <span class="info-box-text">Salary</span>
-                                    <span class="info-box-number">₱{{ number_format($position->Salary, 2) }}</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="info-box">
                                 <span class="info-box-icon bg-info"><i class="fas fa-users"></i></span>
                                 <div class="info-box-content">
                                     <span class="info-box-text">Total Employees</span>
@@ -72,7 +63,7 @@
                                 <span class="info-box-icon bg-secondary"><i class="fas fa-calendar-plus"></i></span>
                                 <div class="info-box-content">
                                     <span class="info-box-text">Created</span>
-                                    <span class="info-box-number">{{ $position->created_at->format('M d, Y g:i A') }}</span>
+                                    <span class="info-box-number">{{ $position->formatted_created_at }}</span>
                                 </div>
                             </div>
                         </div>
@@ -81,7 +72,7 @@
                                 <span class="info-box-icon bg-dark"><i class="fas fa-calendar-edit"></i></span>
                                 <div class="info-box-content">
                                     <span class="info-box-text">Last Updated</span>
-                                    <span class="info-box-number">{{ $position->updated_at->format('M d, Y g:i A') }}</span>
+                                    <span class="info-box-number">{{ $position->formatted_updated_at }}</span>
                                 </div>
                             </div>
                         </div>
@@ -109,8 +100,8 @@
                                                 <strong>{{ $employee->first_name }} {{ $employee->last_name }}</strong>
                                             </td>
                                             <td>
-                                                <span class="badge badge-info">
-                                                    {{ $employee->employeeType->EmployeeTypeName ?? 'N/A' }}
+                                                <span class="badge badge-{{ $employee->status == 'Active' ? 'success' : 'danger' }}">
+                                                    {{ $employee->status }}
                                                 </span>
                                             </td>
                                             <td>
