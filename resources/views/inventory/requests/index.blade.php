@@ -789,7 +789,9 @@
                                     id: item.ItemID || '',
                                     resource_catalog_id: item.ResourceCatalogID || '',
                                     name: item.ItemName || '',
-                                    quantity: item.estimated_quantity || 0,
+                                    quantity: item.remaining_quantity || item.estimated_quantity || 0,
+                                    estimated_quantity: item.estimated_quantity || 0,
+                                    issued_quantity: item.issued_quantity || 0,
                                     unit: item.Unit || '',
                                     type: item.ItemType || ''
                                 }));
@@ -816,7 +818,7 @@
                 function renderRequiredItems() {
                     let html = '';
                     if (!requiredItems.length) {
-                        html = '<div class="text-muted small">No required items for this milestone.</div>';
+                        html = '<div class="alert alert-success small mb-0"><i class="fas fa-check-circle mr-2"></i>All required items have been issued for this milestone.</div>';
                     } else {
                         html = '<ul class="list-group">';
                         requiredItems.forEach(item => {

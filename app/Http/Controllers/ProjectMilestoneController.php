@@ -435,13 +435,19 @@ class ProjectMilestoneController extends Controller
     }
 
     /**
-     * Get required items for a milestone
+     * Get required items for a milestone (excluding already issued items)
      */
     public function getRequiredItems(ProjectMilestone $milestone)
     {
         $requiredItems = $milestone->requiredItems()->with('resourceCatalog')->get();
         
-        return response()->json($requiredItems->map(function($req) {
+        // Get issued items for this milestone
+        $issuedItems = \App\Models\IssuanceRecordItem::whereHas('issuanceRecord', function($q) use ($milestone) {
+            $q->where('MilestoneID', $milestone->milestone_id)
+              ->where('Status', 'Issued');
+        })->get()->groupBy('ItemID');
+        
+        return response()->json($requiredItems->map(function($req) use ($issuedItems) {
             $resourceCatalog = $req->resourceCatalog;
             
             // Find the corresponding inventory item
@@ -450,6 +456,15 @@ class ProjectMilestoneController extends Controller
                 $inventoryItem = \App\Models\InventoryItem::where('ResourceCatalogID', $resourceCatalog->ResourceCatalogID)->first();
             }
             
+            // Calculate already issued quantity
+            $issuedQty = 0;
+            if ($inventoryItem && isset($issuedItems[$inventoryItem->ItemID])) {
+                $issuedQty = $issuedItems[$inventoryItem->ItemID]->sum('QuantityIssued');
+            }
+            
+            // Calculate remaining quantity needed
+            $remainingQty = max(0, $req->estimated_quantity - $issuedQty);
+            
             return [
                 'ItemID' => $inventoryItem->ItemID ?? null,
                 'ResourceCatalogID' => $resourceCatalog->ResourceCatalogID ?? null,
@@ -457,7 +472,12 @@ class ProjectMilestoneController extends Controller
                 'ItemType' => $resourceCatalog->Type ?? 'N/A',
                 'Unit' => $resourceCatalog->Unit ?? 'N/A',
                 'estimated_quantity' => $req->estimated_quantity,
+                'issued_quantity' => $issuedQty,
+                'remaining_quantity' => $remainingQty,
             ];
-        }));
+        })->filter(function($item) {
+            // Only return items that still need to be issued
+            return $item['remaining_quantity'] > 0;
+        })->values());
     }
 }
