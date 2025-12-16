@@ -2,252 +2,226 @@
 
 @section('content')
     <div class="container-fluid">
-        <div class="mb-4">
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{{ route('receiving.index') }}">Receiving</a></li>
-                    <li class="breadcrumb-item active">Receiving Record #{{ $receivingRecord->ReceivingID }}</li>
-                </ol>
-            </nav>
-        </div>
-
-        @if(session('success'))
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        @endif
-
         <div class="row">
-            <div class="col-md-8">
-                <div class="card mb-4">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h4 class="mb-0">Receiving Record #{{ $receivingRecord->ReceivingID }}</h4>
-                        <div>
-                            @php
-                                $conditionClass = [
-                                    'Good' => 'success',
-                                    'Damaged' => 'danger',
-                                    'Mixed' => 'warning'
-                                ][$receivingRecord->OverallCondition] ?? 'secondary';
-                            @endphp
-                            <span
-                                class="badge bg-{{ $conditionClass }} fs-6">{{ $receivingRecord->OverallCondition }}</span>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <h6 class="text-muted">Purchase Order Information</h6>
-                                <table class="table table-sm table-borderless">
-                                    <tr>
-                                        <td><strong>PO Number:</strong></td>
-                                        <td>
-                                            <a href="{{ route('purchase-orders.show', $receivingRecord->POID) }}">
-                                                #{{ $receivingRecord->purchaseOrder->POID ?? 'N/A' }}
-                                            </a>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Supplier:</strong></td>
-                                        <td>{{ $receivingRecord->purchaseOrder->supplier->SupplierName ?? 'N/A' }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>PO Status:</strong></td>
-                                        <td>
-                                            <span class="badge bg-info">
-                                                {{ $receivingRecord->purchaseOrder->Status ?? 'N/A' }}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                </table>
+            <div class="col-12">
+                <div class="card">
+                    <!-- Card Header -->
+                    <div class="card-header" style="background-color: #87A96B;">
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <h3 class="card-title mb-0" style="color: white; font-size: 1.25rem;">
+                                    <i class="fas fa-box-open me-2"></i>
+                                    Receiving Record #{{ $receivingRecord->ReceivingID }}
+                                </h3>
                             </div>
-                            <div class="col-md-6">
-                                <h6 class="text-muted">Receiving Details</h6>
-                                <table class="table table-sm table-borderless">
-                                    <tr>
-                                        <td><strong>Received Date:</strong></td>
-                                        <td>{{ $receivingRecord->ReceivedDate->format('M d, Y') }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Received By:</strong></td>
-                                        <td>{{ $receivingRecord->receiver->FirstName ?? '' }}
-                                            {{ $receivingRecord->receiver->LastName ?? '' }}
-                                        </td>
-                                    </tr>
-                                    @if($receivingRecord->DeliveryReceiptNumber)
-                                        <tr>
-                                            <td><strong>DR Number:</strong></td>
-                                            <td>{{ $receivingRecord->DeliveryReceiptNumber }}</td>
-                                        </tr>
-                                    @endif
-                                    <tr>
-                                        <td><strong>Recorded At:</strong></td>
-                                        <td>{{ $receivingRecord->created_at->format('M d, Y h:i A') }}</td>
-                                    </tr>
-                                </table>
-                            </div>
-                        </div>
-
-                        @if($receivingRecord->Remarks)
-                            <div class="mb-3">
-                                <h6 class="text-muted">Remarks</h6>
-                                <p class="mb-0">{{ $receivingRecord->Remarks }}</p>
-                            </div>
-                        @endif
-
-                        @if($receivingRecord->AttachmentPath)
-                            <div class="mb-3">
-                                <h6 class="text-muted">Delivery Receipt Attachment</h6>
-                                <a href="{{ Storage::url($receivingRecord->AttachmentPath) }}" target="_blank"
-                                    class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-file"></i> View Attachment
+                            <div class="col-auto">
+                                <a href="{{ route('receiving.index') }}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left me-1"></i> Back to List
                                 </a>
                             </div>
-                        @endif
+                        </div>
                     </div>
-                </div>
 
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">Received Items</h5>
-                    </div>
                     <div class="card-body">
+                        <!-- Info Section -->
+                        <div class="row mb-4">
+                            <!-- Purchase Order Information -->
+                            <div class="col-md-4 mb-3 mb-md-0">
+                                <div class="border rounded p-3 h-100" style="background-color: #f8f9fa;">
+                                    <h6 class="text-uppercase fw-bold mb-3" style="color: #87A96B; font-size: 0.85rem;">
+                                        <i class="fas fa-file-invoice me-2"></i>Purchase Order Information
+                                    </h6>
+                                    <h5 class="fw-bold mb-2" style="font-size: 1.1rem;">
+                                        <a href="{{ route('purchase-orders.show', $receivingRecord->POID) }}" class="text-decoration-none">
+                                            PO #{{ $receivingRecord->purchaseOrder->POID ?? 'N/A' }}
+                                        </a>
+                                    </h5>
+                                    <p class="mb-1 text-muted" style="font-size: 0.95rem;">
+                                        <i class="fas fa-building me-2"></i>{{ $receivingRecord->purchaseOrder->supplier->SupplierName ?? 'N/A' }}
+                                    </p>
+                                    <p class="mb-0 text-muted" style="font-size: 0.95rem;">
+                                        <span class="badge bg-info">{{ $receivingRecord->purchaseOrder->Status ?? 'N/A' }}</span>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Receiving Details -->
+                            <div class="col-md-4 mb-3 mb-md-0">
+                                <div class="border rounded p-3 h-100" style="background-color: #f8f9fa;">
+                                    <h6 class="text-uppercase fw-bold mb-3" style="color: #87A96B; font-size: 0.85rem;">
+                                        <i class="fas fa-info-circle me-2"></i>Receiving Details
+                                    </h6>
+                                    <table class="table table-sm table-borderless mb-0" style="font-size: 0.95rem;">
+                                        <tr>
+                                            <td class="text-muted ps-0">Received Date</td>
+                                            <td class="fw-semibold">{{ $receivingRecord->ReceivedDate->format('M d, Y') }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted ps-0">Received By</td>
+                                            <td class="fw-semibold">
+                                                {{ $receivingRecord->receiver->full_name ?? 'N/A' }}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted ps-0">Recorded At</td>
+                                            <td class="fw-semibold">{{ $receivingRecord->created_at->format('M d, Y h:i A') }}</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Overall Condition -->
+                            <div class="col-md-4">
+                                <div class="border rounded p-3 h-100" style="background-color: #f8f9fa;">
+                                    <h6 class="text-uppercase fw-bold mb-3" style="color: #87A96B; font-size: 0.85rem;">
+                                        <i class="fas fa-check-circle me-2"></i>Overall Condition
+                                    </h6>
+                                    <table class="table table-sm table-borderless mb-0" style="font-size: 0.95rem;">
+                                        <tr>
+                                            <td class="text-muted ps-0">Condition</td>
+                                            <td>
+                                                @php
+                                                    $conditionClass = 'secondary';
+                                                    $textClass = 'text-white';
+                                                    if ($receivingRecord->OverallCondition == 'Good') {
+                                                        $conditionClass = 'success';
+                                                        $textClass = 'text-white';
+                                                    } elseif ($receivingRecord->OverallCondition == 'Damaged') {
+                                                        $conditionClass = 'danger';
+                                                        $textClass = 'text-white';
+                                                    } elseif ($receivingRecord->OverallCondition == 'Mixed') {
+                                                        $conditionClass = 'warning';
+                                                        $textClass = 'text-dark';
+                                                    }
+                                                @endphp
+                                                <span class="badge bg-{{ $conditionClass }} {{ $textClass }}">
+                                                    {{ $receivingRecord->OverallCondition ?? 'N/A' }}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted ps-0">Total Items</td>
+                                            <td class="fw-semibold">{{ $receivingRecord->items->count() }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-muted ps-0">Total Received</td>
+                                            <td class="fw-semibold">{{ $receivingRecord->items->sum('QuantityReceived') }}</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Received Items Table -->
+                        <h6 class="text-uppercase fw-bold mb-3" style="color: #87A96B; font-size: 0.75rem;">
+                            <i class="fas fa-list me-2"></i>Received Items
+                        </h6>
                         <div class="table-responsive">
-                            <table class="table table-bordered">
-                                <thead class="table-light">
+                            <table class="table table-bordered table-striped">
+                                <thead>
                                     <tr>
                                         <th>Item</th>
                                         <th class="text-center">Qty Ordered</th>
                                         <th class="text-center">Qty Received</th>
                                         <th class="text-center">Good</th>
                                         <th class="text-center">Damaged</th>
-                                        <th>Condition</th>
+                                        <th class="text-center">Condition</th>
                                         <th>Remarks</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach($receivingRecord->items as $item)
+                                    @forelse($receivingRecord->items as $item)
+                                        @php
+                                            $poItem = $item->purchaseOrderItem;
+                                            $inventoryItem = $poItem->inventoryItem ?? null;
+                                            $resourceCatalog = $inventoryItem->resourceCatalog ?? null;
+                                            $itemName = $resourceCatalog->ItemName ?? ($inventoryItem->ItemName ?? 'N/A');
+                                            $itemType = $resourceCatalog->Type ?? '';
+                                            $goodQuantity = $item->QuantityReceived - ($item->QuantityDamaged ?? 0);
+                                        @endphp
                                         <tr>
                                             <td>
-                                                <strong>{{ $item->purchaseOrderItem->inventoryItem->ItemName ?? 'N/A' }}</strong><br>
-                                                <small class="text-muted">
-                                                    {{ $item->purchaseOrderItem->inventoryItem->ItemCode ?? '' }}
-                                                </small>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="rounded-circle d-flex align-items-center justify-content-center me-2"
+                                                        style="width: 32px; height: 32px; background-color: {{ $itemType == 'Equipment' ? 'rgba(23, 162, 184, 0.15)' : 'rgba(135, 169, 107, 0.15)' }};">
+                                                        <i class="fas {{ $itemType == 'Equipment' ? 'fa-tools' : 'fa-cube' }}"
+                                                            style="color: {{ $itemType == 'Equipment' ? '#17a2b8' : '#87A96B' }}; font-size: 0.8rem;"></i>
+                                                    </div>
+                                                    <span><strong>{{ $itemName }}</strong></span>
+                                                </div>
+                                            </td>
+                                            <td class="text-center">{{ number_format($poItem->QuantityOrdered ?? 0) }} {{ $poItem->Unit ?? '' }}</td>
+                                            <td class="text-center"><strong>{{ number_format($item->QuantityReceived) }} {{ $poItem->Unit ?? '' }}</strong></td>
+                                            <td class="text-center">
+                                                <span class="badge text-white" style="background-color: #87A96B;">{{ number_format($goodQuantity) }} {{ $poItem->Unit ?? '' }}</span>
                                             </td>
                                             <td class="text-center">
-                                                {{ $item->purchaseOrderItem->QuantityOrdered }}
-                                                {{ $item->purchaseOrderItem->Unit }}
-                                            </td>
-                                            <td class="text-center">
-                                                <strong>{{ $item->QuantityReceived }}
-                                                    {{ $item->purchaseOrderItem->Unit }}</strong>
-                                            </td>
-                                            <td class="text-center">
-                                                <span class="badge bg-success">{{ $item->GoodQuantity }}
-                                                    {{ $item->purchaseOrderItem->Unit }}</span>
-                                            </td>
-                                            <td class="text-center">
-                                                @if($item->QuantityDamaged > 0)
-                                                    <span class="badge bg-danger">{{ $item->QuantityDamaged }}
-                                                        {{ $item->purchaseOrderItem->Unit }}</span>
+                                                @if(($item->QuantityDamaged ?? 0) > 0)
+                                                    <span class="badge bg-danger text-white">{{ number_format($item->QuantityDamaged) }} {{ $poItem->Unit ?? '' }}</span>
                                                 @else
                                                     <span class="text-muted">0</span>
                                                 @endif
                                             </td>
-                                            <td>
-                                                <span class="badge bg-{{ $item->Condition == 'Good' ? 'success' : 'danger' }}">
+                                            <td class="text-center">
+                                                <span class="badge bg-{{ $item->Condition == 'Good' ? 'success' : 'danger' }} text-white">
                                                     {{ $item->Condition }}
                                                 </span>
                                             </td>
                                             <td>{{ $item->ItemRemarks ?? '-' }}</td>
                                         </tr>
-                                    @endforeach
+                                    @empty
+                                        <tr>
+                                            <td colspan="7" class="text-center text-muted py-4">
+                                                <i class="fas fa-box-open fa-2x mb-2"></i>
+                                                <p class="mb-0">No items in this receiving record</p>
+                                            </td>
+                                        </tr>
+                                    @endforelse
                                 </tbody>
-                                <tfoot class="table-light">
-                                    <tr>
-                                        <th colspan="2" class="text-end">Totals:</th>
-                                        <th class="text-center">{{ $receivingRecord->items->sum('QuantityReceived') }}</th>
-                                        <th class="text-center text-success">
-                                            {{ $receivingRecord->items->sum('GoodQuantity') }}
-                                        </th>
-                                        <th class="text-center text-danger">
-                                            {{ $receivingRecord->items->sum('QuantityDamaged') }}
-                                        </th>
-                                        <th colspan="2"></th>
-                                    </tr>
-                                </tfoot>
+                                @if($receivingRecord->items->count() > 0)
+                                    <tfoot>
+                                        <tr class="fw-bold">
+                                            <td>Total</td>
+                                            <td class="text-center">{{ number_format($receivingRecord->items->sum(function($item) { return $item->purchaseOrderItem->QuantityOrdered ?? 0; })) }}</td>
+                                            <td class="text-center">{{ number_format($receivingRecord->items->sum('QuantityReceived')) }}</td>
+                                            <td class="text-center">{{ number_format($receivingRecord->items->sum(function($item) { return $item->QuantityReceived - ($item->QuantityDamaged ?? 0); })) }}</td>
+                                            <td class="text-center">{{ number_format($receivingRecord->items->sum('QuantityDamaged')) }}</td>
+                                            <td></td>
+                                            <td></td>
+                                        </tr>
+                                    </tfoot>
+                                @endif
                             </table>
                         </div>
-                    </div>
-                </div>
-            </div>
 
-            <div class="col-md-4">
-                <div class="card mb-3">
-                    <div class="card-header">
-                        <h5 class="mb-0">Summary</h5>
+                        @if($receivingRecord->Remarks)
+                            <div class="mt-4">
+                                <h6 class="text-uppercase fw-bold mb-2" style="color: #87A96B; font-size: 0.75rem;">
+                                    <i class="fas fa-comment me-2"></i>Remarks
+                                </h6>
+                                <p class="mb-0 text-muted">{{ $receivingRecord->Remarks }}</p>
+                            </div>
+                        @endif
                     </div>
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Total Items:</span>
-                            <strong>{{ $receivingRecord->items->count() }}</strong>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Total Received:</span>
-                            <strong>{{ $receivingRecord->items->sum('QuantityReceived') }}</strong>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Good Condition:</span>
-                            <strong class="text-success">{{ $receivingRecord->items->sum('GoodQuantity') }}</strong>
-                        </div>
-                        <div class="d-flex justify-content-between">
-                            <span>Damaged:</span>
-                            <strong class="text-danger">{{ $receivingRecord->items->sum('QuantityDamaged') }}</strong>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="card mb-3">
-                    <div class="card-header">
-                        <h5 class="mb-0">Inventory Impact</h5>
-                    </div>
-                    <div class="card-body">
-                        <p class="mb-2"><small class="text-muted">The following inventory items were updated:</small></p>
-                        <ul class="small mb-0">
-                            @foreach($receivingRecord->items as $item)
-                                @if($item->GoodQuantity > 0)
-                                    <li>
-                                        <strong>{{ $item->purchaseOrderItem->inventoryItem->ItemName ?? 'N/A' }}</strong>
-                                        <br>
-                                        <span class="text-success">+{{ $item->GoodQuantity }}
-                                            {{ $item->purchaseOrderItem->Unit }}</span> added to stock
-                                    </li>
-                                @endif
-                            @endforeach
-                        </ul>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0">Actions</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="d-grid gap-2">
-                            <a href="{{ route('purchase-orders.show', $receivingRecord->POID) }}" class="btn btn-info">
+                    <!-- Card Footer with Buttons -->
+                    <div class="card-footer bg-white py-3">
+                        <div class="text-right">
+                            <a href="{{ route('purchase-orders.show', $receivingRecord->POID) }}" 
+                               class="btn btn-info mr-2">
                                 <i class="fas fa-file-invoice"></i> View Purchase Order
                             </a>
-                            <a href="{{ route('receiving.index') }}" class="btn btn-secondary">
-                                <i class="fas fa-list"></i> Back to Receiving List
-                            </a>
-
-                            @if(auth()->user()->UserType == 2) {{-- Admin only --}}
-                                <form action="{{ route('receiving.destroy', $receivingRecord->ReceivingID) }}" method="POST"
-                                    onsubmit="return confirm('Delete this receiving record? This will reverse the inventory updates.')">
+                            @if(auth()->user()->UserTypeID == 2)
+                                <form action="{{ route('receiving.destroy', $receivingRecord->ReceivingID) }}" 
+                                      method="POST" 
+                                      class="d-inline swal-confirm-form"
+                                      data-title="Delete Receiving Record?"
+                                      data-text="This will reverse the inventory updates. This action cannot be undone."
+                                      data-icon="warning"
+                                      data-confirm-text="Yes, Delete It">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-outline-danger w-100">
+                                    <button type="submit" class="btn btn-danger mr-2">
                                         <i class="fas fa-trash"></i> Delete Record
                                     </button>
                                 </form>

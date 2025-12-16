@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ResourceCatalog;
+use App\Models\InventoryItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -58,10 +59,33 @@ class ResourceCatalogController extends Controller
             'Type' => 'required|in:Equipment,Materials',
         ]);
 
-        ResourceCatalog::create($validated);
+        DB::beginTransaction();
+        try {
+            // Create resource catalog item
+            $resourceCatalog = ResourceCatalog::create($validated);
 
-        return redirect()->route('resource-catalog.index')
-            ->with('success', 'Resource added to catalog successfully');
+            // Automatically create corresponding inventory item with zero quantity
+            InventoryItem::firstOrCreate(
+                ['ResourceCatalogID' => $resourceCatalog->ResourceCatalogID],
+                [
+                    'TotalQuantity' => 0,
+                    'AvailableQuantity' => 0,
+                    'CommittedQuantity' => 0,
+                    'MinimumStockLevel' => 0,
+                    'UnitPrice' => 0,
+                    'Status' => 'Active',
+                ]
+            );
+
+            DB::commit();
+
+            return redirect()->route('resource-catalog.index')
+                ->with('success', 'Resource added to catalog successfully');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->route('resource-catalog.index')
+                ->with('error', 'Failed to add resource: ' . $e->getMessage());
+        }
     }
 
     /**

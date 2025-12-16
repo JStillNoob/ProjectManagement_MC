@@ -233,7 +233,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($project->milestones as $milestone)
+                                @foreach($project->milestones->sortBy([['order', 'asc'], ['milestone_id', 'asc']]) as $milestone)
                                     <tr>
                                         <td><strong>{{ $milestone->milestone_name }}</strong></td>
                                         <td>{{ Str::limit($milestone->description ?? 'N/A', 50) }}</td>

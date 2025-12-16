@@ -23,6 +23,10 @@
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap4-theme@1.0.0/dist/select2-bootstrap4.min.css"
         rel="stylesheet" />
+    <!-- Toastr CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
+    <!-- SweetAlert2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
 
     <style>
         /* Pastel Green Solid Theme */
@@ -1230,6 +1234,18 @@
                                             </a>
                                         </li>
                                     @elseif(Auth::user()->UserTypeID == 2)
+                                    @php
+                                        $user = Auth::user();
+                                        $isAdmin = \App\Models\ProjectMilestone::isAdmin($user);
+                                        $isEngineer = false;
+                                        if ($user->EmployeeID) {
+                                            $employee = \App\Models\Employee::with('position')->find($user->EmployeeID);
+                                            if ($employee) {
+                                                $isEngineer = \App\Models\ProjectMilestone::isEngineer($employee);
+                                            }
+                                        }
+                                        $canAccessMilestoneReports = $isAdmin || $isEngineer;
+                                    @endphp
                                     <li class="nav-item">
                                         <a href="{{ route('go_newPage') }}"
                                             class="nav-link {{ request()->routeIs('go_newPage') ? 'active' : '' }}">
@@ -1351,6 +1367,15 @@
                                             <p>Inventory Reports</p>
                                         </a>
                                     </li>
+                                    @if($canAccessMilestoneReports)
+                                    <li class="nav-item">
+                                        <a href="{{ route('reports.milestones.index') }}"
+                                            class="nav-link {{ request()->routeIs('reports.milestones.*') ? 'active' : '' }}">
+                                            <i class="nav-icon fas fa-tasks"></i>
+                                            <p>Milestone Reports</p>
+                                        </a>
+                                    </li>
+                                    @endif
                                     <li class="nav-item">
                                         <a href="{{ route('prodhead.attendance') }}"
                                             class="nav-link {{ request()->routeIs('prodhead.attendance*') || request()->routeIs('attendance.*') ? 'active' : '' }}">
@@ -1375,9 +1400,16 @@
                                     </li>
                                     <li class="nav-item">
                                         <a href="{{ route('inventory.requests.index') }}"
-                                            class="nav-link {{ request()->routeIs('inventory.requests.*') ? 'active' : '' }}">
+                                            class="nav-link {{ request()->routeIs('inventory.requests.index') || request()->routeIs('inventory.requests.create') || request()->routeIs('inventory.requests.show') ? 'active' : '' }}">
                                             <i class="nav-icon fas fa-clipboard-list"></i>
                                             <p>Inventory Requests</p>
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a href="{{ route('inventory.requests.history') }}"
+                                            class="nav-link {{ request()->routeIs('inventory.requests.history') ? 'active' : '' }}">
+                                            <i class="nav-icon fas fa-history"></i>
+                                            <p>Request History</p>
                                         </a>
                                     </li>
                                     <li class="nav-item">
@@ -1457,6 +1489,124 @@
     <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap4.min.js"></script>
     <!-- Select2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <!-- Toastr JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Toastr Configuration -->
+    <script>
+        toastr.options = {
+            "closeButton": true,
+            "debug": false,
+            "newestOnTop": true,
+            "progressBar": true,
+            "positionClass": "toast-top-right",
+            "preventDuplicates": false,
+            "onclick": null,
+            "showDuration": "300",
+            "hideDuration": "1000",
+            "timeOut": "5000",
+            "extendedTimeOut": "1000",
+            "showEasing": "swing",
+            "hideEasing": "linear",
+            "showMethod": "fadeIn",
+            "hideMethod": "fadeOut"
+        };
+
+        // Show toastr notifications from session flash messages
+        @if(session('success'))
+            toastr.success("{{ session('success') }}");
+        @endif
+
+        @if(session('error'))
+            toastr.error("{{ session('error') }}");
+        @endif
+
+        @if(session('warning'))
+            toastr.warning("{{ session('warning') }}");
+        @endif
+
+        @if(session('info'))
+            toastr.info("{{ session('info') }}");
+        @endif
+
+        // Global SweetAlert2 confirmation handler
+        function attachSwalConfirmHandlers() {
+            // Handle forms with swal-confirm-form class
+            document.querySelectorAll('form.swal-confirm-form:not([data-swal-attached])').forEach(function(form) {
+                form.setAttribute('data-swal-attached', 'true');
+                
+                const submitHandler = function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const formEl = this;
+                    
+                    Swal.fire({
+                        title: formEl.dataset.title || 'Are you sure?',
+                        text: formEl.dataset.text || 'This action cannot be undone.',
+                        icon: formEl.dataset.icon || 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#87A96B',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: formEl.dataset.confirmText || 'Yes, proceed',
+                        cancelButtonText: 'Cancel',
+                        reverseButtons: true
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            // Remove the handler temporarily and submit
+                            formEl.removeAttribute('data-swal-attached');
+                            formEl.removeEventListener('submit', submitHandler);
+                            formEl.submit();
+                        }
+                    });
+                };
+                
+                form.addEventListener('submit', submitHandler);
+            });
+            
+            // Handle buttons with swal-confirm-form class that submit a form via form attribute
+            document.querySelectorAll('button.swal-confirm-form[form]:not([data-swal-attached])').forEach(function(button) {
+                button.setAttribute('data-swal-attached', 'true');
+                
+                const clickHandler = function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const buttonEl = this;
+                    const formId = buttonEl.getAttribute('form');
+                    const formEl = document.getElementById(formId);
+                    
+                    if (!formEl) return;
+                    
+                    Swal.fire({
+                        title: buttonEl.dataset.title || 'Are you sure?',
+                        text: buttonEl.dataset.text || 'This action cannot be undone.',
+                        icon: buttonEl.dataset.icon || 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#87A96B',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: buttonEl.dataset.confirmText || 'Yes, proceed',
+                        cancelButtonText: 'Cancel',
+                        reverseButtons: true
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            formEl.submit();
+                        }
+                    });
+                };
+                
+                button.addEventListener('click', clickHandler);
+            });
+        }
+
+        // Attach handlers on page load
+        document.addEventListener('DOMContentLoaded', attachSwalConfirmHandlers);
+        
+        // Re-attach handlers when modals are shown (for dynamically added forms)
+        $(document).on('shown.bs.modal', function() {
+            setTimeout(attachSwalConfirmHandlers, 100);
+        });
+    </script>
 
     @stack('scripts')
 

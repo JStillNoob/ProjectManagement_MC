@@ -18,20 +18,6 @@
                     </div>
                 </div>
                 <div class="card-body p-0">
-                    @if(session('success'))
-                        <div class="alert alert-success alert-dismissible fade show m-3">
-                            {{ session('success') }}
-                            <button type="button" class="close" data-dismiss="alert">&times;</button>
-                        </div>
-                    @endif
-
-                    @if(session('error'))
-                        <div class="alert alert-danger alert-dismissible fade show m-3">
-                            {{ session('error') }}
-                            <button type="button" class="close" data-dismiss="alert">&times;</button>
-                        </div>
-                    @endif
-
                     @if($suppliers->count() > 0)
                         <div class="table-responsive">
                             <table id="suppliersTable" class="table table-bordered table-striped">
@@ -57,17 +43,6 @@
                                                 <a href="{{ route('suppliers.show', $supplier) }}" class="text-info" style="text-decoration: underline; cursor: pointer;">
                                                     <i class="fas fa-eye mr-1"></i> View
                                                 </a>
-                                                <a href="#" class="text-warning ml-2" data-toggle="modal" data-target="#editSupplierModal{{ $supplier->SupplierID }}" style="text-decoration: underline; cursor: pointer;">
-                                                    <i class="fas fa-edit mr-1"></i> Edit
-                                                </a>
-                                                <form action="{{ route('suppliers.destroy', $supplier) }}" method="POST" class="d-inline ml-2"
-                                                      onsubmit="return confirm('Are you sure you want to delete this supplier?');">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="btn btn-link text-danger p-0" style="text-decoration: underline;">
-                                                        <i class="fas fa-trash mr-1"></i> Delete
-                                                    </button>
-                                                </form>
                                             </td>
                                         </tr>
 

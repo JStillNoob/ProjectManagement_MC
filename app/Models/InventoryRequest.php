@@ -21,10 +21,12 @@ class InventoryRequest extends Model
         'ApprovedAt',
         'RejectionReason',
         'MilestoneID',
+        'IsAdditionalRequest',
     ];
 
     protected $casts = [
         'ApprovedAt' => 'datetime',
+        'IsAdditionalRequest' => 'boolean',
     ];
 
     // Relationship with project
@@ -67,5 +69,29 @@ class InventoryRequest extends Model
     public function purchaseOrders()
     {
         return $this->hasMany(PurchaseOrder::class, 'RequestID', 'RequestID');
+    }
+
+    // Scope to get only original (non-additional) requests
+    public function scopeOriginal($query)
+    {
+        return $query->where('IsAdditionalRequest', false);
+    }
+
+    // Scope to get only additional requests
+    public function scopeAdditional($query)
+    {
+        return $query->where('IsAdditionalRequest', true);
+    }
+
+    // Helper method to check if this is an additional request
+    public function isAdditional()
+    {
+        return $this->IsAdditionalRequest === true;
+    }
+
+    // Helper method to check if this is an original request
+    public function isOriginal()
+    {
+        return $this->IsAdditionalRequest === false;
     }
 }

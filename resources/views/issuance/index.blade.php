@@ -23,15 +23,6 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        @if(session('success'))
-                            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                                {{ session('success') }}
-                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
-                                </button>
-                            </div>
-                        @endif
-
                         <!-- Table -->
                         <div class="table-responsive">
                             <table id="issuanceTable" class="table table-bordered table-striped">
@@ -75,13 +66,16 @@
                                                     </a>
                                                     @if($issuance->Status == 'Issued')
                                                         <form action="{{ route('issuance.destroy', $issuance) }}" method="POST"
-                                                            style="display: inline-block;"
-                                                            onsubmit="return confirm('Are you sure you want to delete this issuance record?');">
+                                                            style="display: inline-block;" class="swal-confirm-form"
+                                                            data-title="Archive Issuance?"
+                                                            data-text="Are you sure you want to archive this issuance record?"
+                                                            data-icon="warning"
+                                                            data-confirm-text="Yes, Archive">
                                                             @csrf
                                                             @method('DELETE')
                                                             <button type="submit" class="btn btn-link text-danger p-0"
                                                                 style="text-decoration: underline; border: none; background: none; cursor: pointer;">
-                                                                <i class="fas fa-trash mr-1"></i> Delete
+                                                                <i class="fas fa-archive mr-1"></i> Archive
                                                             </button>
                                                         </form>
                                                     @endif

@@ -21,7 +21,11 @@ class CheckRole
             return redirect()->route('login'); // Or abort(401)
         }
         
-        if (!$user || !in_array($user->UserTypeID, $types)) {
+        // Get UserTypeID as integer to avoid object conversion issues
+        // Use the accessor which should return integer, but add safety check
+        $userTypeId = $user->getUserTypeId();
+        
+        if (!$user || !in_array($userTypeId, array_map('intval', $types))) {
              return redirect()->back()->with('error', 'Access denied. Insufficient permissions.');
         }
 

@@ -17,8 +17,11 @@ class UserController extends Controller
         $showDeactivated = $request->has('show_deactivated') && $request->show_deactivated == '1';
         
         if ($showDeactivated) {
-            // Show all users including deactivated
-            $users = User::with(['userType', 'employee', 'role'])->orderBy('created_at', 'desc')->get();
+            // Show only deactivated users
+            $users = User::with(['userType', 'employee', 'role'])
+                ->where('FlagDeleted', 1)
+                ->orderBy('created_at', 'desc')
+                ->get();
         } else {
             // Show only active users
             $users = User::with(['userType', 'employee', 'role'])->active()->orderBy('created_at', 'desc')->get();

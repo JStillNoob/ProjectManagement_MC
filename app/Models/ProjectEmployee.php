@@ -44,8 +44,20 @@ class ProjectEmployee extends Model
     // Generate unique QR code for this project-employee combination
     public function generateQrCode()
     {
-        // Create a unique identifier combining project and employee
-        $uniqueId = 'PE_' . $this->ProjectID . '_' . $this->EmployeeID . '_' . uniqid();
+        // Create a unique identifier combining project and employee with timestamp and random
+        // Format: PE_{ProjectID}_{EmployeeID}_{timestamp}_{random}
+        $timestamp = time();
+        $random = bin2hex(random_bytes(4)); // 8 character random hex string
+        $uniqueId = 'PE_' . $this->ProjectID . '_' . $this->EmployeeID . '_' . $timestamp . '_' . $random;
+        
+        // Ensure uniqueness by checking if this QR code already exists
+        $attempts = 0;
+        while (static::where('qr_code', $uniqueId)->where('ProjectEmployeeID', '!=', $this->ProjectEmployeeID)->exists() && $attempts < 10) {
+            $random = bin2hex(random_bytes(4));
+            $uniqueId = 'PE_' . $this->ProjectID . '_' . $this->EmployeeID . '_' . $timestamp . '_' . $random;
+            $attempts++;
+        }
+        
         $this->qr_code = $uniqueId;
         $this->save();
         return $this->qr_code;

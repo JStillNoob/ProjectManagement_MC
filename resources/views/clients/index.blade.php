@@ -21,15 +21,6 @@
                     </div>
                 </div>
                 <div class="card-body p-0">
-                    @if(session('success'))
-                        <div class="alert alert-success alert-dismissible fade show m-3" role="alert">
-                            {{ session('success') }}
-                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
-                        </div>
-                    @endif
-
                     <div class="table-responsive">
                         <table id="clientsTable" class="table table-bordered table-striped">
                             <thead>

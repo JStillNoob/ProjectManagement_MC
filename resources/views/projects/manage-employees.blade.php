@@ -31,27 +31,6 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        @if(session('success'))
-                            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                                <i class="fas fa-check-circle mr-2"></i>
-                                {{ session('success') }}
-                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
-                                </button>
-                            </div>
-                        @endif
-
-                        @if(session('error'))
-                            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                                <i class="fas fa-exclamation-triangle mr-2"></i>
-                                {{ session('error') }}
-                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
-                                </button>
-                            </div>
-                        @endif
-
-
                         <!-- Current Project Employees -->
                         <div class="row">
                             <div class="col-12">
@@ -137,22 +116,28 @@
                                                                     </button>
                                                                     <form
                                                                         action="{{ route('projects.assignments.complete', [$project, $assignment]) }}"
-                                                                        method="POST" style="display: inline;">
+                                                                        method="POST" style="display: inline;" class="swal-confirm-form"
+                                                                        data-title="Complete Job?"
+                                                                        data-text="Mark this employee's job as completed?"
+                                                                        data-icon="question"
+                                                                        data-confirm-text="Yes, Complete">
                                                                         @csrf
                                                                         @method('PATCH')
                                                                         <button type="submit" class="btn btn-sm btn-success"
-                                                                            onclick="return confirm('Mark this employee\'s job as completed?')"
                                                                             style="background-color: #28a745 !important; border: 2px solid #28a745 !important; color: white !important; opacity: 1 !important; visibility: visible !important;">
                                                                             <i class="fas fa-check"></i> Complete
                                                                         </button>
                                                                     </form>
                                                                     <form
                                                                         action="{{ route('projects.assignments.remove', [$project, $assignment]) }}"
-                                                                        method="POST" style="display: inline;">
+                                                                        method="POST" style="display: inline;" class="swal-confirm-form"
+                                                                        data-title="Remove Employee?"
+                                                                        data-text="Are you sure you want to remove this employee from the project?"
+                                                                        data-icon="warning"
+                                                                        data-confirm-text="Yes, Remove">
                                                                         @csrf
                                                                         @method('DELETE')
                                                                         <button type="submit" class="btn btn-sm btn-danger"
-                                                                            onclick="return confirm('Are you sure you want to remove this employee from the project?')"
                                                                             style="background-color: #dc3545 !important; border: 2px solid #dc3545 !important; color: white !important; opacity: 1 !important; visibility: visible !important;">
                                                                             <i class="fas fa-trash"></i> Remove
                                                                         </button>

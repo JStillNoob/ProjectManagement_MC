@@ -75,6 +75,9 @@ class PositionController extends Controller
         ]);
 
         if ($validator->fails()) {
+            if ($request->ajax()) {
+                return response()->json(['errors' => $validator->errors()], 422);
+            }
             return redirect()->back()
                 ->withErrors($validator)
                 ->withInput();
@@ -83,6 +86,14 @@ class PositionController extends Controller
         $position->update([
             'PositionName' => $request->PositionName,
         ]);
+
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Position updated successfully.',
+                'position' => $position->fresh()
+            ]);
+        }
 
         return redirect()->route('positions.index')
             ->with('success', 'Position updated successfully.');

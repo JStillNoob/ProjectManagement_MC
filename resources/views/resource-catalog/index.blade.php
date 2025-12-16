@@ -19,20 +19,6 @@
                         </div>
                     </div>
                     <div class="card-body p-0">
-                        @if(session('success'))
-                            <div class="alert alert-success alert-dismissible fade show m-3">
-                                {{ session('success') }}
-                                <button type="button" class="close" data-dismiss="alert">&times;</button>
-                            </div>
-                        @endif
-
-                        @if(session('error'))
-                            <div class="alert alert-danger alert-dismissible fade show m-3">
-                                {{ session('error') }}
-                                <button type="button" class="close" data-dismiss="alert">&times;</button>
-                            </div>
-                        @endif
-
                         @if($items->count() > 0)
                             <div class="table-responsive">
                                 <table id="resourceTable" class="table table-bordered table-striped">
@@ -59,96 +45,8 @@
                                                         class="text-info" style="text-decoration: underline; cursor: pointer;">
                                                         <i class="fas fa-eye mr-1"></i> View
                                                     </a>
-                                                    <a href="#" class="text-warning ml-2" data-toggle="modal"
-                                                        data-target="#editResourceModal{{ $item->ResourceCatalogID }}"
-                                                        style="text-decoration: underline; cursor: pointer;">
-                                                        <i class="fas fa-edit mr-1"></i> Edit
-                                                    </a>
-                                                    <form action="{{ route('resource-catalog.destroy', $item->ResourceCatalogID) }}"
-                                                        method="POST" class="d-inline ml-2"
-                                                        onsubmit="return confirm('Are you sure you want to delete this resource?');">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="btn btn-link text-danger p-0"
-                                                            style="text-decoration: underline;">
-                                                            <i class="fas fa-trash mr-1"></i> Delete
-                                                        </button>
-                                                    </form>
                                                 </td>
                                             </tr>
-
-                                            <!-- Edit Resource Modal -->
-                                            <div class="modal fade" id="editResourceModal{{ $item->ResourceCatalogID }}"
-                                                tabindex="-1" role="dialog" aria-hidden="true">
-                                                <div class="modal-dialog modal-dialog-centered" role="document">
-                                                    <div class="modal-content">
-                                                        <div class="modal-header text-white" style="background: #87A96B;">
-                                                            <h5 class="modal-title">
-                                                                <i class="fas fa-edit mr-2"></i>Edit Resource
-                                                            </h5>
-                                                            <button type="button" class="close text-white" data-dismiss="modal"
-                                                                aria-label="Close">
-                                                                <span aria-hidden="true">&times;</span>
-                                                            </button>
-                                                        </div>
-                                                        <form
-                                                            action="{{ route('resource-catalog.update', $item->ResourceCatalogID) }}"
-                                                            method="POST">
-                                                            @csrf
-                                                            @method('PUT')
-                                                            <div class="modal-body">
-                                                                <div class="form-group">
-                                                                    <label>Item Name <span class="text-danger">*</span></label>
-                                                                    <input type="text" name="ItemName"
-                                                                        class="form-control @error('ItemName') is-invalid @enderror"
-                                                                        value="{{ old('ItemName', $item->ItemName) }}"
-                                                                        placeholder="Enter item name" required>
-                                                                    @error('ItemName')
-                                                                        <div class="invalid-feedback">{{ $message }}</div>
-                                                                    @enderror
-                                                                </div>
-
-                                                                <div class="form-group">
-                                                                    <label>Type <span class="text-danger">*</span></label>
-                                                                    <select name="Type"
-                                                                        class="form-control @error('Type') is-invalid @enderror"
-                                                                        required>
-                                                                        <option value="">Select Type</option>
-                                                                        <option value="Equipment" {{ old('Type', $item->Type) == 'Equipment' ? 'selected' : '' }}>Equipment
-                                                                        </option>
-                                                                        <option value="Materials" {{ old('Type', $item->Type) == 'Materials' ? 'selected' : '' }}>Materials
-                                                                        </option>
-                                                                    </select>
-                                                                    @error('Type')
-                                                                        <div class="invalid-feedback">{{ $message }}</div>
-                                                                    @enderror
-                                                                </div>
-
-                                                                <div class="form-group">
-                                                                    <label>Unit <span class="text-danger">*</span></label>
-                                                                    <input type="text" name="Unit"
-                                                                        class="form-control @error('Unit') is-invalid @enderror"
-                                                                        value="{{ old('Unit', $item->Unit) }}"
-                                                                        placeholder="e.g., pcs, kg, box" required>
-                                                                    @error('Unit')
-                                                                        <div class="invalid-feedback">{{ $message }}</div>
-                                                                    @enderror
-                                                                </div>
-                                                            </div>
-                                                            <div class="modal-footer">
-                                                                <button type="button" class="btn btn-secondary"
-                                                                    data-dismiss="modal">
-                                                                    <i class="fas fa-times"></i> Cancel
-                                                                </button>
-                                                                <button type="submit" class="btn text-white"
-                                                                    style="background: #87A96B; border-color: #87A96B;">
-                                                                    <i class="fas fa-save"></i> Update Resource
-                                                                </button>
-                                                            </div>
-                                                        </form>
-                                                    </div>
-                                                </div>
-                                            </div>
                                         @endforeach
                                     </tbody>
                                 </table>

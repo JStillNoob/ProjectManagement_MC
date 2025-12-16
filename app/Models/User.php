@@ -87,6 +87,61 @@ class User extends Authenticatable
         return $this->userType();
     }
 
+    // Helper method to safely get UserTypeID as integer
+    public function getUserTypeId()
+    {
+        $value = $this->attributes['UserTypeID'] ?? null;
+        return $value !== null ? (int) $value : null;
+    }
+
+    // Accessor to ensure UserTypeID always returns integer
+    public function getUserTypeIDAttribute($value)
+    {
+        // Always get the raw attribute value directly from attributes array
+        // This bypasses any relationship loading issues
+        if (isset($this->attributes['UserTypeID'])) {
+            $rawValue = $this->attributes['UserTypeID'];
+        } else {
+            $rawValue = $value;
+        }
+        
+        // If value is null, return null
+        if ($rawValue === null) {
+            return null;
+        }
+        
+        // If it's an object (shouldn't happen, but handle it), try to extract ID
+        if (is_object($rawValue)) {
+            // If it's a UserType model instance
+            if ($rawValue instanceof \App\Models\UserType) {
+                return (int) $rawValue->UserTypeID;
+            }
+            // Try to get UserTypeID property
+            if (isset($rawValue->UserTypeID)) {
+                return (int) $rawValue->UserTypeID;
+            }
+            // Try getAttribute method
+            if (method_exists($rawValue, 'getAttribute')) {
+                $id = $rawValue->getAttribute('UserTypeID');
+                if ($id !== null) {
+                    return (int) $id;
+                }
+            }
+            // Last resort: try to access as array
+            if (is_array($rawValue) && isset($rawValue['UserTypeID'])) {
+                return (int) $rawValue['UserTypeID'];
+            }
+        }
+        
+        // Cast to integer if numeric
+        if (is_numeric($rawValue)) {
+            return (int) $rawValue;
+        }
+        
+        // Fallback: return as-is (shouldn't reach here normally)
+        return $rawValue;
+    }
+
     public function scopeVoters($query)
     {
         return $query->whereHas('userType', function($q) {

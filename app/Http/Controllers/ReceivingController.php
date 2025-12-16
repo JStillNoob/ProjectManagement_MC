@@ -113,6 +113,10 @@ class ReceivingController extends Controller
                 'ReceivedBy' => $employeeId,
             ]);
 
+            // Track conditions to determine overall condition
+            $hasGoodItems = false;
+            $hasDamagedItems = false;
+
             // Create receiving record items
             foreach ($validated['items'] as $itemData) {
                 // Validate quantity doesn't exceed remaining
@@ -134,6 +138,13 @@ class ReceivingController extends Controller
                         'Quantity damaged cannot exceed quantity received');
                 }
 
+                // Track conditions
+                if ($itemData['Condition'] == 'Good') {
+                    $hasGoodItems = true;
+                } else {
+                    $hasDamagedItems = true;
+                }
+
                 ReceivingRecordItem::create([
                     'ReceivingID' => $receivingRecord->ReceivingID,
                     'POItemID' => $itemData['POItemID'],
@@ -143,6 +154,19 @@ class ReceivingController extends Controller
                     'ItemRemarks' => $itemData['ItemRemarks'] ?? null,
                 ]);
             }
+
+            // Determine overall condition based on items
+            $overallCondition = 'Good';
+            if ($hasDamagedItems && $hasGoodItems) {
+                $overallCondition = 'Mixed';
+            } elseif ($hasDamagedItems) {
+                $overallCondition = 'Damaged';
+            }
+
+            // Update receiving record with overall condition
+            $receivingRecord->update([
+                'OverallCondition' => $overallCondition
+            ]);
 
             // Update inventory and PO status
             $receivingRecord->updateInventory();

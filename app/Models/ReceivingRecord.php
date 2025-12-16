@@ -72,6 +72,18 @@ class ReceivingRecord extends Model
                 // Update PO item received quantity
                 $poItem->QuantityReceived += $item->QuantityReceived;
                 $poItem->save();
+                
+                // Update NeedsPurchase flag in related inventory request items
+                // Find all inventory request items for this inventory item
+                $requestItems = \App\Models\InventoryRequestItem::where('InventoryItemID', $inventoryItem->ItemID)->get();
+                foreach ($requestItems as $requestItem) {
+                    // Recalculate if purchase is still needed based on current stock
+                    $needsPurchase = $requestItem->QuantityRequested > $inventoryItem->AvailableQuantity;
+                    if ($requestItem->NeedsPurchase != $needsPurchase) {
+                        $requestItem->NeedsPurchase = $needsPurchase;
+                        $requestItem->save();
+                    }
+                }
             }
         }
         

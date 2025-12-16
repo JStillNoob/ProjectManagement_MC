@@ -2,36 +2,22 @@
 
 @section('content')
     <div class="container-fluid">
-        @if(session('success'))
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        @endif
-
-        @if(session('error'))
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                {{ session('error') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        @endif
-
         <div class="row">
             <div class="col-12">
                 <div class="card">
                     <!-- Card Header -->
                     <div class="card-header" style="background-color: #87A96B;">
                         <div class="row align-items-center">
-                            <div class="col-auto mb-3 mb-md-0">
-                                <a href="{{ route('issuance.index') }}" class="btn btn-secondary">
-                                    <i class="fas fa-arrow-left me-1"></i> Back to List
-                                </a>
-                            </div>
                             <div class="col">
                                 <h3 class="card-title mb-0" style="color: white; font-size: 1.25rem;">
                                     <i class="fas fa-truck-loading me-2"></i>
                                     Issuance {{ $issuance->IssuanceNumber }}
                                 </h3>
+                            </div>
+                            <div class="col-auto">
+                                <a href="{{ route('issuance.index') }}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left me-1"></i> Back to List
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -225,16 +211,6 @@
                     <!-- Card Footer -->
                     <div class="card-footer bg-white d-flex justify-content-end">
                         @if(Auth::user()->UserTypeID != 3)
-                            @if($issuance->Status == 'Issued' || $issuance->Status == null)
-                                <form action="{{ route('issuance.destroy', $issuance->IssuanceID) }}" method="POST"
-                                    onsubmit="return confirm('Are you sure you want to delete this issuance record? This will reverse all inventory changes.');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-danger mr-2">
-                                        <i class="fas fa-trash me-1"></i> Delete Issuance
-                                    </button>
-                                </form>
-                            @endif
                             <a href="{{ route('issuance.pdf', $issuance->IssuanceID) }}" class="btn text-white"
                                 style="background-color: #87A96B;" target="_blank">
                                 <i class="fas fa-file-pdf me-1"></i> Print PDF

@@ -194,23 +194,6 @@
 
 @section('content')
 <div class="container-fluid">
-    @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="fas fa-check-circle mr-2"></i>{{ session('success') }}
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-    @endif
-
-    @if(session('error'))
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="fas fa-exclamation-triangle mr-2"></i>{{ session('error') }}
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-    @endif
 
     <!-- Date and Filter Section -->
 
@@ -379,7 +362,7 @@
                                 @forelse($attendanceRecords ?? [] as $record)
                                 <tr>
                                     <td>{{ $record->employee->full_name ?? 'N/A' }}</td>
-                                    <td>{{ $record->employee->position ?? 'N/A' }}</td>
+                                    <td>{{ $record->employee->position->PositionName ?? 'N/A' }}</td>
                                             <td>{{ $record->formatted_time_in ?? 'N/A' }}</td>
                                             <td>{{ $record->formatted_time_out ?? 'N/A' }}</td>
                                     <td>
@@ -446,7 +429,7 @@
                         @forelse($absentEmployees ?? [] as $employee)
                         <tr>
                             <td>{{ $employee->full_name ?? 'N/A' }}</td>
-                            <td>{{ $employee->position ?? 'N/A' }}</td>
+                            <td>{{ $employee->position->PositionName ?? 'N/A' }}</td>
                             <td>
                                         <button type="button" id="view-history-{{ $employee->id }}"
                                             name="view_history_{{ $employee->id }}" class="btn btn-info btn-sm view-history"
@@ -488,7 +471,7 @@
                         <select class="form-control" id="employee_select" name="employee_id" required>
                             <option value="">-- Select Employee --</option>
                             @foreach($allEmployees ?? [] as $employee)
-                                    <option value="{{ $employee->id }}">{{ $employee->full_name }} ({{ $employee->position }})
+                                    <option value="{{ $employee->id }}">{{ $employee->full_name }} ({{ $employee->position->PositionName ?? 'N/A' }})
                                     </option>
                             @endforeach
                         </select>

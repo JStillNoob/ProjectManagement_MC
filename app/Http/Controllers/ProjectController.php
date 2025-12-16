@@ -177,7 +177,7 @@ class ProjectController extends Controller
             }
         }
         
-        // Reload milestones to get updated statuses
+        // Reload milestones to get updated statuses, ordered by 'order' field
         $project->load([
             'status', 
             'client', 
@@ -396,13 +396,18 @@ class ProjectController extends Controller
         }
 
         // Create project employee assignment
-        ProjectEmployee::create([
+        $projectEmployee = ProjectEmployee::create([
             'ProjectID' => $project->ProjectID,
             'EmployeeID' => $request->EmployeeID,
             'role_in_project' => null, // No additional role needed
             'assigned_date' => now(),
             'status' => 'Active'
         ]);
+        
+        // Ensure QR code is generated
+        if (!$projectEmployee->qr_code) {
+            $projectEmployee->generateQrCode();
+        }
 
         return redirect()->back()
             ->with('success', 'Employee assigned to project successfully.');
@@ -450,13 +455,19 @@ class ProjectController extends Controller
             }
 
             // Create project employee assignment
-            ProjectEmployee::create([
+            $projectEmployee = ProjectEmployee::create([
                 'ProjectID' => $project->ProjectID,
                 'EmployeeID' => $employeeId,
                 'role_in_project' => null, // No additional role needed
                 'assigned_date' => now(),
                 'status' => 'Active'
             ]);
+            
+            // Ensure QR code is generated
+            if (!$projectEmployee->qr_code) {
+                $projectEmployee->generateQrCode();
+            }
+            
             $assignedCount++;
         }
 
@@ -662,6 +673,9 @@ class ProjectController extends Controller
         $project->EndDate = $endDate;
         $project->NTPAttachment = $attachmentPath;
         
+        // Recalculate milestone target dates now that StartDate is set
+        $this->recalculateAllMilestoneDates($project);
+        
         // Set status based on whether start date is in the future
         $today = now()->toDateString();
         $startDateStr = $ntpStartDate->toDateString();
@@ -678,9 +692,33 @@ class ProjectController extends Controller
         }
         
         $project->save();
-
+        
+        // Recalculate milestone target dates now that StartDate is set
+        $this->recalculateAllMilestoneDates($project);
+        
         return redirect()->route('ProdHead.projects')
-            ->with('success', 'Project approved with NTP. Start date and end date have been set.');
+            ->with('success', 'Project approved with NTP. Start date and end date have been set. Milestone target dates have been calculated.');
+    }
+
+    /**
+     * Recalculate target dates for all milestones
+     */
+    private function recalculateAllMilestoneDates(Project $project)
+    {
+        if (!$project->StartDate) {
+            return;
+        }
+
+        $milestones = $project->milestones()->orderBy('order')->orderBy('milestone_id')->get();
+        $cumulativeDays = 0;
+
+        foreach ($milestones as $ms) {
+            if ($ms->EstimatedDays) {
+                $cumulativeDays += $ms->EstimatedDays;
+                $ms->target_date = \Carbon\Carbon::parse($project->StartDate)->addDays($cumulativeDays);
+                $ms->saveQuietly();
+            }
+        }
     }
 
     /**
@@ -696,6 +734,55 @@ class ProjectController extends Controller
         $filename = 'Project_' . str_replace(' ', '_', $project->ProjectName) . '_QR_Codes.pdf';
         
         return $pdf->download($filename);
+    }
+
+    /**
+     * Upload attachment for a project.
+     */
+    public function uploadAttachment(Request $request, Project $project)
+    {
+        $request->validate([
+            'attachment_type' => 'required|in:blueprint,floorplan,ntp',
+            'attachment' => 'required|image|mimes:jpeg,png,jpg,gif|max:5120', // 5MB max
+        ]);
+
+        $type = $request->input('attachment_type');
+        $file = $request->file('attachment');
+        
+        // Generate filename
+        $filename = 'project_' . $project->ProjectID . '_' . $type . '_' . time() . '.' . $file->getClientOriginalExtension();
+        
+        // Store file
+        $path = $file->storeAs('project_attachments', $filename, 'public');
+
+        // Update project based on type
+        switch ($type) {
+            case 'blueprint':
+                // Delete old file if exists
+                if ($project->BlueprintPath) {
+                    Storage::disk('public')->delete($project->BlueprintPath);
+                }
+                $project->BlueprintPath = $path;
+                break;
+            case 'floorplan':
+                // Delete old file if exists
+                if ($project->FloorPlanPath) {
+                    Storage::disk('public')->delete($project->FloorPlanPath);
+                }
+                $project->FloorPlanPath = $path;
+                break;
+            case 'ntp':
+                // Delete old file if exists
+                if ($project->NTPAttachment) {
+                    Storage::disk('public')->delete($project->NTPAttachment);
+                }
+                $project->NTPAttachment = $path;
+                break;
+        }
+
+        $project->save();
+
+        return redirect()->back()->with('success', ucfirst($type) . ' uploaded successfully.');
     }
 
 }

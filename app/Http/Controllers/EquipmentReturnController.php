@@ -10,6 +10,7 @@ use App\Models\Employee;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 
 class EquipmentReturnController extends Controller
 {
@@ -45,7 +46,7 @@ class EquipmentReturnController extends Controller
         // Calculate summary statistics
         $totalAssigned = ProjectMilestoneEquipment::whereNotNull('DateAssigned')->count();
         $returnedGood = ProjectMilestoneEquipment::whereNotNull('DateReturned')
-            ->where('Status', 'Good')
+            ->where('Status', 'Returned')
             ->count();
         $returnedDamaged = ProjectMilestoneEquipment::whereNotNull('DateReturned')
             ->where('Status', 'Damaged')
@@ -84,15 +85,37 @@ class EquipmentReturnController extends Controller
 
     public function store(Request $request, $id)
     {
-        $validated = $request->validate([
+        // Normalize empty strings to null for incident fields when status is Returned
+        $requestData = $request->all();
+        if ($request->Status === 'Returned') {
+            if (empty($requestData['incident_type']) || $requestData['incident_type'] === '') {
+                $requestData['incident_type'] = null;
+            }
+            if (empty($requestData['incident_description']) || $requestData['incident_description'] === '') {
+                $requestData['incident_description'] = null;
+            }
+            $request->merge($requestData);
+        }
+
+        $rules = [
             'DateReturned' => 'required|date',
-            'Status' => 'required|in:Good,Damaged,Missing',
+            'Status' => 'required|in:Returned,Damaged,Missing',
             'ReturnRemarks' => 'nullable|string',
             'damage_photo' => 'nullable|file|mimes:jpg,jpeg,png|max:5120',
-            'incident_type' => 'required_if:Status,Damaged,Missing|in:Damage,Loss,Theft,Malfunction',
-            'incident_description' => 'required_if:Status,Damaged,Missing|string',
             'estimated_cost' => 'nullable|numeric|min:0',
-        ]);
+        ];
+
+        // Only require incident fields if status is Damaged or Missing
+        if (in_array($request->Status, ['Damaged', 'Missing'])) {
+            $rules['incident_type'] = 'required|in:Damage,Loss,Theft,Malfunction';
+            $rules['incident_description'] = 'required|string';
+        } else {
+            // When status is Returned, these fields are not required and can be null
+            $rules['incident_type'] = 'nullable';
+            $rules['incident_description'] = 'nullable';
+        }
+
+        $validated = $request->validate($rules);
 
         $assignment = ProjectMilestoneEquipment::findOrFail($id);
 
@@ -108,12 +131,13 @@ class EquipmentReturnController extends Controller
                 'DateReturned' => $validated['DateReturned'],
                 'Status' => $validated['Status'],
                 'ReturnRemarks' => $validated['ReturnRemarks'],
+                'ReturnedBy' => Auth::user()->EmployeeID,
             ]);
 
             // Update inventory based on condition
             $inventoryItem = $assignment->inventoryItem;
             
-            if ($validated['Status'] == 'Good') {
+            if ($validated['Status'] == 'Returned') {
                 // Return to available stock
                 $inventoryItem->CommittedQuantity -= $assignment->QuantityAssigned;
                 $inventoryItem->AvailableQuantity += $assignment->QuantityAssigned;

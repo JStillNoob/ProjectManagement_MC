@@ -15,15 +15,6 @@
                         </h3>
                     </div>
                     <div class="card-body">
-                        @if(session('success'))
-                            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                                {{ session('success') }}
-                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
-                                </button>
-                            </div>
-                        @endif
-
                         <!-- Table -->
                         <div class="table-responsive">
                             <table id="equipmentTable" class="table table-bordered table-striped">
@@ -58,13 +49,14 @@
                                             </td>
                                             <td>
                                                 @if($assignment->DateReturned)
-                                                    @if($assignment->ReturnCondition == 'Good')
-                                                        <span class="badge bg-success">Returned (Good)</span>
-                                                    @elseif($assignment->ReturnCondition == 'Damaged')
+                                                    @if($assignment->Status == 'Returned')
+                                                        <span class="badge bg-success">Returned</span>
+                                                    @elseif($assignment->Status == 'Damaged')
                                                         <span class="badge bg-warning">Returned (Damaged)</span>
+                                                    @elseif($assignment->Status == 'Missing')
+                                                        <span class="badge bg-danger">Returned (Missing)</span>
                                                     @else
-                                                        <span class="badge bg-danger">Returned
-                                                            ({{ $assignment->ReturnCondition }})</span>
+                                                        <span class="badge bg-success">Returned</span>
                                                     @endif
                                                 @else
                                                     <span class="badge bg-info">In Use</span>

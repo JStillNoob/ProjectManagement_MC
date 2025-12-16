@@ -199,9 +199,17 @@
 
 <body>
     <header>
-        <div class="company-header">
-            <img src="{{ public_path('images/pdf.header.png') }}" alt="Macua Construction"
-                style="width: 100%; max-width: 100%; height: auto;">
+        <div class="company-header" style="text-align: center; margin-bottom: 20px;">
+            <div style="font-size: 24pt; font-weight: bold; color: #009900; text-transform: uppercase; margin: 0; line-height: 1; text-shadow: 1px 1px 1px #ccc;">
+                MACUA CONSTRUCTION
+            </div>
+            <div style="font-size: 9pt; font-weight: bold; color: #000; text-transform: uppercase; margin: 5px 0 0 0; letter-spacing: 1px;">
+                General Contractor – Mechanical Works - Fabrication
+            </div>
+            <div style="font-size: 8pt; color: #000; font-weight: bold; margin-top: 2px;">
+                PCAB LICENSE NO. 41994
+            </div>
+            <div style="background-color: #009900; height: 4px; width: 100%; margin-top: 10px; margin-bottom: 20px;"></div>
         </div>
     </header>
 
@@ -211,7 +219,7 @@
     </footer>
 
     <main>
-        <div class="header-title">PURCHASE ORDER</div>
+        <div class="header-title" style="color: #0056b3; font-size: 16pt; font-weight: bold; text-transform: uppercase;">PURCHASE ORDER</div>
         <div class="info-section">
             <div class="info-row">
                 <div class="info-column">

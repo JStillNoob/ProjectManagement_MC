@@ -16,6 +16,7 @@ class EmployeeController extends Controller
     public function index()
     {
         // Show all employees including archived
+        // Eager load relationships needed for status calculation
         $employees = Employee::with(['position', 'employeeStatus'])->orderBy('created_at', 'desc')->get();
         return view('Admin.employees.index', compact('employees'));
     }

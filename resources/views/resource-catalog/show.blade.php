@@ -63,89 +63,10 @@
                                         {{ $resourceCatalog->Unit }}</h4>
                                 </div>
                                 <small class="text-muted">Across all inventory items</small>
-
-                                <hr class="my-3">
-
-                                <h5 class="text-primary mb-3"><i class="fas fa-cog mr-2"></i>Actions</h5>
-                                <div class="d-grid gap-2">
-                                    <button type="button" class="btn btn-warning" data-toggle="modal"
-                                        data-target="#editResourceModal">
-                                        <i class="fas fa-edit"></i> Edit Resource
-                                    </button>
-                                    <button type="button" class="btn btn-danger" onclick="confirmDelete()">
-                                        <i class="fas fa-trash"></i> Delete Resource
-                                    </button>
-                                </div>
-                                <form id="delete-form"
-                                    action="{{ route('resource-catalog.destroy', $resourceCatalog->ResourceCatalogID) }}"
-                                    method="POST" style="display: none;">
-                                    @csrf
-                                    @method('DELETE')
-                                </form>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Edit Resource Modal -->
-    <div class="modal fade" id="editResourceModal" tabindex="-1" role="dialog" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content">
-                <div class="modal-header text-white" style="background: #87A96B;">
-                    <h5 class="modal-title">
-                        <i class="fas fa-edit mr-2"></i>Edit Resource
-                    </h5>
-                    <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <form action="{{ route('resource-catalog.update', $resourceCatalog->ResourceCatalogID) }}" method="POST">
-                    @csrf
-                    @method('PUT')
-                    <div class="modal-body">
-                        <div class="form-group">
-                            <label>Item Name <span class="text-danger">*</span></label>
-                            <input type="text" name="ItemName" class="form-control @error('ItemName') is-invalid @enderror"
-                                value="{{ old('ItemName', $resourceCatalog->ItemName) }}" placeholder="Enter item name"
-                                required>
-                            @error('ItemName')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <div class="form-group">
-                            <label>Type <span class="text-danger">*</span></label>
-                            <select name="Type" class="form-control @error('Type') is-invalid @enderror" required>
-                                <option value="">Select Type</option>
-                                <option value="Equipment" {{ old('Type', $resourceCatalog->Type) == 'Equipment' ? 'selected' : '' }}>Equipment</option>
-                                <option value="Materials" {{ old('Type', $resourceCatalog->Type) == 'Materials' ? 'selected' : '' }}>Materials</option>
-                            </select>
-                            @error('Type')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <div class="form-group">
-                            <label>Unit <span class="text-danger">*</span></label>
-                            <input type="text" name="Unit" class="form-control @error('Unit') is-invalid @enderror"
-                                value="{{ old('Unit', $resourceCatalog->Unit) }}" placeholder="e.g., pcs, kg, box" required>
-                            @error('Unit')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">
-                            <i class="fas fa-times"></i> Cancel
-                        </button>
-                        <button type="submit" class="btn text-white" style="background: #87A96B; border-color: #87A96B;">
-                            <i class="fas fa-save"></i> Update Resource
-                        </button>
-                    </div>
-                </form>
             </div>
         </div>
     </div>
@@ -199,20 +120,4 @@
         </style>
     @endpush
 
-    @push('scripts')
-        <script>
-            function confirmDelete() {
-                if (confirm('Are you sure you want to delete this resource? This action cannot be undone.')) {
-                    document.getElementById('delete-form').submit();
-                }
-            }
-
-            // Auto-open modal if there are validation errors
-            @if($errors->any())
-                $(document).ready(function () {
-                    $('#editResourceModal').modal('show');
-                });
-            @endif
-        </script>
-    @endpush
 @endsection

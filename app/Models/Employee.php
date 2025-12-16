@@ -158,6 +158,51 @@ class Employee extends Model
         return $this->employee_status_id === EmployeeStatus::ARCHIVED;
     }
 
+    // Check if employee has active project assignments (assigned to ongoing projects)
+    public function hasActiveProjectAssignments()
+    {
+        return \App\Models\ProjectEmployee::where('EmployeeID', $this->id)
+            ->where('status', 'Active')
+            ->whereNull('end_date')
+            ->whereHas('project', function($query) {
+                $query->whereHas('status', function($statusQuery) {
+                    $statusQuery->whereIn('StatusName', ['On Going', 'Pre-Construction']);
+                });
+            })
+            ->exists();
+    }
+
+    // Get effective status (considers project assignments)
+    public function getEffectiveStatusAttribute()
+    {
+        // If archived, always show archived
+        if ($this->isArchived()) {
+            return 'Archived';
+        }
+
+        // If has active project assignments, show as Active
+        if ($this->hasActiveProjectAssignments()) {
+            return 'Active';
+        }
+
+        // Otherwise, use the stored status
+        return $this->status_name;
+    }
+
+    // Get effective status color
+    public function getEffectiveStatusColorAttribute()
+    {
+        if ($this->isArchived()) {
+            return '#dc3545'; // Red for Archived
+        }
+
+        if ($this->hasActiveProjectAssignments()) {
+            return '#28a745'; // Green for Active
+        }
+
+        return '#6c757d'; // Gray for Inactive
+    }
+
     // Accessor for position (returns Position object, not string)
     public function getPositionAttribute()
     {

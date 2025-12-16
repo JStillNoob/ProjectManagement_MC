@@ -1,7 +1,7 @@
 <div class="modal fade" id="submitMilestoneModal{{ $milestone->milestone_id }}" tabindex="-1" role="dialog" aria-labelledby="submitMilestoneModalLabel{{ $milestone->milestone_id }}" aria-hidden="true">
-    <div class="modal-dialog" role="document">
+    <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
+            <div class="modal-header text-white" style="background: #87A96B;">
                 <h5 class="modal-title" id="submitMilestoneModalLabel{{ $milestone->milestone_id }}">
                     <i class="fas fa-paper-plane mr-2"></i>Submit Milestone Completion
                 </h5>
@@ -9,11 +9,15 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form action="{{ route('projects.milestones.submit', ['project' => $project->ProjectID, 'milestone' => $milestone->milestone_id]) }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('projects.milestones.submit', ['project' => $project->ProjectID, 'milestone' => $milestone->milestone_id]) }}" method="POST" enctype="multipart/form-data" class="swal-confirm-form" 
+                data-title="Submit Milestone Completion" 
+                data-text="Are you sure you want to submit this milestone for approval? Make sure you have uploaded all required proof images." 
+                data-icon="question" 
+                data-confirm-text="Yes, Submit">
                 @csrf
                 <div class="modal-body">
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle mr-1"></i> You are submitting completion for <strong>{{ $milestone->milestone_name }}</strong>. Please upload proof images.
+                    <div class="alert alert-info border-left-info">
+                        <i class="fas fa-info-circle mr-2"></i> You are submitting completion for <strong>{{ $milestone->milestone_name }}</strong>. Please upload proof images.
                     </div>
                     
                     <div class="form-group">
@@ -29,9 +33,11 @@
                         <!-- Image previews will appear here -->
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">
+                <div class="modal-footer bg-white">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times mr-1"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn text-white" style="background: #87A96B; border-color: #87A96B;">
                         <i class="fas fa-check mr-1"></i> Submit for Approval
                     </button>
                 </div>

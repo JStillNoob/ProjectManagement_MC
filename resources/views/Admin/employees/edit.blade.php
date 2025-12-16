@@ -178,8 +178,8 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="PositionID">Position <span class="text-danger">*</span></label>
-                                    <select class="form-control @error('PositionID') is-invalid @enderror" 
-                                            id="PositionID" name="PositionID" required>
+                                    <select class="form-control select2 @error('PositionID') is-invalid @enderror" 
+                                            id="PositionID" name="PositionID" required style="width: 100%;">
                                         <option value="">Select Position</option>
                                         @foreach(\App\Models\Position::all() as $position)
                                             <option value="{{ $position->PositionID }}" 
@@ -223,6 +223,15 @@
 
     @push('scripts')
         <script>
+            $(document).ready(function() {
+                // Initialize Select2 for Position dropdown
+                $('#PositionID').select2({
+                    theme: 'bootstrap4',
+                    placeholder: 'Select Position',
+                    allowClear: true
+                });
+            });
+
             // File input label update
             document.getElementById('image').addEventListener('change', function (e) {
                 var fileName = e.target.files[0] ? e.target.files[0].name : 'Choose new file';

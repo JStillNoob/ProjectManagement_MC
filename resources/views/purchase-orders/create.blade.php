@@ -11,12 +11,6 @@
         </div>
     @endif
 
-    @if($inventoryRequest)
-        <div class="alert alert-info">
-            <strong>Creating from Inventory Request:</strong> {{ $inventoryRequest->RequestID }} - 
-            {{ $inventoryRequest->Reason }}
-        </div>
-    @endif
 
     <form action="{{ route('purchase-orders.store') }}" method="POST" id="poForm">
         @csrf
@@ -55,10 +49,14 @@
 
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h6 class="mb-0"><i class="fas fa-list"></i> Product List</h6>
-                            <button type="button" class="btn btn-sm" id="addItemBtn"
-                                    style="background-color: #87A96B !important; border: 2px solid #87A96B !important; color: white !important;">
-                                <i class="fas fa-plus"></i> Add Item
-                            </button>
+                            @if(!$requestItems || count($requestItems) == 0)
+                                <button type="button" class="btn btn-sm" id="addItemBtn"
+                                        style="background-color: #87A96B !important; border: 2px solid #87A96B !important; color: white !important;">
+                                    <i class="fas fa-plus"></i> Add Item
+                                </button>
+                            @else
+                                <small class="text-muted"><i class="fas fa-info-circle"></i> Items from inventory request (cannot be removed)</small>
+                            @endif
                         </div>
 
                         <div class="table-responsive">
@@ -72,50 +70,60 @@
                                     </tr>
                                 </thead>
                                 <tbody id="itemsTableBody">
-                                    @if($requestItems && count($requestItems) > 0)
+                                    @if($requestItems && $requestItems->isNotEmpty())
                                         @foreach($requestItems as $index => $requestItem)
-                                            <tr class="item-row">
-                                                <td>
-                                                    <select name="items[{{ $index }}][ItemID]" class="form-select item-select" required>
-                                                        <option value="">-- Select Item --</option>
-                                                        @foreach($resourceCatalog as $item)
-                                                            <option value="{{ $item->ResourceCatalogID }}" 
-                                                                    data-unit="{{ $item->Unit }}"
-                                                                    data-type="{{ $item->Type }}"
-                                                                    {{ $requestItem->InventoryItemID == $item->ResourceCatalogID ? 'selected' : '' }}>
-                                                                {{ $item->ItemName }}
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
-                                                </td>
-                                                <td class="align-middle item-type">{{ $resourceCatalog->find($requestItem->InventoryItemID)->Type ?? '-' }}</td>
-                                                <td class="align-middle">
-                                                    <div class="d-flex align-items-stretch justify-content-center gap-3">
-                                                        <input type="number" name="items[{{ $index }}][QuantityOrdered]" 
-                                                               class="form-control text-center quantity-input" 
-                                                               style="width: 100px; font-weight: 500; height: 38px;"
-                                                               value="{{ $requestItem->QuantityRequested - $requestItem->CommittedQuantity }}" 
-                                                               min="1" required>
-                                                        <span class="badge item-unit d-flex align-items-center" style="background-color: #87A96B; color: white; padding: 0 16px; font-size: 0.875rem; height: 38px;">{{ $resourceCatalog->find($requestItem->InventoryItemID)->Unit ?? 'N/A' }}</span>
-                                                    </div>
-                                                </td>
-                                                <td class="text-center align-middle">
-                                                    <button type="button" class="btn btn-sm btn-link text-danger remove-item p-0">
-                                                        <i class="fas fa-times"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
+                                            @php
+                                                // Use item() method (same as show page uses)
+                                                $inventoryItem = $requestItem->item;
+                                                $resourceCatalog = $inventoryItem ? $inventoryItem->resourceCatalog : null;
+                                                
+                                                // Calculate quantity needed
+                                                $committed = $requestItem->CommittedQuantity ?? 0;
+                                                $requested = $requestItem->QuantityRequested ?? 0;
+                                                $quantityNeeded = max(0, $requested - $committed);
+                                                
+                                                // If quantity needed is 0 or less, use the full requested quantity
+                                                if ($quantityNeeded <= 0) {
+                                                    $quantityNeeded = $requested;
+                                                }
+                                            @endphp
+                                            @if($inventoryItem && $resourceCatalog && isset($resourceCatalog->ResourceCatalogID))
+                                                <tr class="item-row" data-required="true">
+                                                    <td>
+                                                        <input type="hidden" name="items[{{ $index }}][ItemID]" value="{{ $inventoryItem->ItemID }}">
+                                                        <input type="text" class="form-control" value="{{ $resourceCatalog->ItemName ?? 'N/A' }}" readonly style="background-color: #f8f9fa;">
+                                                    </td>
+                                                    <td class="align-middle item-type">{{ $resourceCatalog->Type ?? '-' }}</td>
+                                                    <td class="align-middle">
+                                                        <div class="d-flex align-items-stretch justify-content-center gap-3">
+                                                            <input type="number" name="items[{{ $index }}][QuantityOrdered]" 
+                                                                   class="form-control text-center quantity-input" 
+                                                                   style="width: 100px; font-weight: 500; height: 38px;"
+                                                                   value="{{ $quantityNeeded }}" 
+                                                                   min="1" required>
+                                                            <span class="badge item-unit d-flex align-items-center" style="background-color: #87A96B; color: white; padding: 0 16px; font-size: 0.875rem; height: 38px;">{{ $resourceCatalog->Unit ?? 'N/A' }}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td class="text-center align-middle">
+                                                        <span class="text-muted small">Required</span>
+                                                    </td>
+                                                </tr>
+                                            @endif
                                         @endforeach
                                     @else
                                         <tr class="item-row">
                                             <td>
                                                 <select name="items[0][ItemID]" class="form-select item-select" required>
                                                     <option value="">-- Select Item --</option>
-                                                    @foreach($resourceCatalog as $item)
-                                                        <option value="{{ $item->ResourceCatalogID }}" data-unit="{{ $item->Unit }}" data-type="{{ $item->Type }}">
-                                                            {{ $item->ItemName }}
-                                                        </option>
-                                                    @endforeach
+                                                    @if($resourceCatalog && is_iterable($resourceCatalog))
+                                                        @foreach($resourceCatalog as $item)
+                                                            @if($item && is_object($item) && isset($item->ResourceCatalogID))
+                                                                <option value="{{ $item->ResourceCatalogID }}" data-unit="{{ $item->Unit ?? '' }}" data-type="{{ $item->Type ?? '' }}">
+                                                                    {{ $item->ItemName ?? 'N/A' }}
+                                                                </option>
+                                                            @endif
+                                                        @endforeach
+                                                    @endif
                                                 </select>
                                             </td>
                                             <td class="align-middle item-type">-</td>
@@ -187,10 +195,15 @@ document.getElementById('addItemBtn').addEventListener('click', function() {
     updateSummary();
 });
 
-// Remove item row
+// Remove item row (only for non-required items)
 document.addEventListener('click', function(e) {
     if (e.target.closest('.remove-item')) {
         const row = e.target.closest('.item-row');
+        // Check if this is a required item from inventory request
+        if (row && row.dataset.required === 'true') {
+            alert('This item is required from the inventory request and cannot be removed.');
+            return;
+        }
         if (document.querySelectorAll('.item-row').length > 1) {
             row.remove();
             updateSummary();
@@ -231,11 +244,15 @@ function createItemRow(index) {
             <td>
                 <select name="items[\${index}][ItemID]" class="form-select item-select" required>
                     <option value="">-- Select Item --</option>
-                    @foreach($resourceCatalog as $item)
-                        <option value="{{ $item->ResourceCatalogID }}" data-unit="{{ $item->Unit }}" data-type="{{ $item->Type }}">
-                            {{ $item->ItemName }}
-                        </option>
-                    @endforeach
+                    @if($resourceCatalog && is_iterable($resourceCatalog))
+                        @foreach($resourceCatalog as $item)
+                            @if($item && is_object($item) && isset($item->ResourceCatalogID))
+                                <option value="{{ $item->ResourceCatalogID }}" data-unit="{{ $item->Unit ?? '' }}" data-type="{{ $item->Type ?? '' }}">
+                                    {{ $item->ItemName ?? 'N/A' }}
+                                </option>
+                            @endif
+                        @endforeach
+                    @endif
                 </select>
             </td>
             <td class="align-middle item-type">-</td>
