@@ -151,7 +151,7 @@ class Project extends Model
     // Relationship with milestones
     public function milestones()
     {
-        return $this->hasMany(ProjectMilestone::class, 'project_id', 'ProjectID')->orderBy('order')->orderBy('target_date');
+        return $this->hasMany(ProjectMilestone::class, 'project_id', 'ProjectID')->orderBy('order', 'asc')->orderBy('milestone_id', 'asc');
     }
 
     // Accessor for full address

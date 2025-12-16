@@ -137,9 +137,21 @@
                 });
 
                 // Show success message
-                alert('Supplier applied to all items!');
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: 'Supplier applied to all items!',
+                    confirmButtonColor: '#87A96B',
+                    timer: 2000,
+                    timerProgressBar: true
+                });
             } else {
-                alert('Please select a supplier first.');
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'No Supplier Selected',
+                    text: 'Please select a supplier first.',
+                    confirmButtonColor: '#87A96B'
+                });
             }
         }
 
@@ -167,7 +179,12 @@
             });
 
             if (hasError) {
-                alert('Please select a supplier for all items!');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Missing Suppliers',
+                    text: 'Please select a supplier for all items!',
+                    confirmButtonColor: '#87A96B'
+                });
                 return;
             }
 

@@ -28,7 +28,13 @@
                                     <tr>
                                         <th width="35%">Request ID</th>
                                         <td class="font-weight-bold">
-                                            REQ-{{ str_pad($inventoryRequest->RequestID, 4, '0', STR_PAD_LEFT) }}</td>
+                                            REQ-{{ str_pad($inventoryRequest->RequestID, 4, '0', STR_PAD_LEFT) }}
+                                            @if($inventoryRequest->IsAdditionalRequest)
+                                                <span class="badge badge-warning ml-2" title="Additional Request - Items beyond required quantities">
+                                                    <i class="fas fa-plus-circle mr-1"></i>Additional Request
+                                                </span>
+                                            @endif
+                                        </td>
                                     </tr>
                                     <tr>
                                         <th>Request Date</th>
@@ -45,7 +51,7 @@
                                     </tr>
                                     <tr>
                                         <th>Requested By</th>
-                                        <td>{{ $inventoryRequest->employee->full_name }}</td>
+                                        <td>{{ optional($inventoryRequest->employee)->full_name ?? 'N/A' }}</td>
                                     </tr>
                                     <tr>
                                         <th>Request Type</th>
@@ -174,12 +180,23 @@
                                         <tbody>
                                             @foreach($inventoryRequest->items as $line)
                                                 @php
-                                                    $needsPurchase = $line->NeedsPurchase;
                                                     $itemType = $line->item->resourceCatalog->Type ?? 'Materials';
                                                     $stockInfo = $stockVerification[$line->InventoryItemID] ?? null;
+                                                    
+                                                    // For approved/ordered/fulfilled requests, don't show "Low Stock"
+                                                    // because stock has been reserved or the request is being processed
+                                                    $isProcessed = in_array($inventoryRequest->Status, ['Approved', 'Ordered', 'Fulfilled']);
+                                                    
+                                                    if ($isProcessed) {
+                                                        // Don't show "Low Stock" for processed requests
+                                                        $needsPurchase = false;
+                                                    } else {
+                                                        // For pending requests, check if stock is sufficient
+                                                        $needsPurchase = $stockInfo ? !$stockInfo['sufficient'] : $line->NeedsPurchase;
+                                                    }
                                                 @endphp
                                                 <tr
-                                                    class="{{ $needsPurchase || ($stockInfo && !$stockInfo['sufficient']) ? 'table-warning' : '' }}">
+                                                    class="{{ $needsPurchase ? 'table-warning' : '' }}">
                                                     <td>{{ $line->item->resourceCatalog->ItemName ?? 'Item removed' }}</td>
                                                     <td class="text-center">
                                                         <span
@@ -206,7 +223,7 @@
                                                         </td>
                                                     @endif
                                                     <td class="text-center">
-                                                        @if($needsPurchase || ($stockInfo && !$stockInfo['sufficient']))
+                                                        @if($needsPurchase)
                                                             <span class="badge badge-warning text-dark">
                                                                 <i class="fas fa-exclamation-triangle mr-1"></i>Low Stock
                                                             </span>
@@ -269,11 +286,14 @@
                                             </a>
                                         @endif
                                         <form action="{{ route('inventory.requests.approve', $inventoryRequest) }}" method="POST"
-                                            class="d-inline mr-2 mb-2">
+                                            class="d-inline mr-2 mb-2 swal-confirm-form"
+                                            data-title="Approve Request?"
+                                            data-text="Approve this request? Stock will be reserved."
+                                            data-icon="question"
+                                            data-confirm-text="Yes, Approve">
                                             @csrf
                                             <button type="submit" class="btn text-white"
-                                                style="background-color: #87A96B; border-color: #87A96B;"
-                                                onclick="return confirm('Approve this request? Stock will be reserved.')">
+                                                style="background-color: #87A96B; border-color: #87A96B;">
                                                 <i class="fas fa-check mr-1"></i> Approve Request
                                             </button>
                                         </form>
@@ -289,11 +309,14 @@
                                                 <i class="fas fa-file-invoice-dollar mr-1"></i> View Purchase Order
                                             </a>
                                             <form action="{{ route('inventory.requests.approve', $inventoryRequest) }}" method="POST"
-                                                class="d-inline mr-2 mb-2">
+                                                class="d-inline mr-2 mb-2 swal-confirm-form"
+                                                data-title="Approve Request?"
+                                                data-text="Approve this request? Stock will be reserved."
+                                                data-icon="question"
+                                                data-confirm-text="Yes, Approve">
                                                 @csrf
                                                 <button type="submit" class="btn text-white"
-                                                    style="background-color: #87A96B; border-color: #87A96B;"
-                                                    onclick="return confirm('Approve this request? Stock will be reserved.')">
+                                                    style="background-color: #87A96B; border-color: #87A96B;">
                                                     <i class="fas fa-check mr-1"></i> Approve Request
                                                 </button>
                                             </form>
@@ -313,11 +336,14 @@
                                         @endif
                                     @else
                                         <form action="{{ route('inventory.requests.approve', $inventoryRequest) }}" method="POST"
-                                            class="d-inline mr-2 mb-2">
+                                            class="d-inline mr-2 mb-2 swal-confirm-form"
+                                            data-title="Approve Request?"
+                                            data-text="Approve this request? Stock will be reserved."
+                                            data-icon="question"
+                                            data-confirm-text="Yes, Approve">
                                             @csrf
                                             <button type="submit" class="btn text-white"
-                                                style="background-color: #87A96B; border-color: #87A96B;"
-                                                onclick="return confirm('Approve this request? Stock will be reserved.')">
+                                                style="background-color: #87A96B; border-color: #87A96B;">
                                                 <i class="fas fa-check mr-1"></i> Approve Request
                                             </button>
                                         </form>

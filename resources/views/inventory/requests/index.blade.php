@@ -51,10 +51,17 @@
                                     <tbody>
                                         @foreach($requests as $request)
                                             <tr>
-                                                <td><strong>#{{ $request->RequestID }}</strong></td>
+                                                <td>
+                                                    <strong>#{{ $request->RequestID }}</strong>
+                                                    @if($request->IsAdditionalRequest)
+                                                        <span class="badge badge-warning ml-2" title="Additional Request - Items beyond required quantities">
+                                                            <i class="fas fa-plus-circle mr-1"></i>Additional
+                                                        </span>
+                                                    @endif
+                                                </td>
                                                 <td>{{ $request->project->ProjectName ?? 'N/A' }}</td>
                                                 <td>{{ $request->milestone->milestone_name ?? 'N/A' }}</td>
-                                                <td>{{ $request->employee->FirstName ?? '' }} {{ $request->employee->LastName ?? '' }}</td>
+                                                <td>{{ optional($request->employee)->full_name ?? 'N/A' }}</td>
                                                 <td><span class="badge badge-info">{{ $request->RequestType }}</span></td>
                                                 <td>
                                                     @if($request->Status === 'Pending')
@@ -78,7 +85,11 @@
                                                         </a>
                                                         @if(in_array($request->Status, ['Pending', 'Pending - To Order']))
                                                             <form action="{{ route('inventory.requests.approve', $request) }}" method="POST"
-                                                                style="display:inline;" onsubmit="return confirm('Are you sure you want to approve this request?');">
+                                                                style="display:inline;" class="swal-confirm-form"
+                                                                data-title="Approve Request?"
+                                                                data-text="This will approve the inventory request and allow creating a purchase order."
+                                                                data-icon="question"
+                                                                data-confirm-text="Yes, Approve">
                                                                 @csrf
                                                                 <button type="submit" class="btn btn-outline-success" title="Approve">
                                                                     <i class="fas fa-check"></i>
@@ -253,14 +264,21 @@
             <div class="col-12">
                 <div class="card border-0 shadow-sm">
                     <div class="card-header bg-white border-0">
-                        <div class="d-flex align-items-center">
-                            <div class="bg-success rounded-circle d-flex align-items-center justify-content-center mr-2"
-                                style="width: 36px; height: 36px; background-color: #87A96B !important;">
-                                <i class="fas fa-boxes text-white"></i>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-success rounded-circle d-flex align-items-center justify-content-center mr-2"
+                                    style="width: 36px; height: 36px; background-color: #87A96B !important;">
+                                    <i class="fas fa-boxes text-white"></i>
+                                </div>
+                                <div>
+                                    <h5 class="mb-0 font-weight-bold text-dark">Milestone Required Items</h5>
+                                    <small class="text-muted">Grouped by milestone</small>
+                                </div>
                             </div>
                             <div>
-                                <h5 class="mb-0 font-weight-bold text-dark">Milestone Required Items</h5>
-                                <small class="text-muted">Grouped by milestone</small>
+                                <a href="{{ route('inventory.requests.history') }}" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-history mr-1"></i> Request History
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -275,10 +293,17 @@
                                     $statusClass = $status === 'completed' ? 'success' : ($status === 'in progress' ? 'warning' : 'secondary');
                                 @endphp
                                 <div class="col-md-6 col-lg-4 mb-3">
-                                    <div class="card h-100 border-0 shadow-sm milestone-req-card"
-                                        style="border-radius: 14px; cursor: pointer;"
+                                    @php
+                                        $milestoneStatus = strtolower($milestone->status ?? 'Pending');
+                                        $isPending = $milestoneStatus === 'pending';
+                                        $isPendingApproval = $milestone->SubmissionStatus === 'Pending Approval';
+                                        $canRequest = !$isPending && !$isPendingApproval; // Foreman cannot request if status is Pending or if milestone is waiting for approval
+                                    @endphp
+                                    <div class="card h-100 border-0 shadow-sm {{ $canRequest ? 'milestone-req-card' : '' }}"
+                                        style="border-radius: 14px; {{ $canRequest ? 'cursor: pointer;' : 'cursor: not-allowed; opacity: 0.7;' }}"
                                         data-milestone-id="{{ $milestone->milestone_id }}"
-                                        data-milestone-name="{{ $milestone->milestone_name }}">
+                                        data-milestone-name="{{ $milestone->milestone_name }}"
+                                        data-can-request="{{ $canRequest ? 'true' : 'false' }}">
                                         <div class="card-body pb-3">
                                             <div class="d-flex justify-content-between align-items-start mb-2">
                                                 @php $targetDate = $milestone->formatted_target_date ?? null; @endphp
@@ -323,8 +348,14 @@
                                                     <span class="badge badge-light text-muted">Required Items</span>
                                                     <span class="text-muted small">{{ $items->count() }} total</span>
                                                 </div>
-                                                <span class="text-muted small"><i class="fas fa-edit mr-1"></i>Click card to
-                                                    edit</span>
+                                                @if($canRequest)
+                                                    <span class="text-muted small"><i class="fas fa-edit mr-1"></i>Click card to
+                                                        edit</span>
+                                                @elseif($isPendingApproval)
+                                                    <span class="text-warning small"><i class="fas fa-clock mr-1"></i>Waiting for Approval</span>
+                                                @else
+                                                    <span class="text-danger small"><i class="fas fa-lock mr-1"></i>Cannot request - Status is Pending</span>
+                                                @endif
                                             </div>
                                         </div>
                                     </div>
@@ -367,24 +398,36 @@
                             <div class="form-row align-items-end">
                                 <div class="col-md-6 mb-2">
                                     <label class="small">Item</label>
-                                    <select class="form-control" id="additionalItemSelect">
+                                    <select class="form-control select2" id="additionalItemSelect" style="width: 100%;">
                                         <option value="">Select Item</option>
                                         @foreach($materials as $item)
-                                            <option value="{{ $item['id'] }}" data-unit="{{ $item['unit'] }}"
+                                            <option value="{{ $item['id'] ?? ('rc_' . ($item['resource_catalog_id'] ?? '')) }}" 
+                                                data-resource-catalog-id="{{ $item['resource_catalog_id'] ?? '' }}"
+                                                data-inventory-item-id="{{ $item['id'] ?? '' }}"
+                                                data-unit="{{ $item['unit'] }}"
                                                 data-type="Materials">{{ $item['name'] }} ({{ $item['unit'] }})</option>
                                         @endforeach
                                         @foreach($equipment as $item)
-                                            <option value="{{ $item['id'] }}" data-unit="{{ $item['unit'] }}"
+                                            <option value="{{ $item['id'] ?? ('rc_' . ($item['resource_catalog_id'] ?? '')) }}" 
+                                                data-resource-catalog-id="{{ $item['resource_catalog_id'] ?? '' }}"
+                                                data-inventory-item-id="{{ $item['id'] ?? '' }}"
+                                                data-unit="{{ $item['unit'] }}"
                                                 data-type="Equipment">{{ $item['name'] }} ({{ $item['unit'] }})</option>
                                         @endforeach
                                     </select>
                                 </div>
-                                <div class="col-md-3 mb-2">
+                                <div class="col-md-4 mb-2">
                                     <label class="small">Quantity</label>
-                                    <input type="number" class="form-control" id="additionalItemQty" min="0.01" step="0.01"
-                                        placeholder="0.00">
+                                    <div class="input-group">
+                                        <input type="number" class="form-control" id="additionalItemQty" min="0.01" step="0.01"
+                                            placeholder="0.00">
+                                        <div class="input-group-append">
+                                            <span class="input-group-text" id="additionalItemUnit">—</span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="col-md-3 mb-2">
+                                <div class="col-md-2 mb-2">
+                                    <label class="small d-block">&nbsp;</label>
                                     <button type="button" class="btn btn-outline-success btn-block"
                                         id="addAdditionalItemBtn">
                                         <i class="fas fa-plus-circle mr-1"></i>Add Item
@@ -767,6 +810,12 @@
 
                 // Open modal and populate with milestone data
                 $('.milestone-req-card').on('click', function () {
+                    // Check if request is allowed for this milestone
+                    const canRequest = $(this).data('can-request');
+                    if (canRequest === false || canRequest === 'false') {
+                        toastr.error('You cannot request items for this milestone. Either the milestone status is "Pending" or it is waiting for approval.');
+                        return false;
+                    }
                     const milestoneId = $(this).data('milestone-id');
                     const milestoneName = $(this).data('milestone-name');
                     const projectId = @json($foremanProject ? $foremanProject->ProjectID : null);
@@ -815,6 +864,47 @@
                     $('#milestoneRequestModal').modal('show');
                 });
 
+                // Initialize Select2 when modal is shown
+                $('#milestoneRequestModal').on('shown.bs.modal', function () {
+                    // Initialize Select2 for additional items dropdown if not already initialized
+                    if (!$('#additionalItemSelect').hasClass('select2-hidden-accessible')) {
+                        $('#additionalItemSelect').select2({
+                            theme: 'bootstrap4',
+                            placeholder: 'Select Item',
+                            allowClear: true,
+                            width: '100%'
+                        });
+                    }
+                });
+
+                // Update unit display when item is selected (works with both regular select and Select2)
+                $(document).on('change', '#additionalItemSelect', function () {
+                    const selected = $(this).find('option:selected');
+                    const unit = selected.data('unit') || '—';
+                    $('#additionalItemUnit').text(unit);
+                });
+                
+                // Also handle Select2 specific event
+                $(document).on('select2:select', '#additionalItemSelect', function (e) {
+                    const selected = $(e.params.data.element);
+                    const unit = selected.data('unit') || '—';
+                    $('#additionalItemUnit').text(unit);
+                });
+
+                // Clean up Select2 when modal is closed
+                $('#milestoneRequestModal').on('hidden.bs.modal', function () {
+                    // Destroy Select2 if it exists
+                    if ($('#additionalItemSelect').hasClass('select2-hidden-accessible')) {
+                        $('#additionalItemSelect').select2('destroy');
+                    }
+                    // Reset form
+                    $('#milestoneRequestForm')[0].reset();
+                    $('#additionalItemUnit').text('—'); // Reset unit display
+                    additionalItems = [];
+                    requiredItems = [];
+                    renderAdditionalItems();
+                });
+
                 function renderRequiredItems() {
                     let html = '';
                     if (!requiredItems.length) {
@@ -853,16 +943,31 @@
                 $('#addAdditionalItemBtn').on('click', function () {
                     const select = $('#additionalItemSelect');
                     const selected = select.find('option:selected');
-                    const id = select.val();
+                    const inventoryItemId = selected.data('inventory-item-id') || null;
+                    const resourceCatalogId = selected.data('resource-catalog-id') || null;
                     const name = selected.text();
                     const type = selected.data('type');
                     const unit = selected.data('unit');
                     const qty = parseFloat($('#additionalItemQty').val());
-                    if (!id || !qty || qty <= 0) return;
-                    additionalItems.push({ id, name, type, unit, quantity: qty });
+                    
+                    // Must have either inventory_item_id or resource_catalog_id, and valid quantity
+                    if ((!inventoryItemId && !resourceCatalogId) || !qty || qty <= 0) {
+                        alert('Please select an item and enter a valid quantity.');
+                        return;
+                    }
+                    
+                    additionalItems.push({ 
+                        id: inventoryItemId, 
+                        resource_catalog_id: resourceCatalogId,
+                        name, 
+                        type, 
+                        unit, 
+                        quantity: qty 
+                    });
                     renderAdditionalItems();
                     $('#additionalItemQty').val('');
-                    select.val('');
+                    select.val('').trigger('change'); // Trigger change for Select2
+                    $('#additionalItemUnit').text('—'); // Reset unit display
                 });
 
                 $('#additionalItemsTable').on('click', 'button[data-idx]', function () {
@@ -896,9 +1001,10 @@
                     // Add additional items (optional)
                     additionalItems.forEach(item => {
                         itemsData.push({
-                            inventory_item_id: item.id,
+                            inventory_item_id: item.id || null,
+                            resource_catalog_id: item.resource_catalog_id || null,
                             quantity: item.quantity,
-                            needs_purchase: 0
+                            needs_purchase: item.id ? 0 : 1  // Mark as needs_purchase if no inventory item exists
                         });
                     });
                     

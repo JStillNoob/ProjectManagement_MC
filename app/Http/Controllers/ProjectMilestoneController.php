@@ -238,6 +238,18 @@ class ProjectMilestoneController extends Controller
             $requiredItems = json_decode($request->required_items, true);
             if (is_array($requiredItems)) {
                 foreach ($requiredItems as $item) {
+                    // Validate that item_id is not null or empty
+                    if (empty($item['item_id']) || $item['item_id'] === null) {
+                        if ($request->ajax()) {
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'Invalid item data: item_id is required. Please remove and re-add the item.',
+                            ], 422);
+                        }
+                        return redirect()->back()
+                            ->with('error', 'Invalid item data: item_id is required. Please remove and re-add the item.');
+                    }
+                    
                     \App\Models\MilestoneRequiredItem::create([
                         'milestone_id' => $milestone->milestone_id,
                         'item_id' => $item['item_id'],
@@ -247,8 +259,11 @@ class ProjectMilestoneController extends Controller
             }
         }
 
-        // If EstimatedDays changed, recalculate target dates (only if project has StartDate)
-        if ($oldEstimatedDays != $request->EstimatedDays && $project->StartDate) {
+        // If EstimatedDays or order changed, recalculate target dates (only if project has StartDate)
+        $oldOrder = $milestone->order ?? $milestone->milestone_id;
+        $newOrder = $request->order ?? $oldOrder;
+        
+        if ($project->StartDate && ($oldEstimatedDays != $request->EstimatedDays || $oldOrder != $newOrder)) {
             $this->recalculateAllMilestoneDates($project);
         }
 
@@ -479,5 +494,21 @@ class ProjectMilestoneController extends Controller
             // Only return items that still need to be issued
             return $item['remaining_quantity'] > 0;
         })->values());
+    }
+
+    /**
+     * Get proof images for a milestone
+     */
+    public function getProofImages(ProjectMilestone $milestone)
+    {
+        $proofImages = $milestone->proofImages()->orderBy('created_at', 'desc')->get();
+        
+        return response()->json($proofImages->map(function($image) {
+            return [
+                'id' => $image->id,
+                'image_path' => $image->image_path,
+                'created_at' => $image->created_at ? $image->created_at->format('M d, Y H:i') : null,
+            ];
+        }));
     }
 }

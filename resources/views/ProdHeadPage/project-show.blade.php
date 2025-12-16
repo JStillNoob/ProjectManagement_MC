@@ -8,26 +8,6 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-body">
-                    @if(session('success'))
-                        <div class="alert alert-success alert-dismissible fade show" role="alert">
-                            <i class="fas fa-check-circle mr-2"></i>
-                            {{ session('success') }}
-                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
-                        </div>
-                    @endif
-
-                    @if(session('error'))
-                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                            <i class="fas fa-exclamation-circle mr-2"></i>
-                            {{ session('error') }}
-                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
-                        </div>
-                    @endif
-
                     @php
                         $milestoneCounts = $project->milestone_counts;
                     @endphp
@@ -231,7 +211,7 @@
                                 </div>
                                 <div class="card-body" style="padding: 0.75rem;">
                                     @if($project->projectEmployees && $project->projectEmployees->count() > 0)
-                                        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                        <div class="table-responsive">
                                             <table class="table table-sm mb-0">
                                                 <tbody>
                                                     @foreach($project->projectEmployees as $assignment)
@@ -265,7 +245,7 @@
                                                                             class="btn btn-sm btn-outline-info mr-1"
                                                                             style="padding: 0.15rem 0.35rem; font-size: 0.7rem;"
                                                                             data-toggle="modal"
-                                                                            data-target="#showQrModal{{ $assignment->id }}">
+                                                                            data-target="#showQrModal{{ $assignment->ProjectEmployeeID }}">
                                                                             <i class="fas fa-qrcode"></i>
                                                                         </button>
                                                                         <form
@@ -420,16 +400,19 @@
                                                     $remaining = $items->count() - $displayItems->count();
                                                     $status = strtolower($milestone->status ?? 'Pending');
                                                     $statusClass = $status === 'completed' ? 'success' : ($status === 'in progress' ? 'warning' : 'secondary');
+                                                    $isCompleted = $status === 'completed';
                                                 @endphp
                                                 <div class="col-md-6 col-lg-4 mb-3">
-                                                    <div class="card h-100 border-0 shadow-sm edit-milestone-card milestone-req-card"
-                                                        style="border-radius: 14px; cursor: pointer;"
+                                                    <div class="card h-100 border-0 shadow-sm edit-milestone-card milestone-req-card {{ $isCompleted ? 'milestone-completed' : '' }}"
+                                                        style="border-radius: 14px; {{ $isCompleted ? 'cursor: not-allowed; opacity: 0.7;' : 'cursor: pointer;' }}"
                                                         data-milestone-id="{{ $milestone->milestone_id }}"
                                                         data-milestone-name="{{ $milestone->milestone_name }}"
                                                         data-description="{{ $milestone->description }}"
                                                         data-estimated-days="{{ $milestone->EstimatedDays }}"
                                                         data-actual-date="{{ optional($milestone->target_date)->toDateString() ?? '' }}"
-                                                        data-status="{{ $milestone->status }}">
+                                                        data-status="{{ $milestone->status }}"
+                                                        data-submission-status="{{ $milestone->SubmissionStatus ?? 'Not Submitted' }}"
+                                                        data-is-completed="{{ $isCompleted ? 'true' : 'false' }}">
                                                         <div class="card-body pb-3">
                                                             <div class="d-flex justify-content-between align-items-start mb-2">
                                                                 @php $targetDate = $milestone->formatted_target_date ?? null; @endphp
@@ -478,8 +461,12 @@
                                                                     <span class="text-muted small">{{ $items->count() }}
                                                                         total</span>
                                                                 </div>
-                                                                <span class="text-muted small"><i class="fas fa-edit mr-1"></i>Click
-                                                                    card to edit</span>
+                                                                @if($isCompleted)
+                                                                    <span class="text-muted small"><i class="fas fa-lock mr-1"></i>Completed - Cannot edit</span>
+                                                                @else
+                                                                    <span class="text-muted small"><i class="fas fa-edit mr-1"></i>Click
+                                                                        card to edit</span>
+                                                                @endif
                                                             </div>
                                                         </div>
                                                     </div>
@@ -510,9 +497,15 @@
                             <div class="card shadow-sm" style="border-radius: 8px;">
                                 <div class="card-header"
                                     style="background-color: #f8f9fa; border-bottom: 1px solid #dee2e6;">
-                                    <h5 class="mb-0 font-weight-bold">
-                                        <i class="fas fa-images mr-2 text-primary"></i>Project Attachments
-                                    </h5>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0 font-weight-bold">
+                                            <i class="fas fa-images mr-2 text-primary"></i>Project Attachments
+                                        </h5>
+                                        <button type="button" class="btn btn-success btn-sm" data-toggle="modal" data-target="#uploadAttachmentModal"
+                                            style="background-color: #87A96B !important; border-color: #87A96B !important;">
+                                            <i class="fas fa-upload mr-1"></i> Upload Image
+                                        </button>
+                                    </div>
                                 </div>
                                 <div class="card-body">
                                     @php
@@ -871,12 +864,12 @@
     <!-- QR Code Modals for each employee -->
     @if($project->projectEmployees && $project->projectEmployees->count() > 0)
         @foreach($project->projectEmployees as $assignment)
-            <div class="modal fade" id="showQrModal{{ $assignment->id }}" tabindex="-1" role="dialog"
-                aria-labelledby="showQrModalLabel{{ $assignment->id }}" aria-hidden="true">
+            <div class="modal fade" id="showQrModal{{ $assignment->ProjectEmployeeID }}" tabindex="-1" role="dialog"
+                aria-labelledby="showQrModalLabel{{ $assignment->ProjectEmployeeID }}" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered" role="document">
                     <div class="modal-content">
                         <div class="modal-header text-white" style="background: #87A96B;">
-                            <h5 class="modal-title" id="showQrModalLabel{{ $assignment->id }}">
+                            <h5 class="modal-title" id="showQrModalLabel{{ $assignment->ProjectEmployeeID }}">
                                 <i class="fas fa-qrcode mr-2"></i>Employee QR Code
                             </h5>
                             <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
@@ -1070,9 +1063,9 @@
         aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
-                <div class="modal-header text-white" style="background: #7fb069;">
+                <div class="modal-header text-white" style="background: #87A96B;">
                     <h5 class="modal-title" id="editMilestoneModalLabel">
-                        <i class="fas fa-edit mr-2"></i>Edit Milestone
+                        <i class="fas fa-edit mr-2"></i><span id="modalTitleText">Edit Milestone</span>
                     </h5>
                     <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
@@ -1132,63 +1125,107 @@
                             </div>
                         </div>
 
-                        <hr class="my-4">
+                        <hr class="my-4" id="itemsSectionDivider" style="display: none;">
 
-                        <h6 class="text-primary mb-3"><i class="fas fa-boxes mr-2"></i>Required Items</h6>
-                        <small class="form-text text-muted mb-3">
-                            Update materials/equipment for this milestone. These will be the only items available when
-                            foreman requests materials.
-                        </small>
+                        <!-- Required Items Section (hidden when pending approval) -->
+                        <div id="requiredItemsSection">
+                            <h6 class="text-primary mb-3"><i class="fas fa-boxes mr-2"></i>Required Items</h6>
+                            <small class="form-text text-muted mb-3">
+                                Update materials/equipment for this milestone. These will be the only items available when
+                                foreman requests materials.
+                            </small>
 
-                        <div class="row mb-2">
-                            <div class="col-md-6">
-                                <select class="form-control form-control-sm" id="editSelectItemForMilestone">
-                                    <option value="">Select Item...</option>
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="input-group input-group-sm">
-                                    <input type="number" class="form-control form-control-sm" id="editItemEstimatedQty"
-                                        placeholder="Estimated Qty" min="0.01" step="0.01">
-                                    <div class="input-group-append">
-                                        <span class="input-group-text" id="editItemEstimatedUnit">Unit</span>
+                            <div class="row mb-2">
+                                <div class="col-md-6">
+                                    <select class="form-control form-control-sm" id="editSelectItemForMilestone">
+                                        <option value="">Select Item...</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="input-group input-group-sm">
+                                        <input type="number" class="form-control form-control-sm" id="editItemEstimatedQty"
+                                            placeholder="Estimated Qty" min="0.01" step="0.01">
+                                        <div class="input-group-append">
+                                            <span class="input-group-text" id="editItemEstimatedUnit">Unit</span>
+                                        </div>
                                     </div>
                                 </div>
+                                <div class="col-md-3">
+                                    <button type="button" class="btn btn-sm btn-success w-100" id="editAddItemToMilestone">
+                                        <i class="fas fa-plus"></i> Add
+                                    </button>
+                                </div>
                             </div>
-                            <div class="col-md-3">
-                                <button type="button" class="btn btn-sm btn-success w-100" id="editAddItemToMilestone">
-                                    <i class="fas fa-plus"></i> Add
-                                </button>
-                            </div>
-                        </div>
 
-                        <div class="table-responsive">
-                            <table class="table table-sm table-bordered">
-                                <thead class="thead-light">
-                                    <tr>
-                                        <th>Item</th>
-                                        <th>Type</th>
-                                        <th width="150">Est. Quantity</th>
-                                        <th width="80">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="editMilestoneItemsList">
-                                    <tr class="text-center text-muted">
-                                        <td colspan="4">No items added yet</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-bordered">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th>Item</th>
+                                            <th>Type</th>
+                                            <th width="150">Est. Quantity</th>
+                                            <th width="80">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="editMilestoneItemsList">
+                                        <tr class="text-center text-muted">
+                                            <td colspan="4">No items added yet</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <input type="hidden" name="required_items" id="editRequiredItemsData">
                         </div>
-                        <input type="hidden" name="required_items" id="editRequiredItemsData">
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-dismiss="modal">
-                            <i class="fas fa-times"></i> Cancel
-                        </button>
-                        <button type="submit" class="btn text-white" style="background: #7fb069; border-color: #7fb069;">
-                            <i class="fas fa-save"></i> Update Milestone
-                        </button>
+                    <div class="modal-footer bg-white">
+                        <!-- Edit Mode Buttons -->
+                        <div id="editModeButtons">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                            <button type="submit" form="editMilestoneForm" class="btn text-white" style="background: #87A96B; border-color: #87A96B;">
+                                <i class="fas fa-save"></i> Update Milestone
+                            </button>
+                        </div>
+                        
+                        <!-- Approval Mode Buttons -->
+                        <div id="approvalModeButtons" style="display: none;">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                                <i class="fas fa-times"></i> Close
+                            </button>
+                            <button type="submit" form="approveMilestoneForm" class="btn text-white swal-confirm-form" 
+                                style="background: #28a745; border-color: #28a745;"
+                                data-title="Approve Milestone Completion"
+                                data-text="Are you sure you want to approve this milestone completion?"
+                                data-icon="question"
+                                data-confirm-text="Yes, Approve">
+                                <i class="fas fa-check"></i> Approve
+                            </button>
+                            <button type="submit" form="rejectMilestoneForm" class="btn btn-danger swal-confirm-form"
+                                data-title="Reject Milestone Submission"
+                                data-text="Are you sure you want to reject this milestone submission? The foreman will need to resubmit."
+                                data-icon="warning"
+                                data-confirm-text="Yes, Reject">
+                                <i class="fas fa-times"></i> Reject
+                            </button>
+                        </div>
                     </div>
+                </form>
+                
+                <!-- Approval forms (outside edit form to prevent validation conflicts) -->
+                <form id="approveMilestoneForm" method="POST" class="d-none swal-confirm-form"
+                    data-title="Approve Milestone Completion"
+                    data-text="Are you sure you want to approve this milestone completion?"
+                    data-icon="question"
+                    data-confirm-text="Yes, Approve">
+                    @csrf
+                </form>
+                <form id="rejectMilestoneForm" method="POST" class="d-none swal-confirm-form"
+                    data-title="Reject Milestone Submission"
+                    data-text="Are you sure you want to reject this milestone submission? The foreman will need to resubmit."
+                    data-icon="warning"
+                    data-confirm-text="Yes, Reject">
+                    @csrf
                 </form>
             </div>
         </div>
@@ -1484,6 +1521,10 @@
             }
 
             /* Milestone required items cards */
+            .milestone-completed {
+                pointer-events: none;
+            }
+            
             .milestone-req-card {
                 transition: all 0.15s ease-in-out !important;
                 border: 1px solid #f2f2f2 !important;
@@ -1496,7 +1537,8 @@
             }
 
             .milestone-req-status.badge-success {
-                background-color: #87A96B;
+                background-color: #28a745 !important;
+                color: white !important;
             }
 
             .milestone-req-status.badge-warning {
@@ -1732,15 +1774,28 @@
 
             // Handle edit milestone card click
             $(document).on('click', '.edit-milestone-card', function () {
+                // Check if milestone is completed - disable editing
+                const isCompleted = $(this).data('is-completed') === true || $(this).data('is-completed') === 'true';
+                if (isCompleted) {
+                    toastr.info('This milestone is completed and cannot be edited.');
+                    return false;
+                }
+                
                 const milestoneId = $(this).data('milestone-id');
                 const milestoneName = $(this).data('milestone-name');
                 const description = $(this).data('description') || '';
                 const estimatedDays = $(this).data('estimated-days') || '';
                 const actualDate = $(this).data('actual-date') || '';
                 const status = $(this).data('status');
+                const submissionStatus = $(this).data('submission-status') || 'Not Submitted';
+                const isPendingApproval = submissionStatus === 'Pending Approval';
 
                 // Set form action
                 $('#editMilestoneForm').attr('action', '{{ route("projects.milestones.update", [$project, ":milestone"]) }}'.replace(':milestone', milestoneId));
+                
+                // Set approve/reject form actions
+                $('#approveMilestoneForm').attr('action', '{{ route("projects.milestones.approve", [$project, ":milestone"]) }}'.replace(':milestone', milestoneId));
+                $('#rejectMilestoneForm').attr('action', '{{ route("projects.milestones.reject", [$project, ":milestone"]) }}'.replace(':milestone', milestoneId));
 
                 // Populate hidden form fields
                 $('#edit_milestone_name').val(milestoneName);
@@ -1748,6 +1803,7 @@
                 $('#edit_EstimatedDays').val(estimatedDays);
                 $('#edit_actual_date').val(actualDate);
                 $('#edit_status').val(status);
+                $('#edit_submission_status').val(submissionStatus);
 
                 // Populate display fields (read-only)
                 $('#edit_milestone_name_display').val(milestoneName);
@@ -1756,34 +1812,88 @@
                 $('#edit_actual_date_display').val(actualDate || 'N/A');
                 $('#edit_status_display').val(status);
 
-                // Load required items for this milestone
-                editMilestoneRequiredItems = [];
-                $('#editRequiredItemsData').val('');
-                $('#editMilestoneItemsList').html('<tr class="text-center text-muted"><td colspan="4">Loading...</td></tr>');
-                fetch(`/api/milestones/${milestoneId}/required-items`)
-                    .then(res => res.json())
-                    .then(data => {
-                        editMilestoneRequiredItems = (data || []).map(item => ({
-                            item_id: item.ItemID,
-                            item_name: item.ItemName,
-                            item_type: item.ItemType,
-                            estimated_quantity: item.estimated_quantity,
-                            unit: item.Unit
-                        }));
-                        renderEditMilestoneItems();
-                    })
-                    .catch(() => {
-                        $('#editMilestoneItemsList').html('<tr class="text-center text-muted"><td colspan="4">Unable to load items.</td></tr>');
-                    });
-
-                // Calculate and show target date preview
-                @if($project->StartDate)
-                    updateEditTargetDatePreview();
-                @endif
+                // Show/hide sections based on approval status
+                if (isPendingApproval) {
+                    // Show approval mode
+                    $('#modalTitleText').html('<i class="fas fa-check-circle mr-2"></i>Review Milestone Submission');
+                    $('#approvalSection').show();
+                    $('#requiredItemsSection').hide();
+                    $('#itemsSectionDivider').hide();
+                    $('#editModeButtons').hide();
+                    $('#approvalModeButtons').show();
+                    
+                    // Load proof images
+                    loadProofImages(milestoneId);
+                } else {
+                    // Show edit mode
+                    $('#modalTitleText').html('<i class="fas fa-edit mr-2"></i>Edit Milestone');
+                    $('#approvalSection').hide();
+                    $('#requiredItemsSection').show();
+                    $('#itemsSectionDivider').show();
+                    $('#editModeButtons').show();
+                    $('#approvalModeButtons').hide();
+                    
+                    // Load required items for this milestone
+                    editMilestoneRequiredItems = [];
+                    $('#editRequiredItemsData').val('');
+                    $('#editMilestoneItemsList').html('<tr class="text-center text-muted"><td colspan="4">Loading...</td></tr>');
+                    fetch(`/api/milestones/${milestoneId}/required-items`)
+                        .then(res => res.json())
+                        .then(data => {
+                            editMilestoneRequiredItems = (data || []).map(item => ({
+                                item_id: item.ItemID,
+                                item_name: item.ItemName,
+                                item_type: item.ItemType,
+                                estimated_quantity: item.estimated_quantity,
+                                unit: item.Unit
+                            }));
+                            renderEditMilestoneItems();
+                        })
+                        .catch(() => {
+                            $('#editMilestoneItemsList').html('<tr class="text-center text-muted"><td colspan="4">Unable to load items.</td></tr>');
+                        });
+                    
+                    // Calculate and show target date preview
+                    @if($project->StartDate)
+                        updateEditTargetDatePreview();
+                    @endif
+                }
 
                 // Show modal
                 $('#editMilestoneModal').modal('show');
             });
+
+            // Function to load proof images
+            function loadProofImages(milestoneId) {
+                const container = $('#proofImagesContainer');
+                container.html('<div class="col-12 text-center"><i class="fas fa-spinner fa-spin"></i> Loading proof images...</div>');
+                
+                fetch(`/api/milestones/${milestoneId}/proof-images`)
+                    .then(res => res.json())
+                    .then(data => {
+                        container.empty();
+                        if (data && data.length > 0) {
+                            data.forEach(image => {
+                                const imageUrl = image.image_path.startsWith('http') ? image.image_path : `/storage/${image.image_path}`;
+                                container.append(`
+                                    <div class="col-6 col-md-4 col-lg-3 mb-3">
+                                        <a href="${imageUrl}" data-lightbox="milestone-proofs-${milestoneId}" data-title="Proof Image - ${image.created_at || ''}">
+                                            <div class="card h-100 border-0 shadow-sm" style="overflow: hidden; border-radius: 8px;">
+                                                <img src="${imageUrl}" class="card-img-top" alt="Proof Image" style="height: 120px; object-fit: cover; transition: transform 0.3s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                                            </div>
+                                        </a>
+                                    </div>
+                                `);
+                            });
+                        } else {
+                            container.html('<div class="col-12 text-muted text-center">No proof images available.</div>');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading proof images:', error);
+                        container.html('<div class="col-12 text-danger text-center">Error loading proof images.</div>');
+                    });
+            }
 
             // Update target date preview in edit modal
             function updateEditTargetDatePreview() {
@@ -2009,17 +2119,28 @@
             // Add item to milestone
             $('#btnAddItemToMilestone').click(function () {
                 const select = $selectMilestoneItem;
+                // Get value from Select2 properly
+                const itemId = select.select2('val') || select.val();
                 const selectedOption = select.find(':selected');
-                const itemId = select.val();
                 const qty = parseFloat($qtyInput.val());
 
-                if (!itemId) {
+                if (!itemId || itemId === '' || itemId === null) {
                     alert('Please select an item');
                     return;
                 }
 
-                if (!qty || qty <= 0) {
+                if (!qty || qty <= 0 || isNaN(qty)) {
                     alert('Please enter a valid quantity');
+                    return;
+                }
+
+                // Get item data from the selected option
+                const itemName = selectedOption.data('name') || selectedOption.text().split(' (')[0];
+                const itemType = selectedOption.data('type') || '';
+                const itemUnit = selectedOption.data('unit') || 'unit';
+
+                if (!itemName) {
+                    alert('Unable to get item information. Please try selecting the item again.');
                     return;
                 }
 
@@ -2031,17 +2152,17 @@
 
                 const itemData = {
                     item_id: itemId,
-                    item_name: selectedOption.data('name'),
-                    item_type: selectedOption.data('type'),
+                    item_name: itemName,
+                    item_type: itemType,
                     estimated_quantity: qty,
-                    unit: selectedOption.data('unit')
+                    unit: itemUnit
                 };
 
                 milestoneRequiredItems.push(itemData);
                 renderMilestoneItems();
 
-                // Reset
-                select.val('');
+                // Properly reset Select2
+                select.val(null).trigger('change');
                 $qtyInput.val('');
                 $unitLabel.text('Unit');
             });
@@ -2116,17 +2237,28 @@
 
             $('#editAddItemToMilestone').click(function () {
                 const select = $('#editSelectItemForMilestone');
+                // Get value from Select2 properly
+                const itemId = select.select2('val') || select.val();
                 const selectedOption = select.find(':selected');
-                const itemId = select.val();
                 const qty = parseFloat($('#editItemEstimatedQty').val());
 
-                if (!itemId) {
+                if (!itemId || itemId === '' || itemId === null) {
                     alert('Please select an item');
                     return;
                 }
 
-                if (!qty || qty <= 0) {
+                if (!qty || qty <= 0 || isNaN(qty)) {
                     alert('Please enter a valid quantity');
+                    return;
+                }
+
+                // Get item data from the selected option
+                const itemName = selectedOption.data('name') || selectedOption.text().split(' (')[0];
+                const itemType = selectedOption.data('type') || '';
+                const itemUnit = selectedOption.data('unit') || 'unit';
+
+                if (!itemName) {
+                    alert('Unable to get item information. Please try selecting the item again.');
                     return;
                 }
 
@@ -2137,16 +2269,17 @@
 
                 const itemData = {
                     item_id: itemId,
-                    item_name: selectedOption.data('name'),
-                    item_type: selectedOption.data('type'),
+                    item_name: itemName,
+                    item_type: itemType,
                     estimated_quantity: qty,
-                    unit: selectedOption.data('unit')
+                    unit: itemUnit
                 };
 
                 editMilestoneRequiredItems.push(itemData);
                 renderEditMilestoneItems();
 
-                select.val('');
+                // Properly reset Select2
+                select.val(null).trigger('change');
                 $('#editItemEstimatedQty').val('');
                 $('#editItemEstimatedUnit').text('Unit');
             });
@@ -2280,5 +2413,74 @@
         </script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
     @endpush
+
+<!-- Upload Attachment Modal -->
+<div class="modal fade" id="uploadAttachmentModal" tabindex="-1" role="dialog" aria-labelledby="uploadAttachmentModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #87A96B;">
+                <h5 class="modal-title text-white" id="uploadAttachmentModalLabel">
+                    <i class="fas fa-upload mr-2"></i>Upload Project Attachment
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form action="{{ route('projects.uploadAttachment', $project) }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="attachment_type">Attachment Type <span class="text-danger">*</span></label>
+                        <select class="form-control" id="attachment_type" name="attachment_type" required>
+                            <option value="">Select Type</option>
+                            <option value="blueprint">Blueprint</option>
+                            <option value="floorplan">Floor Plan</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="attachment">Image File <span class="text-danger">*</span></label>
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" id="attachment" name="attachment" accept="image/*" required>
+                            <label class="custom-file-label" for="attachment">Choose file</label>
+                        </div>
+                        <small class="form-text text-muted">Max: 5MB (JPEG, PNG, JPG, GIF)</small>
+                    </div>
+                    <div id="imagePreview" class="mt-3" style="display: none;">
+                        <label>Preview:</label>
+                        <img id="previewImg" src="" alt="Preview" class="img-fluid rounded" style="max-height: 200px;">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                    <button type="submit" class="btn btn-success" style="background-color: #87A96B !important; border-color: #87A96B !important;">
+                        <i class="fas fa-upload"></i> Upload
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // File input label update and preview
+    document.getElementById('attachment').addEventListener('change', function(e) {
+        var fileName = e.target.files[0] ? e.target.files[0].name : 'Choose file';
+        e.target.nextElementSibling.textContent = fileName;
+        
+        // Show preview
+        if (e.target.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(event) {
+                document.getElementById('previewImg').src = event.target.result;
+                document.getElementById('imagePreview').style.display = 'block';
+            };
+            reader.readAsDataURL(e.target.files[0]);
+        } else {
+            document.getElementById('imagePreview').style.display = 'none';
+        }
+    });
+</script>
 
 @endsection

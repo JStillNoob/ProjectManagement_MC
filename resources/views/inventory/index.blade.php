@@ -20,25 +20,6 @@
                         </div>
                     </div>
                     <div class="card-body p-0">
-                        @if(session('success'))
-                            <div class="alert alert-success alert-dismissible fade show m-3" role="alert">
-                                <i class="fas fa-check-circle mr-2"></i>
-                                {{ session('success') }}
-                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
-                                </button>
-                            </div>
-                        @endif
-
-                        @if(session('error'))
-                            <div class="alert alert-danger alert-dismissible fade show m-3" role="alert">
-                                <i class="fas fa-exclamation-circle mr-2"></i>
-                                {{ session('error') }}
-                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
-                                </button>
-                            </div>
-                        @endif
 
                         <!-- Filter Section -->
                         <div class="row mx-3 my-3">
@@ -124,13 +105,9 @@
                                                 </div>
                                             </td>
                                             <td style="white-space: nowrap;">
-                                                <a href="{{ route('inventory.show', $item) }}" class="text-info mr-3"
+                                                <a href="{{ route('inventory.show', $item) }}" class="text-info"
                                                     style="text-decoration: underline; cursor: pointer;">
                                                     <i class="fas fa-eye mr-1"></i> View Details
-                                                </a>
-                                                <a href="{{ route('inventory.edit', $item) }}" class="text-warning mr-3"
-                                                    style="text-decoration: underline; cursor: pointer;">
-                                                    <i class="fas fa-edit mr-1"></i> Adjust Qty
                                                 </a>
                                             </td>
                                         </tr>

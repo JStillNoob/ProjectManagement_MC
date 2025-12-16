@@ -20,6 +20,7 @@ class ProjectMilestoneEquipment extends Model
         'Status',
         'Remarks',
         'ReturnRemarks',
+        'ReturnedBy',
     ];
 
     protected $casts = [

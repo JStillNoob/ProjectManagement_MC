@@ -9,25 +9,6 @@
             <div class="card">
 
                 <div class="card-body">
-                    @if(session('success'))
-                        <div class="alert alert-success alert-dismissible fade show" role="alert">
-                            <i class="fas fa-check-circle mr-2"></i>
-                            {{ session('success') }}
-                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
-                        </div>
-                    @endif
-
-                    @if(session('error'))
-                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                            <i class="fas fa-exclamation-circle mr-2"></i>
-                            {{ session('error') }}
-                            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
-                        </div>
-                    @endif
 
                     @php
                         $milestoneCounts = $project->milestone_counts;
@@ -318,7 +299,7 @@
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    @foreach($project->milestones as $index => $milestone)
+                                                    @foreach($project->milestones->sortBy([['order', 'asc'], ['milestone_id', 'asc']]) as $index => $milestone)
                                                         <tr>
                                                             <td>
                                                                 <strong>{{ Str::limit($milestone->milestone_name, 40) }}</strong>
@@ -376,7 +357,7 @@
     </div>
 
     <!-- Milestone Detail Modals -->
-    @foreach($project->milestones as $milestone)
+    @foreach($project->milestones->sortBy([['order', 'asc'], ['milestone_id', 'asc']]) as $milestone)
         <div class="modal fade" id="milestoneDetailsModal{{ $milestone->milestone_id }}" tabindex="-1" role="dialog">
             <div class="modal-dialog modal-lg" role="document">
                 <div class="modal-content">
@@ -694,7 +675,7 @@
                         "searching": true,
                         "paging": true,
                         "info": true,
-                        "order": [[0, "asc"]],
+                        "order": [], // Disable default sorting to preserve server-side order (by 'order' field)
                         "columnDefs": [
                             { "orderable": false, "targets": [2] }, // Actions column not orderable
                             { "className": "text-center", "targets": [1, 2] } // Center Status and Actions

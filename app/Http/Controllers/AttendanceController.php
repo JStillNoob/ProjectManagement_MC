@@ -58,7 +58,7 @@ class AttendanceController extends Controller
         }
         
         // Build query - only show employees assigned to the current project
-        $query = Attendance::with('employee')
+        $query = Attendance::with('employee.position')
             ->where('attendance_date', $date)
             ->active();
 
@@ -92,13 +92,14 @@ class AttendanceController extends Controller
         // Get all employees for comparison - only project employees if project is specified
         if ($project) {
             $allEmployees = Employee::active()
+                ->with('position')
                 ->whereHas('projects', function($q) use ($project) {
                     $q->where('projects.ProjectID', $project->ProjectID)
                       ->where('project_employees.status', 'Active');
                 })
                 ->get();
         } else {
-            $allEmployees = Employee::active()->get();
+            $allEmployees = Employee::active()->with('position')->get();
         }
         
         $presentEmployees = $attendanceRecords->where('status', 'Present')->pluck('employee_id')->toArray();
@@ -423,7 +424,10 @@ class AttendanceController extends Controller
     public function prodHeadOverview(Request $request)
     {
         // Check if user is Production Head (UserTypeID = 1) or HR Admin (UserTypeID = 2)
-        if (!in_array(Auth::user()->UserTypeID, [1, 2])) {
+        $user = Auth::user();
+        $userTypeId = $user->getUserTypeId();
+        
+        if (!in_array($userTypeId, [1, 2])) {
             abort(403, 'Access denied. Only Production Heads and HR Admins can access this page.');
         }
         
@@ -458,7 +462,7 @@ class AttendanceController extends Controller
             }
             
             // Get attendance records for this project
-            $projectAttendance = Attendance::with('employee')
+            $projectAttendance = Attendance::with('employee.position')
                 ->whereHas('employee.projects', function($q) use ($project) {
                     $q->where('projects.ProjectID', $project->ProjectID)
                       ->where('project_employees.status', 'Active');
@@ -591,7 +595,10 @@ class AttendanceController extends Controller
     public function exportAttendancePdf(Request $request)
     {
         // Check if user is Production Head (UserTypeID = 1) or HR Admin (UserTypeID = 2)
-        if (!in_array(Auth::user()->UserTypeID, [1, 2])) {
+        $user = Auth::user();
+        $userTypeId = $user->getUserTypeId();
+        
+        if (!in_array($userTypeId, [1, 2])) {
             abort(403, 'Access denied. Only Production Heads and HR Admins can access this page.');
         }
         
@@ -625,7 +632,7 @@ class AttendanceController extends Controller
             }
             
             // Get attendance records for this project
-            $projectAttendance = Attendance::with('employee')
+            $projectAttendance = Attendance::with('employee.position')
                 ->whereHas('employee.projects', function($q) use ($project) {
                     $q->where('projects.ProjectID', $project->ProjectID)
                       ->where('project_employees.status', 'Active');
@@ -661,13 +668,22 @@ class AttendanceController extends Controller
             $overallSummary['attendance_rate'] = round(($overallSummary['total_attendance_records'] / $totalPossibleAttendance) * 100, 1);
         }
         
-        // For now, we'll return the HTML view. In production, you'd use a PDF library like DomPDF
-        return view('ProdHeadPage.attendance-pdf', compact(
+        // Generate PDF using DomPDF
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('ProdHeadPage.attendance-pdf', compact(
             'projectAttendanceData', 
             'startDate', 
             'endDate', 
             'overallSummary'
         ));
+        
+        $pdf->setPaper('a4', 'portrait');
+        $pdf->setOptions([
+            'isHtml5ParserEnabled' => true,
+            'isRemoteEnabled' => true,
+            'defaultFont' => 'sans-serif',
+        ]);
+        
+        return $pdf->download('attendance_report_' . $startDate . '_to_' . $endDate . '.pdf');
     }
 
     /**

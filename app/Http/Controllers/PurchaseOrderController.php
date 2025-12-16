@@ -61,18 +61,44 @@ class PurchaseOrderController extends Controller
         $resourceCatalog = ResourceCatalog::active()->orderBy('ItemName')->get();
         
         $inventoryRequest = null;
-        $requestItems = [];
+        $requestItems = collect([]); // Initialize as empty collection
 
         // If creating from an inventory request
         if ($request->has('request_id')) {
-            $inventoryRequest = InventoryRequest::with('requestItems.inventoryItem')
+            // Load the request with items using the same pattern as the show method
+            $inventoryRequest = InventoryRequest::with(['items.item.resourceCatalog'])
                 ->findOrFail($request->request_id);
             
-            // Get only items that need purchase
-            $requestItems = $inventoryRequest->requestItems()
-                ->where('NeedsPurchase', true)
-                ->with('inventoryItem')
-                ->get();
+            // Get all items from the request (use the items relationship directly)
+            $allItems = $inventoryRequest->items;
+            
+            // Filter to only include items with valid inventory items and resource catalogs
+            $requestItems = $allItems->filter(function($requestItem) {
+                try {
+                    // Use item() method (same as show method uses)
+                    $inventoryItem = $requestItem->item;
+                    
+                    if (!$inventoryItem || !is_object($inventoryItem)) {
+                        return false;
+                    }
+                    
+                    // Get resource catalog (should already be loaded via eager loading)
+                    $resourceCatalog = $inventoryItem->resourceCatalog;
+                    
+                    // Validate resource catalog
+                    if (!$resourceCatalog || !is_object($resourceCatalog) || !isset($resourceCatalog->ResourceCatalogID)) {
+                        return false;
+                    }
+                    
+                    return true;
+                } catch (\Exception $e) {
+                    \Log::error('Error filtering request items: ' . $e->getMessage());
+                    return false;
+                } catch (\Error $e) {
+                    \Log::error('Error filtering request items: ' . $e->getMessage());
+                    return false;
+                }
+            })->values();
         }
 
         return view('purchase-orders.create', compact('suppliers', 'resourceCatalog', 'inventoryRequest', 'requestItems'));
@@ -126,7 +152,7 @@ class PurchaseOrderController extends Controller
             if ($request->RequestID) {
                 $inventoryRequest = InventoryRequest::find($request->RequestID);
                 if ($inventoryRequest) {
-                    $inventoryRequest->update(['Status' => 'PO Generated']);
+                    $inventoryRequest->update(['Status' => 'Ordered']);
                 }
             }
 

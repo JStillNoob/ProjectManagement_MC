@@ -20,20 +20,52 @@
 
         .header {
             text-align: center;
-            padding: 20px 0;
-            border-bottom: 3px solid #87A96B;
+            margin-bottom: 30px;
+        }
+
+        /* Styles to mimic the Logo without an image */
+        .company-name {
+            font-size: 24pt;
+            font-weight: bold;
+            color: #009900;
+            /* Macua Green */
+            text-transform: uppercase;
+            margin: 0;
+            line-height: 1;
+            text-shadow: 1px 1px 1px #ccc;
+            /* Subtle shadow like the logo */
+        }
+
+        .company-tagline {
+            font-size: 9pt;
+            font-weight: bold;
+            color: #000;
+            text-transform: uppercase;
+            margin: 5px 0 0 0;
+            letter-spacing: 1px;
+        }
+
+        .license-no {
+            font-size: 8pt;
+            color: #000;
+            font-weight: bold;
+            margin-top: 2px;
+        }
+
+        .green-bar {
+            background-color: #009900;
+            height: 4px;
+            width: 100%;
+            margin-top: 10px;
             margin-bottom: 20px;
         }
 
-        .header h1 {
-            color: #87A96B;
-            font-size: 24pt;
+        .document-title {
+            font-size: 16pt;
+            font-weight: bold;
+            color: #0056b3;
             margin-bottom: 5px;
-        }
-
-        .header p {
-            color: #666;
-            font-size: 10pt;
+            text-transform: uppercase;
         }
 
         .project-info {
@@ -166,9 +198,16 @@
 </head>
 
 <body>
+    {{-- TEXT-BASED HEADER (Replaces Image) --}}
     <div class="header">
-        <h1>PROJECT QR CODES</h1>
-        <p>Project Management System - Attendance Module</p>
+        <div class="company-name">MACUA CONSTRUCTION</div>
+        <div class="company-tagline">General Contractor – Mechanical Works - Fabrication</div>
+        <div class="license-no">PCAB LICENSE NO. 41994</div>
+
+        {{-- The Green Line from the logo --}}
+        <div class="green-bar"></div>
+
+        <div class="document-title">PROJECT QR CODES</div>
     </div>
 
     <div class="project-info">

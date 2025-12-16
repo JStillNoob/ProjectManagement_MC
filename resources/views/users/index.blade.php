@@ -22,15 +22,6 @@
                         </div>
                     </div>
                     <div class="card-body p-0">
-                        @if(session('success'))
-                            <div class="alert alert-success alert-dismissible fade show m-3" role="alert">
-                                {{ session('success') }}
-                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                    <span aria-hidden="true">&times;</span>
-                                </button>
-                            </div>
-                        @endif
-
                         <div class="table-responsive">
                             <table id="usersTable" class="table table-bordered table-striped">
                                 <thead>
@@ -70,8 +61,11 @@
                                                 </a>
                                                 @if($user->FlagDeleted)
                                                     <form action="{{ route('users.reactivate', $user) }}" method="POST"
-                                                        style="display: inline-block;"
-                                                        onsubmit="return confirm('Are you sure you want to reactivate this user?')">
+                                                        style="display: inline-block;" class="swal-confirm-form"
+                                                        data-title="Reactivate User?"
+                                                        data-text="This user will be able to log in again."
+                                                        data-icon="question"
+                                                        data-confirm-text="Yes, Reactivate">
                                                         @csrf
                                                         @method('PATCH')
                                                         <button type="submit" class="btn btn-link text-success p-0"
@@ -81,8 +75,11 @@
                                                     </form>
                                                 @else
                                                     <form action="{{ route('users.destroy', $user) }}" method="POST"
-                                                        style="display: inline-block;"
-                                                        onsubmit="return confirm('Are you sure you want to deactivate this user?')">
+                                                        style="display: inline-block;" class="swal-confirm-form"
+                                                        data-title="Deactivate User?"
+                                                        data-text="This user will no longer be able to log in. This action can be reversed."
+                                                        data-icon="warning"
+                                                        data-confirm-text="Yes, Deactivate">
                                                         @csrf
                                                         @method('DELETE')
                                                         <button type="submit" class="btn btn-link text-danger p-0"
@@ -345,31 +342,92 @@
                 }
 
                 $(document).ready(function () {
-                    // Initialize DataTables
-                    $('#usersTable').DataTable({
-                        "responsive": true,
-                        "lengthChange": true,
-                        "autoWidth": false,
-                        "pageLength": 10,
-                        "order": [[0, 'asc']], // Order by Employee name
-                        "columnDefs": [
-                            { "orderable": false, "targets": [3] }, // Disable sorting on Actions
-                            { "className": "text-center", "targets": [2, 3] } // Center User Type and Actions columns
-                        ],
-                        "language": {
-                            "search": "Search:",
-                            "lengthMenu": "_MENU_",
-                            "info": "Showing _START_ to _END_ of _TOTAL_ entries",
-                            "infoEmpty": "Showing 0 to 0 of 0 entries",
-                            "infoFiltered": "(filtered from _MAX_ total entries)",
-                            "paginate": {
-                                "first": "First",
-                                "last": "Last",
-                                "next": "Next",
-                                "previous": "Previous"
+                    // Wait a bit to ensure DOM is fully ready
+                    setTimeout(function() {
+                        // Check if table exists
+                        var table = $('#usersTable');
+                        if (table.length === 0) {
+                            console.warn('Users table not found');
+                            return;
+                        }
+
+                        // Destroy existing DataTable instance if it exists
+                        if ($.fn.DataTable.isDataTable('#usersTable')) {
+                            try {
+                                table.DataTable().destroy();
+                            } catch (e) {
+                                console.warn('Error destroying existing DataTable:', e);
                             }
                         }
-                    });
+
+                        // Verify table structure before initialization
+                        var headerCols = table.find('thead tr th').length;
+                        if (headerCols === 0) {
+                            console.error('No header columns found');
+                            return;
+                        }
+
+                        var bodyRows = table.find('tbody tr');
+                        var validRows = 0;
+                        var hasColspanRow = false;
+
+                        bodyRows.each(function() {
+                            var $row = $(this);
+                            var rowCols = $row.find('td').length;
+                            var $colspanCell = $row.find('td[colspan]');
+                            
+                            if ($colspanCell.length > 0) {
+                                hasColspanRow = true;
+                                // Ensure colspan matches header column count
+                                var colspan = parseInt($colspanCell.attr('colspan')) || 1;
+                                if (colspan !== headerCols) {
+                                    $colspanCell.attr('colspan', headerCols);
+                                }
+                            } else if (rowCols === headerCols) {
+                                validRows++;
+                            } else if (rowCols > 0 && rowCols !== headerCols) {
+                                console.warn('Row has incorrect column count: ' + rowCols + ' (expected: ' + headerCols + ')');
+                                console.warn('Row HTML:', $row.html());
+                            }
+                        });
+
+                        // Only initialize if we have valid rows or an empty state with correct colspan
+                        if (validRows === 0 && !hasColspanRow) {
+                            console.warn('No valid rows found in table. Header cols: ' + headerCols + ', Body rows: ' + bodyRows.length);
+                            return;
+                        }
+
+                        // Initialize DataTables with error handling
+                        try {
+                            table.DataTable({
+                                "responsive": true,
+                                "lengthChange": true,
+                                "autoWidth": false,
+                                "pageLength": 10,
+                                "order": [[0, 'asc']], // Order by Employee name
+                                "columnDefs": [
+                                    { "orderable": false, "targets": [3] }, // Disable sorting on Actions
+                                    { "className": "text-center", "targets": [2, 3] } // Center User Type and Actions columns
+                                ],
+                                "language": {
+                                    "search": "Search:",
+                                    "lengthMenu": "_MENU_",
+                                    "info": "Showing _START_ to _END_ of _TOTAL_ entries",
+                                    "infoEmpty": "Showing 0 to 0 of 0 entries",
+                                    "infoFiltered": "(filtered from _MAX_ total entries)",
+                                    "paginate": {
+                                        "first": "First",
+                                        "last": "Last",
+                                        "next": "Next",
+                                        "previous": "Previous"
+                                    }
+                                }
+                            });
+                        } catch (error) {
+                            console.error('Error initializing DataTables:', error);
+                            console.error('Table HTML:', table.html());
+                        }
+                    }, 100); // Small delay to ensure DOM is ready
 
                     // Employee selection preview in modal
                     $('#EmployeeID').on('change', function () {

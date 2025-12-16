@@ -84,6 +84,51 @@ class InventoryRequestController extends Controller
     }
 
     /**
+     * Show request history for foreman
+     */
+    public function history(Request $request)
+    {
+        $user = Auth::user();
+        
+        // Only foremen (UserTypeID == 3) can access this page
+        if ($user->UserTypeID != 3 || !$user->EmployeeID) {
+            return redirect()->route('inventory.requests.index')
+                ->with('error', 'You do not have permission to access this page.');
+        }
+
+        $employee = \App\Models\Employee::find($user->EmployeeID);
+        if (!$employee) {
+            return redirect()->route('inventory.requests.index')
+                ->with('error', 'Employee record not found.');
+        }
+
+        // Get foreman's assigned project
+        $foremanProject = $employee->projects()
+            ->wherePivot('status', 'Active')
+            ->first();
+
+        if (!$foremanProject) {
+            return redirect()->route('inventory.requests.index')
+                ->with('error', 'You are not assigned to any project.');
+        }
+
+        // Get all requests for this project made by the foreman
+        $query = InventoryRequest::with(['project', 'employee', 'items.item.resourceCatalog', 'milestone', 'approver'])
+            ->where('ProjectID', $foremanProject->ProjectID)
+            ->where('EmployeeID', $user->EmployeeID);
+
+        // Filter by status if provided
+        $status = $request->get('status');
+        if ($status) {
+            $query->where('Status', $status);
+        }
+
+        $requests = $query->orderBy('created_at', 'desc')->paginate(15);
+
+        return view('inventory.requests.history', compact('requests', 'foremanProject', 'status'));
+    }
+
+    /**
      * Show the form for creating a new resource.
      */
     public function create()
@@ -169,6 +214,27 @@ class InventoryRequestController extends Controller
                 ->with('error', 'Invalid milestone for this project.');
         }
 
+        // Check if user is foreman (UserTypeID == 3) and milestone status is Pending
+        if ($user->UserTypeID == 3 && strtolower($milestone->status ?? 'Pending') === 'pending') {
+            return redirect()->back()
+                ->with('error', 'You cannot request items for a milestone with "Pending" status. The milestone must be "In Progress" or "Completed" to request items.');
+        }
+
+        // Check if milestone is waiting for approval - disable requests
+        if ($milestone->SubmissionStatus === 'Pending Approval') {
+            return redirect()->back()
+                ->with('error', 'You cannot request items for this milestone. It is currently waiting for approval. Please wait until it is approved before making new requests.');
+        }
+
+        // Check if there's an existing request for this milestone
+        // If yes, mark the new request as "Additional Request"
+        $existingRequest = InventoryRequest::where('MilestoneID', $validated['MilestoneID'])
+            ->where('ProjectID', $validated['ProjectID'])
+            ->whereIn('Status', ['Pending', 'Pending - To Order', 'Ordered', 'Approved'])
+            ->first();
+        
+        $isAdditionalRequest = $existingRequest ? true : false;
+
         $normalizedItems = collect($validated['items'])
             ->map(function ($item) {
                 return [
@@ -188,7 +254,7 @@ class InventoryRequestController extends Controller
         $shortages = [];
 
         try {
-            DB::transaction(function () use (&$shortages, $normalizedItems, $validated, $user) {
+            DB::transaction(function () use (&$shortages, $normalizedItems, $validated, $user, $isAdditionalRequest) {
                 // Auto-determine RequestType based on items
                 $requestType = $validated['RequestType'] ?? null;
                 if (!$requestType) {
@@ -224,6 +290,7 @@ class InventoryRequestController extends Controller
                     'Reason' => $validated['Reason'] ?? null,
                     'MilestoneID' => $validated['MilestoneID'],
                     'Status' => 'Pending',
+                    'IsAdditionalRequest' => $isAdditionalRequest,
                 ]);
 
                 foreach ($normalizedItems as $line) {
@@ -291,12 +358,20 @@ class InventoryRequestController extends Controller
                 return "{$row['name']} (Requested: " . number_format($row['requested'], 2) . " {$row['unit']}, Available: " . number_format($row['available'], 2) . " {$row['unit']})";
             })->implode('; ');
 
+            $message = $isAdditionalRequest 
+                ? 'Additional request submitted for this milestone. Some items need purchasing: ' . $summary
+                : 'Request submitted. Some items need purchasing: ' . $summary;
+
             return redirect()->route('inventory.requests.index')
-                ->with('warning', 'Request submitted. Some items need purchasing: ' . $summary);
+                ->with('warning', $message);
         }
 
+        $message = $isAdditionalRequest
+            ? 'Additional request submitted successfully for this milestone.'
+            : 'Inventory request submitted successfully.';
+
         return redirect()->route('inventory.requests.index')
-            ->with('success', 'Inventory request submitted successfully.');
+            ->with('success', $message);
     }
 
     /**
@@ -588,23 +663,32 @@ class InventoryRequestController extends Controller
     {
         $typeName = $type === 'Equipment' ? 'Equipment' : 'Materials';
 
-        return InventoryItem::with('resourceCatalog')
+        // Get all items from resource catalog (not just those with inventory items)
+        $resourceCatalogItems = \App\Models\ResourceCatalog::where('Type', $typeName)
+            ->orderBy('ItemName')
+            ->get();
+
+        // Get all inventory items for this type
+        $inventoryItems = InventoryItem::with('resourceCatalog')
             ->whereHas('resourceCatalog', function ($q) use ($typeName) {
                 $q->where('Type', $typeName);
             })
             ->where('Status', 'Active')
-            ->join('resource_catalog', 'inventory_items.ResourceCatalogID', '=', 'resource_catalog.ResourceCatalogID')
-            ->orderBy('resource_catalog.ItemName')
-            ->select('inventory_items.*')
             ->get()
-            ->map(function (InventoryItem $item) {
-                return [
-                    'id' => $item->ItemID,
-                    'name' => $item->resourceCatalog->ItemName ?? 'N/A',
-                    'unit' => $item->resourceCatalog->Unit ?? 'N/A',
-                    'available_stock' => $this->calculateAvailableStock($item),
-                ];
-            });
+            ->keyBy('ResourceCatalogID'); // Key by ResourceCatalogID for quick lookup
+
+        // Map all resource catalog items, including those without inventory items
+        return $resourceCatalogItems->map(function ($resourceItem) use ($inventoryItems) {
+            $inventoryItem = $inventoryItems->get($resourceItem->ResourceCatalogID);
+            
+            return [
+                'id' => $inventoryItem ? $inventoryItem->ItemID : null,
+                'resource_catalog_id' => $resourceItem->ResourceCatalogID,
+                'name' => $resourceItem->ItemName,
+                'unit' => $resourceItem->Unit,
+                'available_stock' => $inventoryItem ? $this->calculateAvailableStock($inventoryItem) : 0,
+            ];
+        });
     }
 
     protected function calculateAvailableStock(InventoryItem $item): float

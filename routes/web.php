@@ -221,6 +221,7 @@ Route::post('projects/{project}/end', [ProjectController::class, 'endProject'])-
 Route::post('projects/{project}/proceed-ntp', [ProjectController::class, 'proceedWithNTP'])->name('projects.proceed-ntp')->middleware('auth');
 Route::post('projects/{project}/assign-employees', [ProjectController::class, 'assignEmployees'])->name('projects.assignEmployees')->middleware('auth');
 Route::delete('projects/{project}/employees/{employee}', [ProjectController::class, 'removeEmployee'])->name('projects.removeEmployee')->middleware('auth');
+Route::post('projects/{project}/upload-attachment', [ProjectController::class, 'uploadAttachment'])->name('projects.uploadAttachment')->middleware('auth');
 
 // Project Employee Management Routes
 Route::get('projects/{project}/manage-employees', [ProjectController::class, 'manageEmployees'])->name('projects.manage-employees')->middleware('auth');
@@ -263,8 +264,12 @@ Route::delete('projects/{project}/milestones/{milestone}/equipment/{equipment}',
 Route::get('inventory-requests/items/options', [App\Http\Controllers\InventoryRequestController::class, 'availableItems'])
     ->name('inventory.requests.items')
     ->middleware('auth');
+Route::get('inventory-requests/history', [App\Http\Controllers\InventoryRequestController::class, 'history'])->name('inventory.requests.history')->middleware('auth');
 Route::get('api/milestones/{milestone}/required-items', [App\Http\Controllers\ProjectMilestoneController::class, 'getRequiredItems'])
     ->name('api.milestones.required-items')
+    ->middleware('auth');
+Route::get('api/milestones/{milestone}/proof-images', [App\Http\Controllers\ProjectMilestoneController::class, 'getProofImages'])
+    ->name('api.milestones.proof-images')
     ->middleware('auth');
 Route::resource('inventory-requests', App\Http\Controllers\InventoryRequestController::class)->names([
     'index' => 'inventory.requests.index',
@@ -333,6 +338,11 @@ Route::get('reports/inventory/equipment-utilization', [App\Http\Controllers\Inve
 Route::get('reports/inventory/po-summary', [App\Http\Controllers\InventoryReportController::class, 'purchaseOrderSummary'])->name('reports.inventory.po-summary')->middleware('auth');
 Route::get('reports/inventory/issuance-history', [App\Http\Controllers\InventoryReportController::class, 'issuanceHistory'])->name('reports.inventory.issuance-history')->middleware('auth');
 Route::get('reports/inventory/damage-report', [App\Http\Controllers\InventoryReportController::class, 'damageReport'])->name('reports.inventory.damage-report')->middleware('auth');
+
+// Milestone Reports Routes
+Route::get('reports/milestones', [App\Http\Controllers\MilestoneReportController::class, 'index'])->name('reports.milestones.index')->middleware('auth');
+Route::get('reports/milestones/{milestone}', [App\Http\Controllers\MilestoneReportController::class, 'show'])->name('reports.milestones.show')->middleware('auth');
+Route::get('reports/milestones/{milestone}/pdf', [App\Http\Controllers\MilestoneReportController::class, 'exportPdf'])->name('reports.milestones.pdf')->middleware('auth');
 
 // Jaspersoft Enterprise Reports
 Route::get('reports', [App\Http\Controllers\ReportController::class, 'index'])->name('reports.index')->middleware('auth');

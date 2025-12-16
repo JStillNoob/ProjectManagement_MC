@@ -21,15 +21,6 @@
                                         </div>
                                     </div>
                                     <div class="card-body p-0">
-                                        @if(session('success'))
-                                            <div class="alert alert-success alert-dismissible fade show m-3" role="alert">
-                                                {{ session('success') }}
-                                                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                                                    <span aria-hidden="true">&times;</span>
-                                                </button>
-                                            </div>
-                                        @endif
-
                                         <!-- Filter Section -->
                                         <div class="row mx-3 my-3">
                                             <div class="col-md-4">
@@ -97,18 +88,15 @@
                                                                 @endphp
                                                                 {{ $position ? $position->PositionName : 'N/A' }}
                                                             </td>
-                                                            <td>
+                                                            <td data-status="{{ strtolower($employee->effective_status) }}">
                                                                 @php
-                                                                    $statusColor = '#6c757d'; // Default gray for Inactive
-                                                                    if ($employee->employee_status_id == \App\Models\EmployeeStatus::ACTIVE) {
-                                                                        $statusColor = '#28a745'; // Green for Active
-                                                                    } elseif ($employee->employee_status_id == \App\Models\EmployeeStatus::ARCHIVED) {
-                                                                        $statusColor = '#dc3545'; // Red for Archived
-                                                                    }
+                                                                    // Use effective status which considers project assignments
+                                                                    $effectiveStatus = $employee->effective_status;
+                                                                    $statusColor = $employee->effective_status_color;
                                                                 @endphp
                                                                 <div class="d-flex align-items-center">
                                                                     <span class="mr-2" style="width: 8px; height: 8px; border-radius: 50%; background-color: {{ $statusColor }};"></span>
-                                                                    <span>{{ $employee->status_name }}</span>
+                                                                    <span>{{ $effectiveStatus }}</span>
                                                                 </div>
                                                             </td>
                                                             <td style="white-space: nowrap;">
@@ -117,8 +105,11 @@
                                                                 </a>
                                                                 @if($employee->employee_status_id == \App\Models\EmployeeStatus::ARCHIVED)
                                                                     <form action="{{ route('employees.unarchive', $employee) }}" method="POST"
-                                                                        style="display: inline-block;"
-                                                                        onsubmit="return confirm('Are you sure you want to unarchive this employee?')">
+                                                                        style="display: inline-block;" class="swal-confirm-form"
+                                                                        data-title="Unarchive Employee?"
+                                                                        data-text="This employee will be set to inactive status."
+                                                                        data-icon="question"
+                                                                        data-confirm-text="Yes, Unarchive">
                                                                         @csrf
                                                                         @method('PATCH')
                                                                         <button type="submit" class="btn btn-link text-success p-0" style="text-decoration: underline; border: none; background: none; cursor: pointer;">
@@ -127,8 +118,11 @@
                                                                     </form>
                                                                 @else
                                                                     <form action="{{ route('employees.destroy', $employee) }}" method="POST"
-                                                                        style="display: inline-block;"
-                                                                        onsubmit="return confirm('Are you sure you want to archive this employee?')">
+                                                                        style="display: inline-block;" class="swal-confirm-form"
+                                                                        data-title="Archive Employee?"
+                                                                        data-text="Are you sure you want to archive this employee?"
+                                                                        data-icon="warning"
+                                                                        data-confirm-text="Yes, Archive">
                                                                         @csrf
                                                                         @method('DELETE')
                                                                         <button type="submit" class="btn btn-link text-danger p-0" style="text-decoration: underline; border: none; background: none; cursor: pointer;">
@@ -287,6 +281,23 @@
                         @push('scripts')
                         <script>
                             $(document).ready(function() {
+                                // Custom filter function for status
+                                var statusFilter = function(settings, data, dataIndex) {
+                                    var filterStatus = $('#filterStatus').val();
+                                    if (!filterStatus) {
+                                        return true; // Show all if no filter selected
+                                    }
+                                    
+                                    // Get the status from the data-status attribute
+                                    var row = $('#employeesTable').DataTable().row(dataIndex).node();
+                                    var rowStatus = $(row).find('td[data-status]').attr('data-status') || '';
+                                    
+                                    // Normalize both values for comparison
+                                    var filterStatusLower = filterStatus.toLowerCase();
+                                    
+                                    return rowStatus === filterStatusLower;
+                                };
+
                                 // Initialize DataTables
                                 var table = $('#employeesTable').DataTable({
                                     "responsive": true,
@@ -313,6 +324,9 @@
                                     }
                                 });
 
+                                // Add custom status filter
+                                $.fn.dataTable.ext.search.push(statusFilter);
+
                                 // Filter by Position
                                 $('#filterPosition').on('change', function() {
                                     var val = $(this).val();
@@ -321,8 +335,7 @@
 
                                 // Filter by Status
                                 $('#filterStatus').on('change', function() {
-                                    var val = $(this).val();
-                                    table.column(3).search(val ? val : '', true, false).draw();
+                                    table.draw();
                                 });
 
                                 // Clear all filters

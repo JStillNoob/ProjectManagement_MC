@@ -14,7 +14,7 @@ class UserTypeSeeder extends Seeder
     {
         $userTypes = [
             ['UserType' => 'Engineer', 'FlagDeleted' => 0],        // UserTypeID 1 (formerly Production Head)
-            ['UserType' => 'HR', 'FlagDeleted' => 0],              // UserTypeID 2
+            ['UserType' => 'General Manager', 'FlagDeleted' => 0],              // UserTypeID 2
             ['UserType' => 'Foreman', 'FlagDeleted' => 0],          // UserTypeID 3 (formerly Attendant Officer)
             ['UserType' => 'Employee', 'FlagDeleted' => 0],         // UserTypeID 4
         ];

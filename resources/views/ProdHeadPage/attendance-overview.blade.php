@@ -429,19 +429,11 @@
         </form>
     </div>
 
-    <!-- Export Buttons -->
+    <!-- All Projects Section -->
     <div class="export-buttons">
-        <div class="d-flex justify-content-between align-items-center">
-            <div>
-                <h5><i class="fas fa-globe mr-2"></i>All Projects</h5>
-                <p class="text-muted mb-0">Attendance data separated by project</p>
-            </div>
-            <div>
-                <a href="{{ route('prodhead.attendance.pdf', request()->query()) }}" 
-                   class="btn btn-danger" target="_blank">
-                    <i class="fas fa-file-pdf mr-1"></i>Export PDF
-                </a>
-            </div>
+        <div>
+            <h5><i class="fas fa-globe mr-2"></i>All Projects</h5>
+            <p class="text-muted mb-0">Attendance data separated by project</p>
         </div>
     </div>
 
@@ -641,4 +633,155 @@
     @endforelse
 </div>
 @endsection
+
+@push('scripts')
+    <!-- DataTables JS from CDN -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap4.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.5.0/js/responsive.bootstrap4.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.bootstrap4.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            // Initialize DataTables for each project table
+            @foreach($projectAttendanceData ?? [] as $projectData)
+                @php
+                    $tableId = 'projectTable_' . $projectData['project']->ProjectID;
+                @endphp
+                
+                var table_{{ $projectData['project']->ProjectID }} = $('#{{ $tableId }}').DataTable({
+                    responsive: true,
+                    pageLength: 10,
+                    lengthMenu: [[10, 25, 50, 100, -1], [10, 25, 50, 100, "All"]],
+                    order: [[0, 'asc']], // Sort by Employee Name
+                    dom: 'Bfrtip',
+                    buttons: [
+                        {
+                            extend: 'excel',
+                            text: '<i class="fas fa-file-excel"></i> Excel',
+                            className: 'btn btn-success btn-sm',
+                            exportOptions: {
+                                columns: [0, 1, 2, 3, 4, 5, 6]
+                            }
+                        },
+                        {
+                            extend: 'pdf',
+                            text: '<i class="fas fa-file-pdf"></i> PDF',
+                            className: 'btn btn-danger btn-sm',
+                            exportOptions: {
+                                columns: [0, 1, 2, 3, 4, 5, 6]
+                            }
+                        },
+                        {
+                            extend: 'print',
+                            text: '<i class="fas fa-print"></i> Print',
+                            className: 'btn btn-info btn-sm',
+                            exportOptions: {
+                                columns: [0, 1, 2, 3, 4, 5, 6]
+                            },
+                            customize: function (win) {
+                                // Get the project name and dates
+                                var projectName = @json($projectData['project']->ProjectName ?? 'All Projects');
+                                var startDate = @json(\Carbon\Carbon::parse($startDate)->format('M d, Y'));
+                                var endDate = @json(\Carbon\Carbon::parse($endDate)->format('M d, Y'));
+                                var generatedOn = @json(now()->format('F d, Y \a\t h:i A'));
+                                
+                                // Create header HTML
+                                var header = '<div style="text-align: center; margin-bottom: 30px; page-break-after: avoid;">' +
+                                    '<div style="font-size: 24pt; font-weight: bold; color: #009900; text-transform: uppercase; margin: 0; line-height: 1;">MACUA CONSTRUCTION</div>' +
+                                    '<div style="font-size: 9pt; font-weight: bold; color: #000; text-transform: uppercase; margin: 5px 0 0 0;">General Contractor – Mechanical Works - Fabrication</div>' +
+                                    '<div style="font-size: 8pt; color: #000; font-weight: bold; margin-top: 2px;">PCAB LICENSE NO. 41994</div>' +
+                                    '<div style="background-color: #009900; height: 4px; width: 100%; margin: 10px 0 20px 0;"></div>' +
+                                    '<div style="font-size: 16pt; font-weight: bold; color: #0056b3; margin-bottom: 5px; text-transform: uppercase;">ATTENDANCE REPORT</div>' +
+                                    '<p style="color: #666; margin: 5px 0; font-size: 10pt;">' + projectName + ' - ' + startDate + ' to ' + endDate + '</p>' +
+                                    '<p style="color: #666; margin: 5px 0; font-size: 9pt;">Generated on: ' + generatedOn + '</p>' +
+                                    '</div>';
+                                
+                                // Add header to the print window
+                                $(win.document.body).prepend(header);
+                                
+                                // Style the print window
+                                $(win.document.body).css('font-size', '11pt');
+                                $(win.document.body).find('table').css('font-size', '10pt');
+                                $(win.document.body).find('table').css('margin-top', '20px');
+                                
+                                // Remove DataTables default title
+                                $(win.document.body).find('h1').remove();
+                            }
+                        }
+                    ],
+                    language: {
+                        search: "Search employees:",
+                        lengthMenu: "Show _MENU_ employees per page",
+                        info: "Showing _START_ to _END_ of _TOTAL_ employees",
+                        infoEmpty: "No employees found",
+                        infoFiltered: "(filtered from _MAX_ total employees)",
+                        paginate: {
+                            first: "First",
+                            last: "Last",
+                            next: "Next",
+                            previous: "Previous"
+                        }
+                    },
+                    columnDefs: [
+                        {
+                            targets: [2, 3, 4, 5], // Days Present, Days Late, Days Overtime, Total Days
+                            orderable: true,
+                            searchable: false
+                        },
+                        {
+                            targets: 6, // Attendance Rate
+                            orderable: true,
+                            searchable: false,
+                            type: 'num'
+                        }
+                    ]
+                });
+
+                // Custom filter function for project-specific filters
+                window.filterProjectTable_{{ $projectData['project']->ProjectID }} = function() {
+                    var employee = $('#project_employee_filter_{{ $projectData['project']->ProjectID }}').val();
+                    
+                    // Filter by employee name (column 0)
+                    if (employee) {
+                        table_{{ $projectData['project']->ProjectID }}.column(0).search(employee).draw();
+                    } else {
+                        table_{{ $projectData['project']->ProjectID }}.column(0).search('').draw();
+                    }
+                    
+                    // Note: Date and status filtering would require server-side filtering
+                    // For now, we'll just filter by employee name
+                };
+
+                // Clear filters function
+                window.clearProjectFilters_{{ $projectData['project']->ProjectID }} = function() {
+                    $('#project_start_date_{{ $projectData['project']->ProjectID }}').val('{{ $startDate }}');
+                    $('#project_end_date_{{ $projectData['project']->ProjectID }}').val('{{ $endDate }}');
+                    $('#project_status_filter_{{ $projectData['project']->ProjectID }}').val('');
+                    $('#project_employee_filter_{{ $projectData['project']->ProjectID }}').val('');
+                    table_{{ $projectData['project']->ProjectID }}.search('').columns().search('').draw();
+                };
+            @endforeach
+
+            // Global filter function (for backward compatibility)
+            window.filterProjectTable = function(projectId) {
+                if (typeof window['filterProjectTable_' + projectId] === 'function') {
+                    window['filterProjectTable_' + projectId]();
+                }
+            };
+
+            // Global clear filters function (for backward compatibility)
+            window.clearProjectFilters = function(projectId) {
+                if (typeof window['clearProjectFilters_' + projectId] === 'function') {
+                    window['clearProjectFilters_' + projectId]();
+                }
+            };
+        });
+    </script>
+@endpush
 

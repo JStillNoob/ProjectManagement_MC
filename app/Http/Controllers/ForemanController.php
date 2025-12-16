@@ -76,10 +76,13 @@ class ForemanController extends Controller
             abort(403, 'You are not assigned to this project.');
         }
 
-        // Load project with necessary relationships
+        // Load project with necessary relationships, ordered by 'order' field
         $project->load([
             'status',
             'client',
+            'milestones' => function($query) {
+                $query->orderBy('order', 'asc')->orderBy('milestone_id', 'asc');
+            },
             'milestones.materials.item',
             'milestones.equipment.item',
             'milestones.submittedBy.position',

@@ -2,20 +2,6 @@
 
 @section('content')
     <div class="container-fluid">
-        @if(session('success'))
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        @endif
-
-        @if(session('error'))
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                {{ session('error') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        @endif
-
         <!-- Back Button Row -->
 
 
@@ -24,19 +10,18 @@
                 <div class="card">
                     <!-- Card Header -->
                     <div class="card-header" style="background-color: #87A96B;">
-        <div class="row align-items-center">
-            <div class="col-auto mb-3 mb-md-0">
-                <a href="{{ route('purchase-orders.index') }}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left me-1"></i> Back to List
-                </a>
-            </div>
-            <div class="col">
-                <h3 class="card-title mb-0" style="color: white; font-size: 1.25rem;">
-                    <i class="fas fa-file-invoice me-2"></i>
-                    Purchase Order #{{ $purchaseOrder->POID }}
-                </h3>
-            </div>
-                       
+                        <div class="row align-items-center">
+                            <div class="col">
+                                <h3 class="card-title mb-0" style="color: white; font-size: 1.25rem;">
+                                    <i class="fas fa-file-invoice me-2"></i>
+                                    Purchase Order #{{ $purchaseOrder->POID }}
+                                </h3>
+                            </div>
+                            <div class="col-auto">
+                                <a href="{{ route('purchase-orders.index') }}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left me-1"></i> Back to List
+                                </a>
+                            </div>
                         </div>
                     </div>
 
@@ -131,7 +116,7 @@
                                                         $reqBadgeColor = $reqStatusColors[$purchaseOrder->inventoryRequest->Status] ?? 'secondary';
                                                     @endphp
                                                     <span
-                                                        class="badge bg-{{ $reqBadgeColor }}">{{ $purchaseOrder->inventoryRequest->Status }}</span>
+                                                        class="badge bg-{{ $reqBadgeColor }} text-white">{{ $purchaseOrder->inventoryRequest->Status }}</span>
                                                 </td>
                                             </tr>
                                         </table>
@@ -189,12 +174,12 @@
                                                 {{ $item->Unit }}</td>
                                             <td class="text-center">
                                                 @if($isFullyReceived)
-                                                    <span class="badge" style="background-color: #87A96B;">Complete</span>
+                                                    <span class="badge text-white" style="background-color: #87A96B;">Complete</span>
                                                 @elseif($item->QuantityReceived > 0)
                                                     <span
                                                         class="badge bg-warning text-dark">{{ number_format($receivedPercentage, 0) }}%</span>
                                                 @else
-                                                    <span class="badge bg-secondary">Pending</span>
+                                                    <span class="badge bg-secondary text-white">Pending</span>
                                                 @endif
                                             </td>
                                         </tr>
@@ -246,12 +231,25 @@
                                                 <td>{{ $record->receiver->first_name ?? '' }}
                                                     {{ $record->receiver->last_name ?? '' }}</td>
                                                 <td class="text-center">
-                                                    <span class="badge"
+                                                    <span class="badge text-white"
                                                         style="background-color: #87A96B;">{{ $record->items->count() ?? 0 }}</span>
                                                 </td>
                                                 <td class="text-center">
-                                                    <span
-                                                        class="badge bg-{{ $record->OverallCondition == 'Good' ? 'success' : 'warning' }}">
+                                                    @php
+                                                        $conditionClass = 'secondary';
+                                                        $textClass = 'text-white';
+                                                        if ($record->OverallCondition == 'Good') {
+                                                            $conditionClass = 'success';
+                                                            $textClass = 'text-white';
+                                                        } elseif ($record->OverallCondition == 'Damaged') {
+                                                            $conditionClass = 'danger';
+                                                            $textClass = 'text-white';
+                                                        } elseif ($record->OverallCondition == 'Mixed') {
+                                                            $conditionClass = 'warning';
+                                                            $textClass = 'text-dark';
+                                                        }
+                                                    @endphp
+                                                    <span class="badge bg-{{ $conditionClass }} {{ $textClass }}">
                                                         {{ $record->OverallCondition ?? 'N/A' }}
                                                     </span>
                                                 </td>
@@ -268,15 +266,33 @@
                     <div class="card-footer bg-white py-3">
                         <div class="text-right">
                             @if($purchaseOrder->Status != 'Completed' && $purchaseOrder->Status != 'Cancelled')
-                                <form action="{{ route('purchase-orders.cancel', $purchaseOrder->POID) }}" method="POST" class="d-inline">
+                                <form action="{{ route('purchase-orders.cancel', $purchaseOrder->POID) }}" method="POST" class="d-inline swal-confirm-form"
+                                    data-title="Cancel Purchase Order?"
+                                    data-text="This action cannot be undone. The PO will be marked as cancelled."
+                                    data-icon="warning"
+                                    data-confirm-text="Yes, Cancel It">
                                     @csrf
                                     @method('PATCH')
-                                    <button type="submit" class="btn btn-danger mr-2"
-                                            onclick="return confirm('Are you sure you want to cancel this purchase order?')">
+                                    <button type="submit" class="btn btn-danger mr-2">
                                         <i class="fas fa-times"></i> Cancel Order
                                     </button>
                                 </form>
                             @endif
+
+                            @if($purchaseOrder->Status == 'Draft')
+                                <form action="{{ route('purchase-orders.mark-sent', $purchaseOrder->POID) }}" method="POST" class="d-inline swal-confirm-form"
+                                    data-title="Send Purchase Order?"
+                                    data-text="This will mark the PO as sent to the supplier. You can then receive items against this PO."
+                                    data-icon="question"
+                                    data-confirm-text="Yes, Send It">
+                                    @csrf
+                                    @method('PATCH')
+                                    <button type="submit" class="btn btn-info mr-2">
+                                        <i class="fas fa-paper-plane"></i> Mark as Sent
+                                    </button>
+                                </form>
+                            @endif
+
                             <a href="{{ route('purchase-orders.pdf', $purchaseOrder->POID) }}" 
                                class="btn btn-secondary mr-2"
                                style="background-color: #87A96B !important; border-color: #87A96B !important; color: #fff !important;"
@@ -287,7 +303,7 @@
                                 <a href="{{ route('receiving.create', ['po_id' => $purchaseOrder->POID]) }}" 
                                    class="btn btn-success"
                                    style="background-color: #87A96B !important; border-color: #87A96B !important;">
-                                    <i class="fas fa-save"></i> Receive Items
+                                    <i class="fas fa-box-open"></i> Receive Items
                                 </a>
                             @endif
                         </div>

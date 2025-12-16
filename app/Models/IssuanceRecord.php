@@ -95,8 +95,8 @@ class IssuanceRecord extends Model
 
     /**
      * Process issuance and update inventory
-     * For Materials: Decrease TotalQuantity and CommittedQuantity (stock is consumed)
-     * For Equipment: Decrease CommittedQuantity (already reserved at approval), update status to In Use
+     * For Materials: Decrease TotalQuantity, AvailableQuantity, and CommittedQuantity (stock is consumed)
+     * For Equipment: Decrease AvailableQuantity and CommittedQuantity (equipment is assigned, not consumed)
      */
     public function processIssuance()
     {
@@ -106,15 +106,17 @@ class IssuanceRecord extends Model
             if ($item->ItemType == 'Material') {
                 // Permanent deduction for materials
                 // TotalQuantity decreases (stock leaves warehouse)
+                // AvailableQuantity decreases (stock is consumed)
                 // CommittedQuantity decreases (reservation is fulfilled)
-                // AvailableQuantity stays same (was already reduced at approval)
                 $inventoryItem->TotalQuantity -= $item->QuantityIssued;
+                $inventoryItem->AvailableQuantity -= $item->QuantityIssued;
                 $inventoryItem->CommittedQuantity -= $item->QuantityIssued;
             } else {
                 // Equipment issuance
+                // AvailableQuantity decreases (equipment is assigned, not available for other uses)
                 // CommittedQuantity decreases (reservation is fulfilled)
                 // TotalQuantity stays same (equipment is not consumed, just assigned)
-                // AvailableQuantity stays same (was already reduced at approval)
+                $inventoryItem->AvailableQuantity -= $item->QuantityIssued;
                 $inventoryItem->CommittedQuantity -= $item->QuantityIssued;
                 // Note: inventory_items.Status only accepts 'Active' or 'Inactive', not 'In Use'
                 // Equipment tracking is done via project_milestone_equipment table
@@ -138,7 +140,7 @@ class IssuanceRecord extends Model
     /**
      * Reverse issuance (for deletion)
      */
-    public function reverseIssuance()
+public function reverseIssuance()
     {
         foreach ($this->items as $item) {
             $inventoryItem = $item->inventoryItem;
@@ -146,9 +148,11 @@ class IssuanceRecord extends Model
             if ($item->ItemType == 'Material') {
                 // Restore material stock
                 $inventoryItem->TotalQuantity += $item->QuantityIssued;
+                $inventoryItem->AvailableQuantity += $item->QuantityIssued;
                 $inventoryItem->CommittedQuantity += $item->QuantityIssued;
             } else {
-                // Restore equipment reservation
+                // Restore equipment availability
+                $inventoryItem->AvailableQuantity += $item->QuantityIssued;
                 $inventoryItem->CommittedQuantity += $item->QuantityIssued;
                 
                 // Check if any equipment of this type is still in use

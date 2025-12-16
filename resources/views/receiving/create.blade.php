@@ -67,7 +67,8 @@
                                                     class="text-danger">*</span></label>
                                             <input type="date" name="ReceivedDate"
                                                 class="form-control form-control-sm @error('ReceivedDate') is-invalid @enderror"
-                                                value="{{ old('ReceivedDate', date('Y-m-d')) }}" required>
+                                                value="{{ date('Y-m-d') }}" readonly
+                                                style="background-color: #e9ecef; cursor: not-allowed;">
                                         </div>
                                     </div>
                                 </div>

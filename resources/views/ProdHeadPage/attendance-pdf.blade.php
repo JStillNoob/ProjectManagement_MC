@@ -15,21 +15,51 @@
         .header {
             text-align: center;
             margin-bottom: 30px;
-            padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 10px;
         }
-        
-        .header h1 {
+
+        /* Styles to mimic the Logo without an image */
+        .company-name {
+            font-size: 24pt;
+            font-weight: bold;
+            color: #009900;
+            /* Macua Green */
+            text-transform: uppercase;
             margin: 0;
-            font-size: 2.5rem;
+            line-height: 1;
+            text-shadow: 1px 1px 1px #ccc;
+            /* Subtle shadow like the logo */
         }
-        
-        .header p {
-            margin: 10px 0 0 0;
-            font-size: 1.1rem;
-            opacity: 0.9;
+
+        .company-tagline {
+            font-size: 9pt;
+            font-weight: bold;
+            color: #000;
+            text-transform: uppercase;
+            margin: 5px 0 0 0;
+            letter-spacing: 1px;
+        }
+
+        .license-no {
+            font-size: 8pt;
+            color: #000;
+            font-weight: bold;
+            margin-top: 2px;
+        }
+
+        .green-bar {
+            background-color: #009900;
+            height: 4px;
+            width: 100%;
+            margin-top: 10px;
+            margin-bottom: 20px;
+        }
+
+        .document-title {
+            font-size: 16pt;
+            font-weight: bold;
+            color: #0056b3;
+            margin-bottom: 5px;
+            text-transform: uppercase;
         }
         
         .overall-summary {
@@ -343,9 +373,17 @@
 </head>
 <body>
     <!-- Header -->
+    {{-- TEXT-BASED HEADER (Replaces Image) --}}
     <div class="header">
-        <h1>📊 Attendance Report</h1>
-        <p>All Projects - {{ \Carbon\Carbon::parse($startDate)->format('M d, Y') }} to {{ \Carbon\Carbon::parse($endDate)->format('M d, Y') }}</p>
+        <div class="company-name">MACUA CONSTRUCTION</div>
+        <div class="company-tagline">General Contractor – Mechanical Works - Fabrication</div>
+        <div class="license-no">PCAB LICENSE NO. 41994</div>
+
+        {{-- The Green Line from the logo --}}
+        <div class="green-bar"></div>
+
+        <div class="document-title">ATTENDANCE REPORT</div>
+        <p style="color: #666; margin: 5px 0; font-size: 10pt;">All Projects - {{ \Carbon\Carbon::parse($startDate)->format('M d, Y') }} to {{ \Carbon\Carbon::parse($endDate)->format('M d, Y') }}</p>
     </div>
 
     <!-- Report Information -->
@@ -423,7 +461,7 @@
                             if (!isset($employeeStats[$empId])) {
                                 $employeeStats[$empId] = [
                                     'name' => $record->employee->full_name,
-                                    'position' => $record->employee->position,
+                                    'position' => $record->employee->position->PositionName ?? 'N/A',
                                     'present' => 0,
                                     'late' => 0,
                                     'overtime' => 0,
@@ -433,7 +471,7 @@
                             $employeeStats[$empId]['total_days']++;
                             if ($record->status == 'Present') $employeeStats[$empId]['present']++;
                             if ($record->status == 'Late') $employeeStats[$empId]['late']++;
-                            if ($record->status == 'Overtime') $employeeStats[$empId]['overtime']++;
+                            if ($record->isOvertime()) $employeeStats[$empId]['overtime']++;
                         }
                     @endphp
                     
@@ -487,7 +525,7 @@
                             <tr>
                                 <td>
                                     <strong>{{ $record->employee->full_name ?? 'N/A' }}</strong><br>
-                                    <small style="color: #6c757d;">{{ $record->employee->position ?? 'N/A' }}</small>
+                                    <small style="color: #6c757d;">{{ $record->employee->position->PositionName ?? 'N/A' }}</small>
                                 </td>
                                 <td>{{ $record->attendance_date->format('M d, Y') }}</td>
                                 <td>{{ $record->formatted_time_in ?? 'N/A' }}</td>
@@ -505,7 +543,7 @@
                                 </td>
                                 <td>{{ $record->working_hours ?? 'N/A' }}</td>
                                 <td>
-                                    @if($record->status == 'Overtime')
+                                    @if($record->isOvertime())
                                         <span style="color: #17a2b8;">{{ $record->overtime_hours ?? 'N/A' }}</span>
                                     @else
                                         <span style="color: #6c757d;">-</span>

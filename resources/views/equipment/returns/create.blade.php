@@ -4,8 +4,21 @@
     <div class="container-fluid">
         @if(session('error'))
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                {{ session('error') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                <i class="fas fa-exclamation-circle me-2"></i>{{ session('error') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+
+        @if($errors->any())
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                <strong>Please fix the following errors:</strong>
+                <ul class="mb-0 mt-2">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         @endif
 
@@ -97,8 +110,8 @@
                                 <div class="row">
                                     <div class="col-md-3 mb-3">
                                         <label for="DateReturned" class="form-label">Return Date <span class="text-danger">*</span></label>
-                                        <input type="date" name="DateReturned" id="DateReturned" class="form-control"
-                                            value="{{ old('DateReturned', date('Y-m-d')) }}" required max="{{ date('Y-m-d') }}">
+                                        <input type="hidden" name="DateReturned" value="{{ date('Y-m-d') }}">
+                                        <input type="text" id="DateReturned" class="form-control" value="{{ date('M d, Y') }}" readonly style="background-color: #f8f9fa;" aria-label="Return Date">
                                         @error('DateReturned')
                                             <div class="text-danger small">{{ $message }}</div>
                                         @enderror
@@ -107,46 +120,50 @@
                                     <div class="col-md-3 mb-3">
                                         <label for="QuantityReturned" class="form-label">Quantity Returned <span class="text-danger">*</span></label>
                                         <input type="number" name="QuantityReturned" id="QuantityReturned" class="form-control"
-                                            step="0.01" min="0.01" max="{{ $assignment->QuantityAssigned }}"
-                                            value="{{ old('QuantityReturned', $assignment->QuantityAssigned) }}" required>
-                                        <small class="form-text text-muted">Max: {{ number_format($assignment->QuantityAssigned, 2) }}</small>
+                                            step="1" min="1" max="{{ (int) $assignment->QuantityAssigned }}"
+                                            value="{{ old('QuantityReturned', (int) $assignment->QuantityAssigned) }}" required>
+                                        <small class="form-text text-muted">Max: {{ (int) $assignment->QuantityAssigned }}</small>
                                         @error('QuantityReturned')
                                             <div class="text-danger small">{{ $message }}</div>
                                         @enderror
                                     </div>
 
                                     <div class="col-md-3 mb-3">
-                                        <label for="ReturnCondition" class="form-label">Return Condition <span class="text-danger">*</span></label>
-                                        <select name="ReturnCondition" id="ReturnCondition" class="form-select" required onchange="toggleIncidentFields()">
+                                        <label for="Status" class="form-label">Return Condition <span class="text-danger">*</span></label>
+                                        <select name="Status" id="Status" class="form-control" required onchange="toggleIncidentFields()" aria-label="Return Condition">
                                             <option value="">Select Condition</option>
-                                            <option value="Good" {{ old('ReturnCondition') == 'Good' ? 'selected' : '' }}>Good Condition</option>
-                                            <option value="Damaged" {{ old('ReturnCondition') == 'Damaged' ? 'selected' : '' }}>Damaged</option>
-                                            <option value="Missing" {{ old('ReturnCondition') == 'Missing' ? 'selected' : '' }}>Missing/Lost</option>
+                                            <option value="Returned" {{ old('Status') == 'Returned' ? 'selected' : '' }}>Good Condition</option>
+                                            <option value="Damaged" {{ old('Status') == 'Damaged' ? 'selected' : '' }}>Damaged</option>
+                                            <option value="Missing" {{ old('Status') == 'Missing' ? 'selected' : '' }}>Missing/Lost</option>
                                         </select>
-                                        @error('ReturnCondition')
+                                        @error('Status')
                                             <div class="text-danger small">{{ $message }}</div>
                                         @enderror
                                     </div>
 
                                     <div class="col-md-3 mb-3">
                                         <label for="ReturnedBy" class="form-label">Returned By <span class="text-danger">*</span></label>
-                                        <select name="ReturnedBy" id="ReturnedBy" class="form-select" required>
-                                            <option value="">Select Employee</option>
-                                            @foreach($employees as $employee)
-                                                <option value="{{ $employee->id }}" {{ old('ReturnedBy') == $employee->id ? 'selected' : '' }}>
-                                                    {{ $employee->full_name }}
-                                                </option>
-                                            @endforeach
-                                        </select>
+                                        @php
+                                            $currentUser = Auth::user()->load('employee');
+                                            $returnedByName = 'User';
+                                            if ($currentUser->employee) {
+                                                $returnedByName = $currentUser->employee->full_name ?? 'User';
+                                            } else {
+                                                $emailParts = explode('@', $currentUser->Email ?? '');
+                                                $returnedByName = ucfirst($emailParts[0] ?? 'User');
+                                            }
+                                        @endphp
+                                        <input type="hidden" name="ReturnedBy" value="{{ $currentUser->EmployeeID }}">
+                                        <input type="text" id="ReturnedBy" class="form-control" value="{{ $returnedByName }}" readonly style="background-color: #f8f9fa;" aria-label="Returned By">
                                         @error('ReturnedBy')
                                             <div class="text-danger small">{{ $message }}</div>
                                         @enderror
                                     </div>
 
                                     <div class="col-12">
-                                        <label for="ReturnNotes" class="form-label">Return Notes</label>
-                                        <textarea name="ReturnNotes" id="ReturnNotes" class="form-control" rows="2" placeholder="Optional notes about the return...">{{ old('ReturnNotes') }}</textarea>
-                                        @error('ReturnNotes')
+                                        <label for="ReturnRemarks" class="form-label">Return Notes</label>
+                                        <textarea name="ReturnRemarks" id="ReturnRemarks" class="form-control" rows="2" placeholder="Optional notes about the return...">{{ old('ReturnRemarks') }}</textarea>
+                                        @error('ReturnRemarks')
                                             <div class="text-danger small">{{ $message }}</div>
                                         @enderror
                                     </div>
@@ -160,15 +177,15 @@
                                 </h6>
                                 <div class="row">
                                     <div class="col-md-3 mb-3">
-                                        <label for="IncidentType" class="form-label">Incident Type</label>
-                                        <select name="IncidentType" id="IncidentType" class="form-select">
+                                        <label for="incident_type" class="form-label">Incident Type</label>
+                                        <select name="incident_type" id="IncidentType" class="form-select" aria-label="Incident Type">
                                             <option value="">Select Type</option>
-                                            <option value="Damage" {{ old('IncidentType') == 'Damage' ? 'selected' : '' }}>Damage</option>
-                                            <option value="Loss" {{ old('IncidentType') == 'Loss' ? 'selected' : '' }}>Loss</option>
-                                            <option value="Theft" {{ old('IncidentType') == 'Theft' ? 'selected' : '' }}>Theft</option>
-                                            <option value="Malfunction" {{ old('IncidentType') == 'Malfunction' ? 'selected' : '' }}>Malfunction</option>
+                                            <option value="Damage" {{ old('incident_type') == 'Damage' ? 'selected' : '' }}>Damage</option>
+                                            <option value="Loss" {{ old('incident_type') == 'Loss' ? 'selected' : '' }}>Loss</option>
+                                            <option value="Theft" {{ old('incident_type') == 'Theft' ? 'selected' : '' }}>Theft</option>
+                                            <option value="Malfunction" {{ old('incident_type') == 'Malfunction' ? 'selected' : '' }}>Malfunction</option>
                                         </select>
-                                        @error('IncidentType')
+                                        @error('incident_type')
                                             <div class="text-danger small">{{ $message }}</div>
                                         @enderror
                                     </div>
@@ -184,7 +201,7 @@
 
                                     <div class="col-md-3 mb-3">
                                         <label for="ResponsibleEmployeeID" class="form-label">Responsible Employee</label>
-                                        <select name="ResponsibleEmployeeID" id="ResponsibleEmployeeID" class="form-select">
+                                        <select name="ResponsibleEmployeeID" id="ResponsibleEmployeeID" class="form-select" aria-label="Responsible Employee">
                                             <option value="">Select Employee (if applicable)</option>
                                             @foreach($employees as $employee)
                                                 <option value="{{ $employee->id }}" {{ old('ResponsibleEmployeeID') == $employee->id ? 'selected' : '' }}>
@@ -198,28 +215,28 @@
                                     </div>
 
                                     <div class="col-md-3 mb-3">
-                                        <label for="EstimatedCost" class="form-label">Est. Repair/Replacement Cost</label>
-                                        <input type="number" name="EstimatedCost" id="EstimatedCost" class="form-control"
-                                            step="0.01" min="0" value="{{ old('EstimatedCost') }}" placeholder="0.00">
-                                        @error('EstimatedCost')
+                                        <label for="estimated_cost" class="form-label">Est. Repair/Replacement Cost</label>
+                                        <input type="number" name="estimated_cost" id="EstimatedCost" class="form-control"
+                                            step="0.01" min="0" value="{{ old('estimated_cost') }}" placeholder="0.00">
+                                        @error('estimated_cost')
                                             <div class="text-danger small">{{ $message }}</div>
                                         @enderror
                                     </div>
 
                                     <div class="col-md-8 mb-3">
-                                        <label for="IncidentDescription" class="form-label">Incident Description</label>
-                                        <textarea name="IncidentDescription" id="IncidentDescription" class="form-control" rows="2"
-                                            placeholder="Describe what happened...">{{ old('IncidentDescription') }}</textarea>
-                                        @error('IncidentDescription')
+                                        <label for="incident_description" class="form-label">Incident Description</label>
+                                        <textarea name="incident_description" id="IncidentDescription" class="form-control" rows="2"
+                                            placeholder="Describe what happened...">{{ old('incident_description') }}</textarea>
+                                        @error('incident_description')
                                             <div class="text-danger small">{{ $message }}</div>
                                         @enderror
                                     </div>
 
                                     <div class="col-md-4 mb-3">
-                                        <label for="PhotoPath" class="form-label">Photo Evidence</label>
-                                        <input type="file" name="PhotoPath" id="PhotoPath" class="form-control" accept="image/*">
+                                        <label for="damage_photo" class="form-label">Photo Evidence</label>
+                                        <input type="file" name="damage_photo" id="PhotoPath" class="form-control" accept="image/*">
                                         <small class="form-text text-muted">Upload photo of damage</small>
-                                        @error('PhotoPath')
+                                        @error('damage_photo')
                                             <div class="text-danger small">{{ $message }}</div>
                                         @enderror
                                     </div>
@@ -229,11 +246,11 @@
 
                         <!-- Card Footer -->
                         <div class="card-footer bg-white d-flex justify-content-end">
-                            <a href="{{ route('equipment.returns.index') }}" class="btn btn-secondary me-2">
-                                <i class="fas fa-times me-1"></i> Cancel
+                            <a href="{{ route('equipment.returns.index') }}" class="btn btn-secondary me-3" aria-label="Cancel equipment return">
+                                <i class="fas fa-times me-1" aria-hidden="true"></i> Cancel
                             </a>
-                            <button type="submit" class="btn text-white" style="background-color: #87A96B;">
-                                <i class="fas fa-check me-1"></i> Process Return
+                            <button type="submit" class="btn text-white" style="background-color: #87A96B;" aria-label="Process equipment return">
+                                <i class="fas fa-check me-1" aria-hidden="true"></i> Process Return
                             </button>
                         </div>
                     </div>
@@ -244,7 +261,7 @@
 
     <script>
         function toggleIncidentFields() {
-            const condition = document.getElementById('ReturnCondition').value;
+            const condition = document.getElementById('Status').value;
             const incidentSection = document.getElementById('incidentSection');
 
             if (condition === 'Damaged' || condition === 'Missing') {
@@ -265,6 +282,33 @@
         // Check on page load if condition is already selected
         window.addEventListener('DOMContentLoaded', function () {
             toggleIncidentFields();
+            
+            // Prevent decimal input for quantity returned
+            const quantityInput = document.getElementById('QuantityReturned');
+            if (quantityInput) {
+                quantityInput.addEventListener('input', function(e) {
+                    // Remove any decimal points and non-numeric characters except digits
+                    let value = this.value.replace(/[^0-9]/g, '');
+                    if (value !== this.value) {
+                        this.value = value;
+                    }
+                });
+                
+                quantityInput.addEventListener('keydown', function(e) {
+                    // Prevent decimal point, minus sign, and 'e' (scientific notation)
+                    if (e.key === '.' || e.key === ',' || e.key === '-' || e.key === 'e' || e.key === 'E') {
+                        e.preventDefault();
+                    }
+                });
+                
+                quantityInput.addEventListener('paste', function(e) {
+                    e.preventDefault();
+                    let paste = (e.clipboardData || window.clipboardData).getData('text');
+                    // Only allow whole numbers
+                    paste = paste.replace(/[^0-9]/g, '');
+                    this.value = paste;
+                });
+            }
         });
     </script>
 @endsection
