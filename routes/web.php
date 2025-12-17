@@ -129,7 +129,7 @@ Route::middleware('auth')->group(function () {
         return response()->json(['success' => false, 'message' => 'Employee not found for QR code'], 404);
     });
 
-    // API route to check employee's current attendance status for today
+    // API route to check employee's current attendance status for today (supports 4 clock events)
     Route::get('/api/employee/{id}/attendance-status', function(Request $request, $id) {
         $date = $request->get('date', now()->format('Y-m-d'));
         
@@ -145,43 +145,63 @@ Route::middleware('auth')->group(function () {
         
         $status = [
             'has_time_in' => false,
+            'has_lunch_out' => false,
+            'has_lunch_in' => false,
             'has_time_out' => false,
             'next_action' => 'time_in', // Default to time_in
             'time_in' => null,
+            'lunch_out' => null,
+            'lunch_in' => null,
             'time_out' => null,
             'status' => null,
             'can_time_in' => true,
+            'can_lunch_out' => false,
+            'can_lunch_in' => false,
             'can_time_out' => false,
             'is_completed' => false
         ];
         
         if ($attendance) {
             $status['has_time_in'] = !is_null($attendance->time_in);
+            $status['has_lunch_out'] = !is_null($attendance->lunch_out);
+            $status['has_lunch_in'] = !is_null($attendance->lunch_in);
             $status['has_time_out'] = !is_null($attendance->time_out);
             $status['time_in'] = $attendance->time_in;
+            $status['lunch_out'] = $attendance->lunch_out;
+            $status['lunch_in'] = $attendance->lunch_in;
             $status['time_out'] = $attendance->time_out;
             $status['status'] = $attendance->status;
             
             // Determine what actions are allowed
             $status['can_time_in'] = !$status['has_time_in'];
+            $status['can_lunch_out'] = $status['has_time_in'] && !$status['has_lunch_out'];
+            $status['can_lunch_in'] = $status['has_lunch_out'] && !$status['has_lunch_in'];
             $status['can_time_out'] = $status['has_time_in'] && !$status['has_time_out'];
             $status['is_completed'] = $status['has_time_in'] && $status['has_time_out'];
             
-            // Determine next action
-            if (!$status['has_time_in']) {
-                $status['next_action'] = 'time_in';
-            } elseif (!$status['has_time_out']) {
-                $status['next_action'] = 'time_out';
-            } else {
-                $status['next_action'] = 'completed'; // Both time_in and time_out are done
-            }
+            // Determine next expected action
+            $status['next_action'] = $attendance->getNextExpectedAction();
         }
+        
+        // Action labels for display
+        $actionLabels = [
+            'time_in' => 'Time In',
+            'lunch_out' => 'Lunch Out',
+            'lunch_in' => 'Lunch In',
+            'time_out' => 'Time Out',
+            'complete' => 'Complete'
+        ];
+        
+        $status['next_action_label'] = $actionLabels[$status['next_action']] ?? 'Time In';
         
         return response()->json([
             'success' => true,
             'attendance_status' => $status
         ]);
     });
+
+    // API route to get expected action for employee
+    Route::get('/api/employee/{id}/expected-action', [App\Http\Controllers\AttendanceController::class, 'getExpectedAction']);
 });
 
 
@@ -195,6 +215,7 @@ Route::get('/foreman/projects/{project}', [App\Http\Controllers\ForemanControlle
 // Production Head Attendance Management Routes
 Route::get('/production/attendance', [App\Http\Controllers\AttendanceController::class, 'prodHeadOverview'])->name('prodhead.attendance')->middleware('auth', 'checkRole:1,2');
 Route::get('/production/attendance/export-pdf', [App\Http\Controllers\AttendanceController::class, 'exportAttendancePdf'])->name('prodhead.attendance.pdf')->middleware('auth', 'checkRole:1,2');
+Route::get('/production/attendance/employee/{employeeId}/records', [App\Http\Controllers\AttendanceController::class, 'getEmployeeAttendanceDetails'])->name('prodhead.attendance.employee.details')->middleware('auth', 'checkRole:1,2');
 Route::get('/hr', [UserController::class, 'showAdmin'])->name('go_newPage')->middleware('auth');
 
 // Admin Projects Route
@@ -222,6 +243,7 @@ Route::post('projects/{project}/proceed-ntp', [ProjectController::class, 'procee
 Route::post('projects/{project}/assign-employees', [ProjectController::class, 'assignEmployees'])->name('projects.assignEmployees')->middleware('auth');
 Route::delete('projects/{project}/employees/{employee}', [ProjectController::class, 'removeEmployee'])->name('projects.removeEmployee')->middleware('auth');
 Route::post('projects/{project}/upload-attachment', [ProjectController::class, 'uploadAttachment'])->name('projects.uploadAttachment')->middleware('auth');
+Route::delete('projects/{project}/additional-image/{index}', [ProjectController::class, 'deleteAdditionalImage'])->name('projects.deleteAdditionalImage')->middleware('auth');
 
 // Project Employee Management Routes
 Route::get('projects/{project}/manage-employees', [ProjectController::class, 'manageEmployees'])->name('projects.manage-employees')->middleware('auth');

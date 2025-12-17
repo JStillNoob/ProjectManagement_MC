@@ -167,16 +167,20 @@ class UserController extends Controller
             $q->where('StatusName', 'On Going');
         })->count();
         
-        $employeeCount = \App\Models\Employee::active()->count();
+        // Count overdue milestones (milestones past their target date that aren't completed)
+        $overdueMilestones = \App\Models\ProjectMilestone::whereNotNull('target_date')
+            ->where('target_date', '<', now()->toDateString())
+            ->whereIn('status', ['Pending', 'In Progress'])
+            ->count();
         
         $pendingNTPProjects = \App\Models\Project::whereHas('status', function($q) {
             $q->where('StatusName', 'Pending');
         })->whereNull('NTPStartDate')->count();
         
-        // Active projects for progress bars
+        // Active projects for progress bars (include Delayed projects)
         $activeProjects = \App\Models\Project::with(['status', 'milestones', 'client'])
             ->whereHas('status', function($q) {
-                $q->whereIn('StatusName', ['On Going', 'Pre-Construction']);
+                $q->whereIn('StatusName', ['On Going', 'Pre-Construction', 'Delayed']);
             })
             ->orderBy('created_at', 'desc')
             ->take(10)
@@ -195,7 +199,7 @@ class UserController extends Controller
         return view('AdminIndex', compact(
             'pendingRequests',
             'inProgressProjects', 
-            'employeeCount',
+            'overdueMilestones',
             'pendingNTPProjects',
             'activeProjects',
             'equipmentAssignments'

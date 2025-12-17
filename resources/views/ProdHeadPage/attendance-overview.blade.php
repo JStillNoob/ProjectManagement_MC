@@ -144,11 +144,6 @@
             font-weight: 500;
         }
         
-        /* Remarks styling */
-        .table td[title] {
-            cursor: help;
-        }
-        
         /* Status breakdown cards */
         .card.border-success .card-title {
             color: #155724 !important;
@@ -399,6 +394,35 @@
         .progress-bar.bg-danger {
             background-color: #dc3545 !important;
         }
+        
+        /* View Records Button */
+        .view-attendance-records {
+            white-space: nowrap;
+        }
+        
+        /* Modal Styling */
+        #attendanceRecordsModal .modal-header {
+            border-bottom: none;
+        }
+        
+        #attendanceRecordsModal .modal-body {
+            padding-top: 0.5rem;
+        }
+        
+        #modalRecordsTable th {
+            background-color: #f0f8f0 !important;
+            color: #2d5a3d !important;
+            font-weight: 600;
+            border-bottom: 2px solid #7fb069;
+        }
+        
+        #modalSummaryStats .card {
+            border-width: 2px;
+        }
+        
+        #modalSummaryStats .card-body h5 {
+            font-weight: 700;
+        }
     </style>
 @endpush
 
@@ -499,6 +523,7 @@
                             <option value="Present">Present</option>
                             <option value="Late">Late</option>
                             <option value="Overtime">Overtime</option>
+                            <option value="Half Day">Half Day</option>
                             <option value="Absent">Absent</option>
                         </select>
                     </div>
@@ -540,8 +565,10 @@
                             <th>Days Present</th>
                             <th>Days Late</th>
                             <th>Days Overtime</th>
+                            <th>Days Half</th>
                             <th>Total Days</th>
                             <th>Attendance Rate</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -561,6 +588,7 @@
                                         'present' => 0,
                                         'late' => 0,
                                         'overtime' => 0,
+                                        'half_day' => 0,
                                         'total' => 0
                                     ];
                                 }
@@ -568,6 +596,7 @@
                                 if ($record->status == 'Present') $employeeStats[$empId]['present']++;
                                 if ($record->status == 'Late') $employeeStats[$empId]['late']++;
                                 if ($record->status == 'Overtime') $employeeStats[$empId]['overtime']++;
+                                if ($record->status == 'Half Day') $employeeStats[$empId]['half_day']++;
                             }
                         @endphp
                         
@@ -592,7 +621,10 @@
                                     <span class="badge badge-info badge-lg">{{ $stats['overtime'] }}</span>
                                 </td>
                                 <td>
-                                    <span class="badge badge-secondary badge-lg">{{ $stats['total'] }}</span>
+                                    <span class="badge badge-secondary badge-lg">{{ $stats['half_day'] }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge badge-dark badge-lg">{{ $stats['total'] }}</span>
                                 </td>
                                 <td>
                                     <div class="attendance-rate">
@@ -609,10 +641,19 @@
                                         </div>
                                     </div>
                                 </td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-primary view-attendance-records" 
+                                            data-employee-id="{{ $empId }}"
+                                            data-employee-name="{{ $stats['name'] }}"
+                                            data-start-date="{{ $startDate }}"
+                                            data-end-date="{{ $endDate }}">
+                                        <i class="fas fa-eye mr-1"></i> View Records
+                                    </button>
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center text-muted py-4">
+                                <td colspan="9" class="text-center text-muted py-4">
                                     <i class="fas fa-inbox fa-2x mb-2"></i>
                                     <br>No attendance records found for this project
                                 </td>
@@ -631,6 +672,125 @@
             </div>
         </div>
     @endforelse
+</div>
+
+<!-- Employee Attendance Records Modal -->
+<div class="modal fade" id="attendanceRecordsModal" tabindex="-1" role="dialog" aria-labelledby="attendanceRecordsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #7fb069 0%, #6fa05a 100%); color: white;">
+                <h5 class="modal-title" id="attendanceRecordsModalLabel">
+                    <i class="fas fa-clipboard-list mr-2"></i>
+                    <span id="modalEmployeeName">Employee</span> - Attendance Records
+                </h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Date Range Filter -->
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label for="modalStartDate" class="form-label"><i class="fas fa-calendar-alt mr-1"></i>Start Date</label>
+                        <input type="date" class="form-control" id="modalStartDate">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="modalEndDate" class="form-label"><i class="fas fa-calendar-alt mr-1"></i>End Date</label>
+                        <input type="date" class="form-control" id="modalEndDate">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">&nbsp;</label>
+                        <button type="button" class="btn btn-block" id="btnFilterRecords" style="background: #7fb069; color: white;">
+                            <i class="fas fa-filter mr-1"></i>Filter
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Summary Stats -->
+                <div class="row mb-3" id="modalSummaryStats">
+                    <div class="col-md-2">
+                        <div class="card border-success">
+                            <div class="card-body text-center py-2">
+                                <h5 class="mb-0 text-success" id="statPresent">0</h5>
+                                <small class="text-muted">Present</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="card border-warning">
+                            <div class="card-body text-center py-2">
+                                <h5 class="mb-0 text-warning" id="statLate">0</h5>
+                                <small class="text-muted">Late</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="card border-info">
+                            <div class="card-body text-center py-2">
+                                <h5 class="mb-0 text-info" id="statOvertime">0</h5>
+                                <small class="text-muted">Overtime</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="card border-secondary">
+                            <div class="card-body text-center py-2">
+                                <h5 class="mb-0 text-secondary" id="statHalfDay">0</h5>
+                                <small class="text-muted">Half Day</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="card border-danger">
+                            <div class="card-body text-center py-2">
+                                <h5 class="mb-0 text-danger" id="statAbsent">0</h5>
+                                <small class="text-muted">Absent</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="card border-primary">
+                            <div class="card-body text-center py-2">
+                                <h5 class="mb-0 text-primary" id="statRate">0%</h5>
+                                <small class="text-muted">Rate</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Records Table -->
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover" id="modalRecordsTable">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Time In</th>
+                                <th>Lunch Out</th>
+                                <th>Lunch In</th>
+                                <th>Time Out</th>
+                                <th>Status</th>
+                                <th>Working Hours</th>
+                                <th>Overtime</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modalRecordsBody">
+                            <tr>
+                                <td colspan="8" class="text-center text-muted py-4">
+                                    <i class="fas fa-spinner fa-spin fa-2x mb-2"></i>
+                                    <br>Loading records...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                    <i class="fas fa-times mr-1"></i>Close
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection
 
@@ -666,7 +826,7 @@
                             text: '<i class="fas fa-file-excel"></i> Excel',
                             className: 'btn btn-success btn-sm',
                             exportOptions: {
-                                columns: [0, 1, 2, 3, 4, 5, 6]
+                                columns: [0, 1, 2, 3, 4, 5, 6, 7]
                             }
                         },
                         {
@@ -674,7 +834,7 @@
                             text: '<i class="fas fa-file-pdf"></i> PDF',
                             className: 'btn btn-danger btn-sm',
                             exportOptions: {
-                                columns: [0, 1, 2, 3, 4, 5, 6]
+                                columns: [0, 1, 2, 3, 4, 5, 6, 7]
                             }
                         },
                         {
@@ -682,7 +842,7 @@
                             text: '<i class="fas fa-print"></i> Print',
                             className: 'btn btn-info btn-sm',
                             exportOptions: {
-                                columns: [0, 1, 2, 3, 4, 5, 6]
+                                columns: [0, 1, 2, 3, 4, 5, 6, 7]
                             },
                             customize: function (win) {
                                 // Get the project name and dates
@@ -730,15 +890,20 @@
                     },
                     columnDefs: [
                         {
-                            targets: [2, 3, 4, 5], // Days Present, Days Late, Days Overtime, Total Days
+                            targets: [2, 3, 4, 5, 6], // Days Present, Days Late, Days Overtime, Days Half, Total Days
                             orderable: true,
                             searchable: false
                         },
                         {
-                            targets: 6, // Attendance Rate
+                            targets: 7, // Attendance Rate
                             orderable: true,
                             searchable: false,
                             type: 'num'
+                        },
+                        {
+                            targets: 8, // Actions column
+                            orderable: false,
+                            searchable: false
                         }
                     ]
                 });
@@ -781,6 +946,109 @@
                     window['clearProjectFilters_' + projectId]();
                 }
             };
+
+            // Employee Attendance Records Modal functionality
+            var currentEmployeeId = null;
+            
+            // Handle View Records button click
+            $(document).on('click', '.view-attendance-records', function() {
+                currentEmployeeId = $(this).data('employee-id');
+                var employeeName = $(this).data('employee-name');
+                var startDate = $(this).data('start-date');
+                var endDate = $(this).data('end-date');
+                
+                // Set modal title
+                $('#modalEmployeeName').text(employeeName);
+                
+                // Set date filters
+                $('#modalStartDate').val(startDate);
+                $('#modalEndDate').val(endDate);
+                
+                // Load attendance records
+                loadAttendanceRecords(currentEmployeeId, startDate, endDate);
+                
+                // Show modal
+                $('#attendanceRecordsModal').modal('show');
+            });
+            
+            // Handle Filter button click in modal
+            $('#btnFilterRecords').on('click', function() {
+                if (currentEmployeeId) {
+                    var startDate = $('#modalStartDate').val();
+                    var endDate = $('#modalEndDate').val();
+                    loadAttendanceRecords(currentEmployeeId, startDate, endDate);
+                }
+            });
+            
+            // Load attendance records via AJAX
+            function loadAttendanceRecords(employeeId, startDate, endDate) {
+                // Show loading state
+                $('#modalRecordsBody').html('<tr><td colspan="9" class="text-center text-muted py-4"><i class="fas fa-spinner fa-spin fa-2x mb-2"></i><br>Loading records...</td></tr>');
+                
+                $.ajax({
+                    url: '/production/attendance/employee/' + employeeId + '/records',
+                    method: 'GET',
+                    data: {
+                        start_date: startDate,
+                        end_date: endDate
+                    },
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                        'Accept': 'application/json'
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            // Update summary stats
+                            $('#statPresent').text(response.summary.present_days);
+                            $('#statLate').text(response.summary.late_days);
+                            $('#statOvertime').text(response.summary.overtime_days);
+                            $('#statHalfDay').text(response.summary.half_days);
+                            $('#statAbsent').text(response.summary.absent_days);
+                            $('#statRate').text(response.summary.attendance_rate + '%');
+                            
+                            // Build table rows
+                            var html = '';
+                            if (response.records.length > 0) {
+                                response.records.forEach(function(record) {
+                                    var statusBadge = getStatusBadge(record.status);
+                                    html += '<tr>';
+                                    html += '<td>' + record.formatted_date + '</td>';
+                                    html += '<td>' + record.time_in + '</td>';
+                                    html += '<td>' + record.lunch_out + '</td>';
+                                    html += '<td>' + record.lunch_in + '</td>';
+                                    html += '<td>' + record.time_out + '</td>';
+                                    html += '<td>' + statusBadge + '</td>';
+                                    html += '<td>' + record.working_hours + '</td>';
+                                    html += '<td>' + record.overtime_hours + '</td>';
+                                    html += '</tr>';
+                                });
+                            } else {
+                                html = '<tr><td colspan="8" class="text-center text-muted py-4"><i class="fas fa-inbox fa-2x mb-2"></i><br>No attendance records found for this period</td></tr>';
+                            }
+                            
+                            $('#modalRecordsBody').html(html);
+                        } else {
+                            $('#modalRecordsBody').html('<tr><td colspan="8" class="text-center text-danger py-4"><i class="fas fa-exclamation-triangle fa-2x mb-2"></i><br>Error loading records</td></tr>');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error loading attendance records:', error);
+                        $('#modalRecordsBody').html('<tr><td colspan="8" class="text-center text-danger py-4"><i class="fas fa-exclamation-triangle fa-2x mb-2"></i><br>Error loading records: ' + error + '</td></tr>');
+                    }
+                });
+            }
+            
+            // Get status badge HTML
+            function getStatusBadge(status) {
+                var badges = {
+                    'Present': '<span class="badge badge-success">Present</span>',
+                    'Late': '<span class="badge badge-warning">Late</span>',
+                    'Overtime': '<span class="badge badge-info">Overtime</span>',
+                    'Half Day': '<span class="badge badge-secondary">Half Day</span>',
+                    'Absent': '<span class="badge badge-danger">Absent</span>'
+                };
+                return badges[status] || '<span class="badge badge-primary">' + status + '</span>';
+            }
         });
     </script>
 @endpush

@@ -311,7 +311,19 @@
                                                     <h6 class="mb-0 font-weight-bold text-dark">
                                                         {{ $milestone->milestone_name ?? 'Milestone' }}</h6>
                                                     @if($targetDate && $targetDate !== 'N/A')
-                                                        <small class="text-muted">{{ $targetDate }}</small>
+                                                        <small class="text-muted">Target: {{ $targetDate }}</small>
+                                                    @elseif($milestone->status === 'Pending')
+                                                        <small class="text-muted text-info">Target date will be set when started</small>
+                                                    @endif
+                                                    @if($milestone->is_overdue)
+                                                        <br><span class="badge badge-danger mt-1">
+                                                            <i class="fas fa-exclamation-circle"></i> Overdue ({{ $milestone->days_overdue }} days)
+                                                        </span>
+                                                    @endif
+                                                    @if($milestone->is_early)
+                                                        <br><span class="badge badge-success mt-1">
+                                                            <i class="fas fa-check-circle"></i> Completed Early ({{ $milestone->days_early }} days ahead)
+                                                        </span>
                                                     @endif
                                                 </div>
                                                 <span

@@ -44,10 +44,16 @@
                                                             ($project->status->StatusName == 'Under Warranty' ? 'warning' :
                                                                 ($project->status->StatusName == 'Pending' ? 'info' :
                                                                     ($project->status->StatusName == 'Pre-Construction' ? 'warning' :
-                                                                        ($project->status->StatusName == 'On Hold' ? 'secondary' : 'info')))));
+                                                                        ($project->status->StatusName == 'Delayed' ? 'danger' :
+                                                                            ($project->status->StatusName == 'On Hold' ? 'secondary' : 'info'))))));
                                                 @endphp
                                                 <span class="badge badge-{{ $statusClass }}"
-                                                    style="font-size: 0.75rem;">{{ $project->status->StatusName }}</span>
+                                                    style="font-size: 0.75rem;">
+                                                    @if($project->status->StatusName == 'Delayed')
+                                                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                                                    @endif
+                                                    {{ $project->status->StatusName }}
+                                                </span>
                                             </div>
                                             <div>
                                                 <i class="fas fa-calendar-alt text-warning mr-1"></i>
@@ -421,7 +427,19 @@
                                                                         {{ $milestone->milestone_name ?? 'Milestone' }}
                                                                     </h6>
                                                                     @if($targetDate && $targetDate !== 'N/A')
-                                                                        <small class="text-muted">{{ $targetDate }}</small>
+                                                                        <small class="text-muted">Target: {{ $targetDate }}</small>
+                                                                    @elseif($milestone->status === 'Pending')
+                                                                        <small class="text-muted text-info">Target date will be set when started</small>
+                                                                    @endif
+                                                                    @if($milestone->is_overdue)
+                                                                        <br><span class="badge badge-danger mt-1">
+                                                                            <i class="fas fa-exclamation-circle"></i> Overdue ({{ $milestone->days_overdue }} days)
+                                                                        </span>
+                                                                    @endif
+                                                                    @if($milestone->is_early)
+                                                                        <br><span class="badge badge-success mt-1">
+                                                                            <i class="fas fa-check-circle"></i> Completed Early ({{ $milestone->days_early }} days ahead)
+                                                                        </span>
                                                                     @endif
                                                                 </div>
                                                                 <span
@@ -509,7 +527,7 @@
                                 </div>
                                 <div class="card-body">
                                     @php
-                                        $hasAttachments = $project->BlueprintPath || $project->FloorPlanPath || $project->NTPAttachment;
+                                        $hasAttachments = $project->BlueprintPath || $project->FloorPlanPath || $project->NTPAttachment || ($project->additional_images && count($project->additional_images) > 0);
                                     @endphp
 
                                     @if($hasAttachments)
@@ -626,6 +644,48 @@
                                                         </div>
                                                     </div>
                                                 </div>
+                                            @endif
+
+                                            @if($project->additional_images && count($project->additional_images) > 0)
+                                                @foreach($project->additional_images as $index => $imagePath)
+                                                    <div class="col-md-4 mb-3">
+                                                        <div class="card border-0 shadow-sm h-100">
+                                                            <div class="position-relative">
+                                                                <a href="{{ asset('storage/' . $imagePath) }}"
+                                                                    data-lightbox="project-attachments" data-title="Additional Image {{ $index + 1 }}">
+                                                                    <img src="{{ asset('storage/' . $imagePath) }}"
+                                                                        class="card-img-top" alt="Additional Image {{ $index + 1 }}"
+                                                                        style="height: 200px; object-fit: cover; cursor: pointer;">
+                                                                </a>
+                                                                <div class="position-absolute top-0 left-0 m-2">
+                                                                    <span class="badge badge-secondary">
+                                                                        <i class="fas fa-image mr-1"></i>Image {{ $index + 1 }}
+                                                                    </span>
+                                                                </div>
+                                                                <div class="position-absolute top-0 right-0 m-2">
+                                                                    <form action="{{ route('projects.deleteAdditionalImage', [$project, $index]) }}" method="POST" class="d-inline">
+                                                                        @csrf
+                                                                        @method('DELETE')
+                                                                        <button type="submit" class="btn btn-danger btn-sm" 
+                                                                            onclick="return confirm('Are you sure you want to delete this image?')">
+                                                                            <i class="fas fa-trash"></i>
+                                                                        </button>
+                                                                    </form>
+                                                                </div>
+                                                            </div>
+                                                            <div class="card-body">
+                                                                <a href="{{ asset('storage/' . $imagePath) }}"
+                                                                    target="_blank" class="btn btn-sm btn-outline-primary">
+                                                                    <i class="fas fa-external-link-alt mr-1"></i>Open
+                                                                </a>
+                                                                <a href="{{ asset('storage/' . $imagePath) }}" download
+                                                                    class="btn btn-sm btn-outline-secondary ml-1">
+                                                                    <i class="fas fa-download mr-1"></i>Download
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                @endforeach
                                             @endif
                                         </div>
                                     @else
@@ -2412,6 +2472,115 @@
             });
         </script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
+        
+        <!-- Upload Attachment Modal Script -->
+        <script>
+            $(document).ready(function() {
+                const currentAdditionalCount = {{ $currentAdditionalCount ?? 0 }};
+                
+                // Handle attachment type change
+                $('#attachment_type').on('change', function() {
+                    const type = $(this).val();
+                    const $singleGroup = $('#singleFileGroup');
+                    const $multipleGroup = $('#multipleFilesGroup');
+                    const $singleInput = $('#attachment');
+                    const $multipleInput = $('#attachments');
+                    
+                    if (type === 'additional') {
+                        // Show multiple file input
+                        $singleGroup.hide();
+                        $multipleGroup.show();
+                        $singleInput.removeAttr('required');
+                        $multipleInput.attr('required', 'required');
+                    } else if (type) {
+                        // Show single file input for blueprint/floorplan
+                        $singleGroup.show();
+                        $multipleGroup.hide();
+                        $multipleInput.removeAttr('required');
+                        $singleInput.attr('required', 'required');
+                    } else {
+                        // No type selected - hide both
+                        $singleGroup.hide();
+                        $multipleGroup.hide();
+                    }
+                    
+                    // Reset previews
+                    $('#imagePreview').hide();
+                    $('#previewContainer').empty();
+                });
+                
+                // Single file input label update and preview
+                $('#attachment').on('change', function(e) {
+                    const fileName = e.target.files[0] ? e.target.files[0].name : 'Choose file';
+                    $(this).next('.custom-file-label').text(fileName);
+                    
+                    // Show preview
+                    if (e.target.files[0]) {
+                        const reader = new FileReader();
+                        reader.onload = function(event) {
+                            $('#previewContainer').html('<img src="' + event.target.result + '" alt="Preview" class="img-fluid rounded" style="max-height: 200px;">');
+                            $('#imagePreview').show();
+                        };
+                        reader.readAsDataURL(e.target.files[0]);
+                    } else {
+                        $('#imagePreview').hide();
+                    }
+                });
+                
+                // Multiple files input label update and preview
+                $('#attachments').on('change', function(e) {
+                    const files = e.target.files;
+                    const maxFiles = 8 - currentAdditionalCount;
+                    
+                    if (files.length > maxFiles) {
+                        alert('You can only upload up to ' + maxFiles + ' more images!');
+                        $(this).val('');
+                        $(this).next('.custom-file-label').text('Choose files');
+                        $('#imagePreview').hide();
+                        return;
+                    }
+                    
+                    if (files.length > 0) {
+                        $(this).next('.custom-file-label').text(files.length + ' file(s) selected');
+                        
+                        // Show previews
+                        $('#previewContainer').empty();
+                        Array.from(files).forEach(function(file) {
+                            const reader = new FileReader();
+                            reader.onload = function(event) {
+                                $('#previewContainer').append(
+                                    '<div class="mr-2 mb-2"><img src="' + event.target.result + '" alt="Preview" class="rounded" style="height: 100px; object-fit: cover;"></div>'
+                                );
+                            };
+                            reader.readAsDataURL(file);
+                        });
+                        $('#imagePreview').show();
+                    } else {
+                        $(this).next('.custom-file-label').text('Choose files');
+                        $('#imagePreview').hide();
+                    }
+                });
+                
+                // Reset modal when closed
+                $('#uploadAttachmentModal').on('hidden.bs.modal', function () {
+                    $('#uploadAttachmentForm')[0].reset();
+                    $('#attachment_type').val('');
+                    $('#singleFileGroup').hide();
+                    $('#multipleFilesGroup').hide();
+                    $('#imagePreview').hide();
+                    $('#previewContainer').empty();
+                });
+                
+                // Reset on modal open
+                $('#uploadAttachmentModal').on('shown.bs.modal', function () {
+                    $('#attachment_type').val('');
+                    $('#singleFileGroup').hide();
+                    $('#multipleFilesGroup').hide();
+                    $('#imagePreview').hide();
+                    $('#previewContainer').empty();
+                });
+            });
+        </script>
     @endpush
 
 <!-- Upload Attachment Modal -->
@@ -2426,28 +2595,49 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            <form action="{{ route('projects.uploadAttachment', $project) }}" method="POST" enctype="multipart/form-data">
+            <form action="{{ route('projects.uploadAttachment', $project) }}" method="POST" enctype="multipart/form-data" id="uploadAttachmentForm">
                 @csrf
                 <div class="modal-body">
                     <div class="form-group">
                         <label for="attachment_type">Attachment Type <span class="text-danger">*</span></label>
                         <select class="form-control" id="attachment_type" name="attachment_type" required>
                             <option value="">Select Type</option>
-                            <option value="blueprint">Blueprint</option>
-                            <option value="floorplan">Floor Plan</option>
+                            @if(!$project->BlueprintPath)
+                                <option value="blueprint">Blueprint</option>
+                            @endif
+                            @if(!$project->FloorPlanPath)
+                                <option value="floorplan">Floor Plan</option>
+                            @endif
+                            <option value="additional">Additional Images (Max 8 total)</option>
                         </select>
+                        @php
+                            $currentAdditionalCount = $project->additional_images ? count($project->additional_images) : 0;
+                        @endphp
+                        @if($currentAdditionalCount > 0)
+                            <small class="form-text text-info">
+                                Current additional images: {{ $currentAdditionalCount }}/8
+                            </small>
+                        @endif
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="singleFileGroup">
                         <label for="attachment">Image File <span class="text-danger">*</span></label>
                         <div class="custom-file">
-                            <input type="file" class="custom-file-input" id="attachment" name="attachment" accept="image/*" required>
+                            <input type="file" class="custom-file-input" id="attachment" name="attachment" accept="image/*">
                             <label class="custom-file-label" for="attachment">Choose file</label>
                         </div>
                         <small class="form-text text-muted">Max: 5MB (JPEG, PNG, JPG, GIF)</small>
                     </div>
+                    <div class="form-group" id="multipleFilesGroup" style="display:none;">
+                        <label for="attachments">Image Files <span class="text-danger">*</span> (Select multiple)</label>
+                        <div class="custom-file">
+                            <input type="file" class="custom-file-input" id="attachments" name="attachments[]" accept="image/*" multiple>
+                            <label class="custom-file-label" for="attachments">Choose files</label>
+                        </div>
+                        <small class="form-text text-muted">Max: 5MB per image (JPEG, PNG, JPG, GIF). You can select up to {{ 8 - $currentAdditionalCount }} more images.</small>
+                    </div>
                     <div id="imagePreview" class="mt-3" style="display: none;">
                         <label>Preview:</label>
-                        <img id="previewImg" src="" alt="Preview" class="img-fluid rounded" style="max-height: 200px;">
+                        <div id="previewContainer" class="d-flex flex-wrap"></div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -2462,25 +2652,5 @@
         </div>
     </div>
 </div>
-
-<script>
-    // File input label update and preview
-    document.getElementById('attachment').addEventListener('change', function(e) {
-        var fileName = e.target.files[0] ? e.target.files[0].name : 'Choose file';
-        e.target.nextElementSibling.textContent = fileName;
-        
-        // Show preview
-        if (e.target.files[0]) {
-            var reader = new FileReader();
-            reader.onload = function(event) {
-                document.getElementById('previewImg').src = event.target.result;
-                document.getElementById('imagePreview').style.display = 'block';
-            };
-            reader.readAsDataURL(e.target.files[0]);
-        } else {
-            document.getElementById('imagePreview').style.display = 'none';
-        }
-    });
-</script>
 
 @endsection

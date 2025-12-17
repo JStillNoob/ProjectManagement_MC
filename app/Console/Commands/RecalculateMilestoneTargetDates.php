@@ -20,7 +20,7 @@ class RecalculateMilestoneTargetDates extends Command
      *
      * @var string
      */
-    protected $description = 'Recalculate target dates for all milestones based on project StartDate and cumulative EstimatedDays';
+    protected $description = 'Recalculate target dates for milestones - only for In Progress milestones, clear for Pending ones';
 
     /**
      * Execute the console command.
@@ -47,22 +47,39 @@ class RecalculateMilestoneTargetDates extends Command
                 continue;
             }
             
-            $cumulativeDays = 0;
+            $lastCompletedDate = null;
             
             foreach ($milestones as $milestone) {
                 $totalMilestones++;
+                $oldTargetDate = $milestone->target_date;
                 
-                if ($milestone->EstimatedDays) {
-                    $cumulativeDays += $milestone->EstimatedDays;
-                    $newTargetDate = Carbon::parse($project->StartDate)->addDays($cumulativeDays);
-                    
-                    $oldTargetDate = $milestone->target_date;
-                    $milestone->target_date = $newTargetDate;
-                    $milestone->saveQuietly();
-                    
-                    if ($oldTargetDate != $newTargetDate) {
+                if ($milestone->status === 'Completed') {
+                    // Keep existing target_date for completed milestones
+                    // Update lastCompletedDate for next milestone calculation
+                    $lastCompletedDate = $milestone->actual_date ?? $milestone->target_date;
+                    continue;
+                }
+                
+                if ($milestone->status === 'In Progress') {
+                    // Calculate target date for in-progress milestone
+                    if ($milestone->EstimatedDays) {
+                        $startFrom = $lastCompletedDate ?? $project->StartDate;
+                        $newTargetDate = Carbon::parse($startFrom)->addDays($milestone->EstimatedDays);
+                        $milestone->target_date = $newTargetDate;
+                        $milestone->saveQuietly();
+                        
+                        if ($oldTargetDate != $newTargetDate) {
+                            $updatedMilestones++;
+                            $this->line("  Updated (In Progress): {$milestone->milestone_name} - Target Date: {$newTargetDate->format('M d, Y')}");
+                        }
+                    }
+                } elseif ($milestone->status === 'Pending') {
+                    // Clear target date for pending milestones - they'll get it when they start
+                    if ($milestone->target_date !== null) {
+                        $milestone->target_date = null;
+                        $milestone->saveQuietly();
                         $updatedMilestones++;
-                        $this->line("  Updated: {$milestone->milestone_name} - Target Date: {$newTargetDate->format('M d, Y')}");
+                        $this->line("  Cleared (Pending): {$milestone->milestone_name} - Target Date set to N/A (will be calculated when started)");
                     }
                 }
             }

@@ -742,47 +742,104 @@ class ProjectController extends Controller
     public function uploadAttachment(Request $request, Project $project)
     {
         $request->validate([
-            'attachment_type' => 'required|in:blueprint,floorplan,ntp',
-            'attachment' => 'required|image|mimes:jpeg,png,jpg,gif|max:5120', // 5MB max
+            'attachment_type' => 'required|in:blueprint,floorplan,additional',
+            'attachment' => 'required_if:attachment_type,blueprint,floorplan|image|mimes:jpeg,png,jpg,gif|max:5120', // 5MB max
+            'attachments' => 'required_if:attachment_type,additional|array|min:1|max:8',
+            'attachments.*' => 'image|mimes:jpeg,png,jpg,gif|max:5120', // For multiple files
         ]);
 
         $type = $request->input('attachment_type');
-        $file = $request->file('attachment');
         
-        // Generate filename
-        $filename = 'project_' . $project->ProjectID . '_' . $type . '_' . time() . '.' . $file->getClientOriginalExtension();
-        
-        // Store file
-        $path = $file->storeAs('project_attachments', $filename, 'public');
+        // Handle additional images (multiple uploads)
+        if ($type === 'additional') {
+            $additionalImages = $project->additional_images ?? [];
+            
+            // Check current count
+            $currentCount = count($additionalImages);
+            $maxImages = 8;
+            
+            if ($request->hasFile('attachments')) {
+                $files = $request->file('attachments');
+                $uploadedCount = 0;
+                
+                foreach ($files as $file) {
+                    if ($currentCount + $uploadedCount >= $maxImages) {
+                        return redirect()->back()->with('warning', "Maximum {$maxImages} additional images allowed. Uploaded {$uploadedCount} images.");
+                    }
+                    
+                    // Generate filename
+                    $filename = 'project_' . $project->ProjectID . '_additional_' . time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                    
+                    // Store file
+                    $path = $file->storeAs('project_attachments/additional', $filename, 'public');
+                    
+                    $additionalImages[] = $path;
+                    $uploadedCount++;
+                }
+                
+                $project->additional_images = $additionalImages;
+                $project->save();
+                
+                return redirect()->back()->with('success', "{$uploadedCount} additional image(s) uploaded successfully.");
+            }
+        } else {
+            // Handle single file uploads (blueprint, floorplan)
+            $file = $request->file('attachment');
+            
+            // Generate filename
+            $filename = 'project_' . $project->ProjectID . '_' . $type . '_' . time() . '.' . $file->getClientOriginalExtension();
+            
+            // Store file
+            $path = $file->storeAs('project_attachments', $filename, 'public');
 
-        // Update project based on type
-        switch ($type) {
-            case 'blueprint':
-                // Delete old file if exists
-                if ($project->BlueprintPath) {
-                    Storage::disk('public')->delete($project->BlueprintPath);
-                }
-                $project->BlueprintPath = $path;
-                break;
-            case 'floorplan':
-                // Delete old file if exists
-                if ($project->FloorPlanPath) {
-                    Storage::disk('public')->delete($project->FloorPlanPath);
-                }
-                $project->FloorPlanPath = $path;
-                break;
-            case 'ntp':
-                // Delete old file if exists
-                if ($project->NTPAttachment) {
-                    Storage::disk('public')->delete($project->NTPAttachment);
-                }
-                $project->NTPAttachment = $path;
-                break;
+            // Update project based on type
+            switch ($type) {
+                case 'blueprint':
+                    // Delete old file if exists
+                    if ($project->BlueprintPath) {
+                        Storage::disk('public')->delete($project->BlueprintPath);
+                    }
+                    $project->BlueprintPath = $path;
+                    break;
+                case 'floorplan':
+                    // Delete old file if exists
+                    if ($project->FloorPlanPath) {
+                        Storage::disk('public')->delete($project->FloorPlanPath);
+                    }
+                    $project->FloorPlanPath = $path;
+                    break;
+            }
+
+            $project->save();
+
+            return redirect()->back()->with('success', ucfirst($type) . ' uploaded successfully.');
         }
-
-        $project->save();
-
-        return redirect()->back()->with('success', ucfirst($type) . ' uploaded successfully.');
+        
+        return redirect()->back()->with('error', 'No files uploaded.');
+    }
+    
+    /**
+     * Delete additional image
+     */
+    public function deleteAdditionalImage(Request $request, Project $project, $index)
+    {
+        $additionalImages = $project->additional_images ?? [];
+        
+        if (isset($additionalImages[$index])) {
+            // Delete file from storage
+            Storage::disk('public')->delete($additionalImages[$index]);
+            
+            // Remove from array
+            unset($additionalImages[$index]);
+            
+            // Reindex array
+            $project->additional_images = array_values($additionalImages);
+            $project->save();
+            
+            return redirect()->back()->with('success', 'Image deleted successfully.');
+        }
+        
+        return redirect()->back()->with('error', 'Image not found.');
     }
 
 }

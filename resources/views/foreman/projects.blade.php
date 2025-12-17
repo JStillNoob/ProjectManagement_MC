@@ -38,7 +38,8 @@
                                     ($project->status->StatusName == 'Under Warranty' ? '#ffc107' : 
                                     ($project->status->StatusName == 'Pending' ? '#17a2b8' : 
                                     ($project->status->StatusName == 'Pre-Construction' ? '#ffc107' :
-                                    ($project->status->StatusName == 'On Hold' ? '#6c757d' : '#dc3545')))))
+                                    ($project->status->StatusName == 'Delayed' ? '#dc3545' :
+                                    ($project->status->StatusName == 'On Hold' ? '#6c757d' : '#dc3545'))))))
                                 }} !important;">
                                     <div class="card-header bg-white pb-2">
                                         <h5 class="card-title mb-1">
@@ -51,8 +52,12 @@
                                             ($project->status->StatusName == 'Under Warranty' ? 'warning' : 
                                             ($project->status->StatusName == 'Pending' ? 'info' : 
                                             ($project->status->StatusName == 'Pre-Construction' ? 'warning' :
-                                            ($project->status->StatusName == 'On Hold' ? 'secondary' : 'danger')))))
+                                            ($project->status->StatusName == 'Delayed' ? 'danger' :
+                                            ($project->status->StatusName == 'On Hold' ? 'secondary' : 'danger'))))))
                                         }} badge-pill">
+                                            @if($project->status->StatusName == 'Delayed')
+                                                <i class="fas fa-exclamation-triangle mr-1"></i>
+                                            @endif
                                             {{ $project->status->StatusName }}
                                         </span>
                                     </div>

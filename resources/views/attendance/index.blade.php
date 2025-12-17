@@ -14,17 +14,6 @@
         transition: transform 0.2s ease-in-out;
     }
 
-        /* Remarks field styling */
-        #qr-remarks, #modal-remarks {
-            resize: vertical;
-            min-height: 60px;
-        }
-
-        #qr-remarks:focus, #modal-remarks:focus {
-            border-color: #52b788;
-            box-shadow: 0 0 0 0.2rem rgba(82, 183, 136, 0.25);
-        }
-
         .form-label {
             font-weight: 600;
             color: #495057;
@@ -291,21 +280,37 @@
                                 
                             <input type="hidden" id="detected-employee-id" name="detected_employee_id" value="">
                                 
-                                <!-- Remarks Input -->
-                                <div class="form-group text-left">
-                                    <label for="qr-remarks" class="form-label"><i class="fas fa-comment mr-1"></i> Remarks (Optional):</label>
-                                    <textarea class="form-control" id="qr-remarks" name="qr_remarks" rows="2" 
-                                              placeholder="Add any notes about this attendance (e.g., late due to traffic, overtime for project, etc.)"></textarea>
+                            <!-- Auto-Action Button (recommended action based on time) -->
+                            <div class="row mb-2">
+                                <div class="col-12">
+                                    <button type="button" id="btnAutoAction" class="btn btn-success btn-block btn-lg">
+                                        <i class="fas fa-clock mr-1"></i> <span id="auto-action-label">Time In</span>
+                                    </button>
+                                    <small class="text-muted d-block text-center mt-1" id="auto-action-hint">Recommended action based on current time</small>
                                 </div>
-                                
+                            </div>
+                            
+                            <!-- Manual Action Buttons (4 clock events) -->
                             <div class="row">
-                                <div class="col-6">
-                                    <button type="button" id="btnTimeIn" class="btn btn-dark btn-block">
+                                <div class="col-6 mb-2">
+                                    <button type="button" id="btnTimeIn" class="btn btn-dark btn-block btn-sm" data-action="time_in">
                                         <i class="fas fa-sign-in-alt mr-1"></i> Time In
                                     </button>
                                 </div>
-                                <div class="col-6">
-                                    <button type="button" id="btnTimeOut" class="btn btn-dark btn-block">
+                                <div class="col-6 mb-2">
+                                    <button type="button" id="btnLunchOut" class="btn btn-warning btn-block btn-sm" data-action="lunch_out">
+                                        <i class="fas fa-utensils mr-1"></i> Lunch Out
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6 mb-2">
+                                    <button type="button" id="btnLunchIn" class="btn btn-info btn-block btn-sm" data-action="lunch_in">
+                                        <i class="fas fa-utensils mr-1"></i> Lunch In
+                                    </button>
+                                </div>
+                                <div class="col-6 mb-2">
+                                    <button type="button" id="btnTimeOut" class="btn btn-danger btn-block btn-sm" data-action="time_out">
                                         <i class="fas fa-sign-out-alt mr-1"></i> Time Out
                                     </button>
                                 </div>
@@ -349,12 +354,13 @@
                             <thead>
                                 <tr>
                                     <th>Name</th>
-                                    <th>Position/Department</th>
+                                    <th>Position</th>
                                     <th>Time In</th>
+                                    <th>Lunch Out</th>
+                                    <th>Lunch In</th>
                                     <th>Time Out</th>
                                     <th>Status</th>
                                     <th>Working Hours</th>
-                                    <th>Remarks</th>
                                     <th style="width: 120px;">Actions</th>
                                 </tr>
                             </thead>
@@ -364,6 +370,8 @@
                                     <td>{{ $record->employee->full_name ?? 'N/A' }}</td>
                                     <td>{{ $record->employee->position->PositionName ?? 'N/A' }}</td>
                                             <td>{{ $record->formatted_time_in ?? 'N/A' }}</td>
+                                            <td>{{ $record->formatted_lunch_out ?? 'N/A' }}</td>
+                                            <td>{{ $record->formatted_lunch_in ?? 'N/A' }}</td>
                                             <td>{{ $record->formatted_time_out ?? 'N/A' }}</td>
                                     <td>
                                         @if($record->status == 'Present')
@@ -372,12 +380,15 @@
                                             <span class="badge badge-warning">{{ $record->status }}</span>
                                         @elseif($record->status == 'Absent')
                                             <span class="badge badge-danger">{{ $record->status }}</span>
+                                        @elseif($record->status == 'Overtime')
+                                            <span class="badge badge-info">{{ $record->status }}</span>
+                                        @elseif($record->status == 'Half Day')
+                                            <span class="badge badge-secondary">{{ $record->status }}</span>
                                         @else
-                                                    <span class="badge badge-info">{{ $record->status ?? 'N/A' }}</span>
+                                                    <span class="badge badge-primary">{{ $record->status ?? 'N/A' }}</span>
                                         @endif
                                     </td>
                                             <td>{{ $record->working_hours ?? 'N/A' }}</td>
-                                    <td>{{ $record->remarks ?? '-' }}</td>
                                     <td>
                                         <div class="btn-group">
                                                     <button type="button" id="edit-attendance-{{ $record->id }}"
@@ -397,7 +408,7 @@
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="8" class="text-center">No attendance records found for this date.</td>
+                                    <td colspan="9" class="text-center">No attendance records found for this date.</td>
                                 </tr>
                                 @endforelse
                             </tbody>
@@ -484,11 +495,6 @@
                             <option value="time_out">Time Out</option>
                         </select>
                     </div>
-                        <div class="form-group">
-                            <label for="modal-remarks"><i class="fas fa-comment mr-1"></i> Remarks (Optional):</label>
-                            <textarea class="form-control" id="modal-remarks" name="modal_remarks" rows="3" 
-                                      placeholder="Add any notes about this attendance (e.g., late due to traffic, overtime for project, etc.)"></textarea>
-                        </div>
                 </div>
                 <div class="modal-footer">
                         <button type="button" id="modal-close-btn" name="modal_close_btn" class="btn btn-secondary"
@@ -973,27 +979,64 @@
             }
 
             function updateAttendanceButtons(status) {
-                // Hide both buttons first
-                $('#btnTimeIn').hide();
-                $('#btnTimeOut').hide();
+                // Disable all manual buttons first, enable based on status
+                $('#btnTimeIn, #btnLunchOut, #btnLunchIn, #btnTimeOut').prop('disabled', true).addClass('disabled');
                 
-                // Update status display
+                // Enable buttons based on what actions are allowed
+                if (status.can_time_in) {
+                    $('#btnTimeIn').prop('disabled', false).removeClass('disabled');
+                }
+                if (status.can_lunch_out) {
+                    $('#btnLunchOut').prop('disabled', false).removeClass('disabled');
+                }
+                if (status.can_lunch_in) {
+                    $('#btnLunchIn').prop('disabled', false).removeClass('disabled');
+                }
+                if (status.can_time_out) {
+                    $('#btnTimeOut').prop('disabled', false).removeClass('disabled');
+                }
+                
+                // Update the auto-action button based on next expected action
+                const autoActionLabels = {
+                    'time_in': '<i class="fas fa-sign-in-alt mr-1"></i> Time In',
+                    'lunch_out': '<i class="fas fa-utensils mr-1"></i> Lunch Out',
+                    'lunch_in': '<i class="fas fa-utensils mr-1"></i> Lunch In',
+                    'time_out': '<i class="fas fa-sign-out-alt mr-1"></i> Time Out',
+                    'complete': '<i class="fas fa-check mr-1"></i> Attendance Complete'
+                };
+                
+                const nextAction = status.next_action || 'time_in';
+                $('#btnAutoAction').html(autoActionLabels[nextAction] || autoActionLabels['time_in']);
+                $('#auto-action-label').text(status.next_action_label || 'Time In');
+                
+                // Store the next action for the auto button
+                $('#btnAutoAction').data('action', nextAction);
+                
+                // Disable auto button if attendance is complete
+                if (nextAction === 'complete' || status.is_completed) {
+                    $('#btnAutoAction').prop('disabled', true).removeClass('btn-success').addClass('btn-secondary');
+                    $('#auto-action-hint').text('All attendance recorded for today');
+                } else {
+                    $('#btnAutoAction').prop('disabled', false).removeClass('btn-secondary').addClass('btn-success');
+                    $('#auto-action-hint').text('Recommended action based on current time');
+                }
+                
+                // Update status display text
                 let statusText = '';
-                if (status.next_action === 'time_in') {
-                    statusText = 'Ready to clock in';
-                    $('#btnTimeIn').show();
-                    $('#btnTimeIn').html('<i class="fas fa-sign-in-alt mr-1"></i> Time In');
-                    $('#btnTimeIn').prop('disabled', false).removeClass('btn-success').addClass('btn-dark');
-                } else if (status.next_action === 'time_out') {
-                    statusText = 'Clocked in at ' + (status.time_in ? status.time_in.substring(0, 5) : 'N/A') + ' - Ready to clock out';
-                    $('#btnTimeOut').show();
-                    $('#btnTimeOut').html('<i class="fas fa-sign-out-alt mr-1"></i> Time Out');
-                    $('#btnTimeOut').prop('disabled', false).removeClass('btn-success').addClass('btn-dark');
-                } else if (status.next_action === 'completed') {
-                    statusText = 'Attendance complete - Clocked in at ' + (status.time_in ? status.time_in.substring(0, 5) : 'N/A') + ', Clocked out at ' + (status.time_out ? status.time_out.substring(0, 5) : 'N/A');
-                    $('#btnTimeIn').show();
-                    $('#btnTimeIn').html('<i class="fas fa-check mr-1"></i> Attendance Complete');
-                    $('#btnTimeIn').prop('disabled', true).addClass('btn-success').removeClass('btn-dark');
+                if (status.has_time_in) {
+                    statusText = 'Time In: ' + formatTime(status.time_in);
+                }
+                if (status.has_lunch_out) {
+                    statusText += ' | Lunch Out: ' + formatTime(status.lunch_out);
+                }
+                if (status.has_lunch_in) {
+                    statusText += ' | Lunch In: ' + formatTime(status.lunch_in);
+                }
+                if (status.has_time_out) {
+                    statusText += ' | Time Out: ' + formatTime(status.time_out);
+                }
+                if (!statusText) {
+                    statusText = 'Ready to clock in for today';
                 }
                 
                 $('#status-text').text(statusText);
@@ -1002,28 +1045,73 @@
                 // Show the container
                 $('.qr-detected-container').show();
             }
+            
+            function formatTime(timeString) {
+                if (!timeString) return 'N/A';
+                // Handle both ISO datetime strings and time-only strings
+                try {
+                    const date = new Date(timeString);
+                    if (!isNaN(date.getTime())) {
+                        return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+                    }
+                    return timeString.substring(0, 5);
+                } catch (e) {
+                    return timeString.substring(0, 5);
+                }
+            }
 
             function showDefaultButtons() {
-                // Show both buttons as fallback
-                $('#btnTimeIn').show();
-                $('#btnTimeOut').show();
-                $('#btnTimeIn').html('<i class="fas fa-sign-in-alt mr-1"></i> Time In');
-                $('#btnTimeOut').html('<i class="fas fa-sign-out-alt mr-1"></i> Time Out');
-                $('#btnTimeIn').prop('disabled', false).removeClass('btn-success').addClass('btn-dark');
-                $('#btnTimeOut').prop('disabled', false).removeClass('btn-success').addClass('btn-dark');
+                // Show all buttons and enable time_in as default
+                $('#btnTimeIn').prop('disabled', false).removeClass('disabled');
+                $('#btnLunchOut, #btnLunchIn, #btnTimeOut').prop('disabled', true).addClass('disabled');
+                $('#btnAutoAction').html('<i class="fas fa-sign-in-alt mr-1"></i> Time In');
+                $('#btnAutoAction').data('action', 'time_in');
+                $('#btnAutoAction').prop('disabled', false).removeClass('btn-secondary').addClass('btn-success');
+                $('#auto-action-hint').text('Recommended action based on current time');
                 $('#attendance-status-display').hide();
             $('.qr-detected-container').show();
         }
 
-        // Time In/Out Buttons
-            $(document).on('click', '#btnTimeIn', function () {
+        // Auto Action Button (recommended action based on time)
+            $(document).on('click', '#btnAutoAction', function () {
             const employeeId = $('#detected-employee-id').val();
             if (!employeeId) {
                 alert('No employee detected');
                 return;
             }
             
+            const action = $(this).data('action');
+            if (action && action !== 'complete') {
+                markAttendance(employeeId, action);
+            }
+        });
+
+        // Manual Time In/Out Buttons (4 actions)
+            $(document).on('click', '#btnTimeIn', function () {
+            const employeeId = $('#detected-employee-id').val();
+            if (!employeeId) {
+                alert('No employee detected');
+                return;
+            }
             markAttendance(employeeId, 'time_in');
+        });
+
+            $(document).on('click', '#btnLunchOut', function () {
+            const employeeId = $('#detected-employee-id').val();
+            if (!employeeId) {
+                alert('No employee detected');
+                return;
+            }
+            markAttendance(employeeId, 'lunch_out');
+        });
+
+            $(document).on('click', '#btnLunchIn', function () {
+            const employeeId = $('#detected-employee-id').val();
+            if (!employeeId) {
+                alert('No employee detected');
+                return;
+            }
+            markAttendance(employeeId, 'lunch_in');
         });
 
             $(document).on('click', '#btnTimeOut', function () {
@@ -1032,7 +1120,6 @@
                 alert('No employee detected');
                 return;
             }
-            
             markAttendance(employeeId, 'time_out');
         });
 
@@ -1040,8 +1127,6 @@
             $(document).on('click', '#btnScanAgain', function () {
                 $('.qr-detected-container').hide();
                 $('.scanner-con').show();
-                // Clear remarks field for next scan
-                $('#qr-remarks').val('');
                 // Reset button states
                 resetAttendanceButtons();
                 // Restart scanner
@@ -1052,12 +1137,12 @@
 
             function resetAttendanceButtons() {
                 // Reset buttons to default state
-                $('#btnTimeIn').show();
-                $('#btnTimeOut').show();
-                $('#btnTimeIn').html('<i class="fas fa-sign-in-alt mr-1"></i> Time In');
-                $('#btnTimeOut').html('<i class="fas fa-sign-out-alt mr-1"></i> Time Out');
-                $('#btnTimeIn').prop('disabled', false).removeClass('btn-success').addClass('btn-dark');
-                $('#btnTimeOut').prop('disabled', false).removeClass('btn-success').addClass('btn-dark');
+                $('#btnTimeIn').prop('disabled', false).removeClass('disabled');
+                $('#btnLunchOut, #btnLunchIn, #btnTimeOut').prop('disabled', true).addClass('disabled');
+                $('#btnAutoAction').html('<i class="fas fa-sign-in-alt mr-1"></i> Time In');
+                $('#btnAutoAction').data('action', 'time_in');
+                $('#btnAutoAction').prop('disabled', false).removeClass('btn-secondary').addClass('btn-success');
+                $('#auto-action-hint').text('Recommended action based on current time');
                 $('#attendance-status-display').hide();
             }
 
@@ -1068,33 +1153,37 @@
             
             const employeeId = $('#employee_select').val();
             const action = $('#attendance_type').val();
-                const remarks = $('#modal-remarks').val();
             
             if (!employeeId || !action) {
                 alert('Please select employee and attendance type');
                 return;
             }
             
-                markAttendanceWithRemarks(employeeId, action, remarks);
+                markAttendanceWithoutRemarks(employeeId, action);
             });
 
             // Clear modal form when modal is closed
             $('#markAttendanceModal').on('hidden.bs.modal', function () {
                 $('#markAttendanceForm')[0].reset();
-                $('#modal-remarks').val('');
             });
 
 
         function markAttendance(employeeId, action) {
-                const remarks = $('#qr-remarks').val() || '';
-                markAttendanceWithRemarks(employeeId, action, remarks);
+                markAttendanceWithoutRemarks(employeeId, action);
             }
 
-            function markAttendanceWithRemarks(employeeId, action, remarks = '') {
-                // Show loading state
-                const button = action === 'time_in' ? $('#btnTimeIn') : $('#btnTimeOut');
+            function markAttendanceWithoutRemarks(employeeId, action) {
+                // Show loading state on all buttons
+                const buttonMap = {
+                    'time_in': '#btnTimeIn',
+                    'lunch_out': '#btnLunchOut',
+                    'lunch_in': '#btnLunchIn',
+                    'time_out': '#btnTimeOut'
+                };
+                const button = $(buttonMap[action] || '#btnAutoAction');
                 const originalText = button.html();
                 button.html('<i class="fas fa-spinner fa-spin mr-1"></i> Processing...').prop('disabled', true);
+                $('#btnAutoAction').html('<i class="fas fa-spinner fa-spin mr-1"></i> Processing...').prop('disabled', true);
 
                 // Create a form and submit it (matching your native PHP approach)
                 const form = document.createElement('form');
@@ -1128,13 +1217,6 @@
                 actionInput.name = 'action';
                 actionInput.value = action;
                 form.appendChild(actionInput);
-
-                // Add remarks
-                const remarksInput = document.createElement('input');
-                remarksInput.type = 'hidden';
-                remarksInput.name = 'remarks';
-                remarksInput.value = remarks;
-                form.appendChild(remarksInput);
 
                 // Append form to body and submit (this will cause page reload like native PHP)
                 document.body.appendChild(form);

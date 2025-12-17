@@ -186,21 +186,20 @@ class AttendanceController extends Controller
     }
 
     /**
-     * Mark attendance for an employee
+     * Mark attendance for an employee (supports 4 actions: time_in, lunch_out, lunch_in, time_out)
      */
     public function markAttendance(Request $request)
     {
         $request->validate([
             'employee_id' => 'required|exists:employees,id',
             'attendance_date' => 'required|date',
-            'action' => 'required|in:time_in,time_out',
-            'remarks' => 'nullable|string|max:255'
+            'action' => 'required|in:time_in,lunch_out,lunch_in,time_out'
         ]);
 
         $employeeId = $request->employee_id;
         $date = $request->attendance_date;
         $action = $request->action;
-        $remarks = $request->remarks;
+        $currentTime = now();
 
         // Check if attendance record exists for this date
         $attendance = Attendance::where('employee_id', $employeeId)
@@ -208,95 +207,218 @@ class AttendanceController extends Controller
             ->first();
 
         if (!$attendance) {
-            // Create new attendance record
+            // Create new attendance record - only for time_in action
+            if ($action !== 'time_in') {
+                $errorMessage = 'Employee must clock in first before ' . str_replace('_', ' ', $action);
+                if ($request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $errorMessage
+                    ], 400);
+                }
+                return redirect()->route('attendance.index', ['date' => $date])
+                    ->with('error', $errorMessage);
+            }
+            
             $attendance = Attendance::create([
                 'employee_id' => $employeeId,
                 'attendance_date' => $date,
-                'time_in' => $action === 'time_in' ? now()->format('H:i:s') : null,
-                'time_out' => $action === 'time_out' ? now()->format('H:i:s') : null,
-                'status' => $this->determineStatus($action, now()),
-                'remarks' => $remarks
+                'time_in' => $currentTime->format('H:i:s'),
+                'status' => $this->determineStatus('time_in', $currentTime, null)
             ]);
         } else {
-            // Check for duplicate actions
-            if ($action === 'time_in' && !is_null($attendance->time_in)) {
-                // Employee already clocked in today
+            // Validate action sequence and check for duplicates
+            $validationResult = $this->validateActionSequence($attendance, $action, $currentTime);
+            if ($validationResult !== true) {
                 if ($request->ajax()) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Employee has already clocked in today at ' . $attendance->time_in->format('H:i A')
+                        'message' => $validationResult
                     ], 400);
                 }
                 return redirect()->route('attendance.index', ['date' => $date])
-                    ->with('error', 'Employee has already clocked in today at ' . $attendance->time_in->format('H:i A'));
+                    ->with('error', $validationResult);
             }
             
-            if ($action === 'time_out' && !is_null($attendance->time_out)) {
-                // Employee already clocked out today
-                if ($request->ajax()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Employee has already clocked out today at ' . $attendance->time_out->format('H:i A')
-                    ], 400);
-                }
-                return redirect()->route('attendance.index', ['date' => $date])
-                    ->with('error', 'Employee has already clocked out today at ' . $attendance->time_out->format('H:i A'));
+            // Update the appropriate field based on action
+            $updateData = [];
+            
+            switch ($action) {
+                case 'time_in':
+                    $updateData['time_in'] = $currentTime->format('H:i:s');
+                    $updateData['status'] = $this->determineStatus('time_in', $currentTime, null);
+                    break;
+                case 'lunch_out':
+                    $updateData['lunch_out'] = $currentTime->format('H:i:s');
+                    break;
+                case 'lunch_in':
+                    $updateData['lunch_in'] = $currentTime->format('H:i:s');
+                    break;
+                case 'time_out':
+                    $updateData['time_out'] = $currentTime->format('H:i:s');
+                    $updateData['status'] = $this->determineStatus('time_out', $currentTime, $attendance);
+                    break;
             }
             
-            // Update existing record (only if not duplicate)
-            if ($action === 'time_in') {
-                $attendance->update([
-                    'time_in' => now()->format('H:i:s'),
-                    'status' => $this->determineStatus($action, now()),
-                    'remarks' => $remarks
-                ]);
-            } else {
-                $attendance->update([
-                    'time_out' => now()->format('H:i:s'),
-                    'status' => $this->determineStatus($action, now()),
-                    'remarks' => $remarks
-                ]);
-            }
+            $attendance->update($updateData);
         }
+
+        // Get action label for response message
+        $actionLabels = [
+            'time_in' => 'Time In',
+            'lunch_out' => 'Lunch Out',
+            'lunch_in' => 'Lunch In',
+            'time_out' => 'Time Out'
+        ];
 
         // Check if this is an AJAX request
         if ($request->ajax()) {
             return response()->json([
                 'success' => true,
-                'message' => 'Attendance marked successfully',
-                'attendance' => $attendance->load('employee')
+                'message' => $actionLabels[$action] . ' recorded successfully',
+                'attendance' => $attendance->load('employee'),
+                'next_action' => $attendance->getNextExpectedAction()
             ]);
         }
         
         // For form submission (like native PHP), redirect back with success message
         return redirect()->route('attendance.index', ['date' => $date])
-            ->with('success', 'Attendance marked successfully!');
+            ->with('success', $actionLabels[$action] . ' recorded successfully!');
+    }
+
+    /**
+     * Validate the action sequence for attendance
+     */
+    private function validateActionSequence($attendance, $action, $time)
+    {
+        switch ($action) {
+            case 'time_in':
+                if (!is_null($attendance->time_in)) {
+                    return 'Employee has already clocked in today at ' . $attendance->time_in->format('h:i A');
+                }
+                break;
+            case 'lunch_out':
+                if (is_null($attendance->time_in)) {
+                    return 'Employee must clock in before taking lunch break';
+                }
+                if (!is_null($attendance->lunch_out)) {
+                    return 'Employee has already clocked out for lunch at ' . $attendance->lunch_out->format('h:i A');
+                }
+                break;
+            case 'lunch_in':
+                if (is_null($attendance->lunch_out)) {
+                    return 'Employee must clock out for lunch first';
+                }
+                if (!is_null($attendance->lunch_in)) {
+                    return 'Employee has already clocked in from lunch at ' . $attendance->lunch_in->format('h:i A');
+                }
+                break;
+            case 'time_out':
+                if (is_null($attendance->time_in)) {
+                    return 'Employee must clock in before clocking out';
+                }
+                if (!is_null($attendance->time_out)) {
+                    return 'Employee has already clocked out today at ' . $attendance->time_out->format('h:i A');
+                }
+                break;
+        }
+        return true;
     }
 
     /**
      * Determine attendance status based on time
+     * 
+     * Rules:
+     * - Time In: Before 8:16 AM = Present, 8:16 AM+ = Late (15-min grace period)
+     * - Time Out: Before 5:31 PM = keeps status, 5:31 PM - 9:00 PM = Overtime
+     * - No time_out by 9:30 PM = Half Day
      */
-    private function determineStatus($action, $time)
+    private function determineStatus($action, $time, $attendance = null)
     {
         if ($action === 'time_in') {
-            // Check if employee is late (after 8:30 AM)
-            $standardTime = Carbon::createFromTime(8, 30, 0);
-            if ($time->format('H:i:s') > $standardTime->format('H:i:s')) {
+            // Check if employee is late (after 8:15 AM grace period)
+            // 8:00 AM - 8:15 AM = On time, 8:16 AM+ = Late
+            $graceEndTime = Carbon::createFromTime(8, 15, 0);
+            if ($time->format('H:i:s') > $graceEndTime->format('H:i:s')) {
                 return 'Late';
             }
             return 'Present';
         }
         
         if ($action === 'time_out') {
-            // Check if employee worked overtime (after 5:30 PM)
-            $standardEndTime = Carbon::createFromTime(17, 30, 0); // 5:30 PM
-            if ($time->format('H:i:s') > $standardEndTime->format('H:i:s')) {
+            // Get existing status (may be Late from time_in)
+            $existingStatus = $attendance ? $attendance->status : 'Present';
+            
+            $overtimeStart = Carbon::createFromTime(17, 30, 0); // 5:30 PM
+            $overtimeEnd = Carbon::createFromTime(21, 0, 0); // 9:00 PM
+            $halfDayCutoff = Carbon::createFromTime(21, 30, 0); // 9:30 PM
+            
+            $timeOutStr = $time->format('H:i:s');
+            
+            // Check if employee worked overtime (5:31 PM - 9:00 PM)
+            if ($timeOutStr > $overtimeStart->format('H:i:s') && $timeOutStr <= $overtimeEnd->format('H:i:s')) {
                 return 'Overtime';
             }
-            return 'Present';
+            
+            // If time out is after 9:30 PM, this shouldn't happen as it would be marked as Half Day
+            // But we'll still handle it by returning Overtime (capped)
+            if ($timeOutStr > $overtimeEnd->format('H:i:s')) {
+                return 'Overtime';
+            }
+            
+            // Normal checkout before overtime zone - keep existing status
+            return $existingStatus;
         }
         
         return 'Present';
+    }
+
+    /**
+     * Auto-determine the next expected action based on current time and attendance record
+     */
+    public function getExpectedAction(Request $request, $employeeId)
+    {
+        $date = $request->get('date', Carbon::today()->format('Y-m-d'));
+        
+        $attendance = Attendance::where('employee_id', $employeeId)
+            ->where('attendance_date', $date)
+            ->first();
+        
+        $now = Carbon::now();
+        $currentHour = $now->hour;
+        
+        if (!$attendance) {
+            return response()->json([
+                'expected_action' => 'time_in',
+                'label' => 'Time In',
+                'message' => 'Please clock in for today'
+            ]);
+        }
+        
+        $nextAction = $attendance->getNextExpectedAction();
+        
+        $actionLabels = [
+            'time_in' => 'Time In',
+            'lunch_out' => 'Lunch Out',
+            'lunch_in' => 'Lunch In',
+            'time_out' => 'Time Out',
+            'complete' => 'Complete'
+        ];
+        
+        $actionMessages = [
+            'time_in' => 'Please clock in for today',
+            'lunch_out' => 'Clock out for lunch break',
+            'lunch_in' => 'Clock in from lunch break',
+            'time_out' => 'Clock out for the day',
+            'complete' => 'All attendance recorded for today'
+        ];
+        
+        return response()->json([
+            'expected_action' => $nextAction,
+            'label' => $actionLabels[$nextAction],
+            'message' => $actionMessages[$nextAction],
+            'attendance' => $attendance
+        ]);
     }
 
     /**
@@ -328,7 +450,7 @@ class AttendanceController extends Controller
             $file = fopen('php://output', 'w');
             
             // CSV headers
-            fputcsv($file, ['Employee Name', 'Position', 'Time In', 'Time Out', 'Date', 'Status', 'Working Hours', 'Remarks']);
+            fputcsv($file, ['Employee Name', 'Position', 'Time In', 'Time Out', 'Date', 'Status', 'Working Hours']);
             
             // CSV data
             foreach ($attendanceRecords as $record) {
@@ -339,8 +461,7 @@ class AttendanceController extends Controller
                     $record->formatted_time_out,
                     $record->formatted_date,
                     $record->status,
-                    $record->working_hours,
-                    $record->remarks ?? ''
+                    $record->working_hours
                 ]);
             }
             
@@ -375,8 +496,7 @@ class AttendanceController extends Controller
         $request->validate([
             'time_in' => 'nullable|date_format:H:i',
             'time_out' => 'nullable|date_format:H:i',
-            'status' => 'required|in:Present,Absent,Late,Half Day',
-            'remarks' => 'nullable|string|max:255'
+            'status' => 'required|in:Present,Absent,Late,Half Day'
         ]);
 
         $attendance = Attendance::findOrFail($id);
@@ -384,8 +504,7 @@ class AttendanceController extends Controller
         $attendance->update([
             'time_in' => $request->time_in,
             'time_out' => $request->time_out,
-            'status' => $request->status,
-            'remarks' => $request->remarks
+            'status' => $request->status
         ]);
 
         return response()->json([
@@ -447,6 +566,7 @@ class AttendanceController extends Controller
             'present_count' => 0,
             'late_count' => 0,
             'overtime_count' => 0,
+            'half_day_count' => 0,
             'absent_count' => 0,
             'attendance_rate' => 0
         ];
@@ -489,6 +609,7 @@ class AttendanceController extends Controller
             $overallSummary['present_count'] += $projectSummary['present_count'];
             $overallSummary['late_count'] += $projectSummary['late_count'];
             $overallSummary['overtime_count'] += $projectSummary['overtime_count'];
+            $overallSummary['half_day_count'] += $projectSummary['half_day_count'];
             $overallSummary['absent_count'] += $projectSummary['absent_count'];
         }
         
@@ -521,6 +642,7 @@ class AttendanceController extends Controller
             'present_count' => $attendanceRecords->where('status', 'Present')->count(),
             'late_count' => $attendanceRecords->where('status', 'Late')->count(),
             'overtime_count' => $attendanceRecords->where('status', 'Overtime')->count(),
+            'half_day_count' => $attendanceRecords->where('status', 'Half Day')->count(),
             'absent_count' => 0,
             'attendance_rate' => 0
         ];
@@ -703,6 +825,94 @@ class AttendanceController extends Controller
             'employee' => $employee,
             'qr_data' => $qrData,
             'qr_url' => $employee->generateQrCodeUrl()
+        ]);
+    }
+
+    /**
+     * Get employee attendance details for admin modal view
+     */
+    public function getEmployeeAttendanceDetails(Request $request, $employeeId)
+    {
+        $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
+        $endDate = $request->get('end_date', Carbon::now()->endOfMonth()->format('Y-m-d'));
+        
+        $employee = Employee::with('position')->findOrFail($employeeId);
+        
+        $attendanceRecords = Attendance::where('employee_id', $employeeId)
+            ->whereBetween('attendance_date', [$startDate, $endDate])
+            ->orderBy('attendance_date', 'desc')
+            ->get();
+        
+        // Calculate summary statistics
+        $totalDays = Carbon::parse($startDate)->diffInDays(Carbon::parse($endDate)) + 1;
+        $presentDays = $attendanceRecords->whereIn('status', ['Present', 'Overtime'])->count();
+        $lateDays = $attendanceRecords->where('status', 'Late')->count();
+        $overtimeDays = $attendanceRecords->where('status', 'Overtime')->count();
+        $halfDays = $attendanceRecords->where('status', 'Half Day')->count();
+        $absentDays = $totalDays - $attendanceRecords->count();
+        
+        // Format records for response
+        $formattedRecords = $attendanceRecords->map(function($record) {
+            return [
+                'id' => $record->id,
+                'date' => $record->attendance_date->format('Y-m-d'),
+                'formatted_date' => $record->formatted_date,
+                'time_in' => $record->formatted_time_in,
+                'lunch_out' => $record->formatted_lunch_out,
+                'lunch_in' => $record->formatted_lunch_in,
+                'time_out' => $record->formatted_time_out,
+                'status' => $record->status,
+                'working_hours' => $record->working_hours,
+                'overtime_hours' => $record->overtime_hours
+            ];
+        });
+        
+        return response()->json([
+            'success' => true,
+            'employee' => [
+                'id' => $employee->id,
+                'name' => $employee->full_name,
+                'position' => $employee->position ? $employee->position->PositionName : 'N/A'
+            ],
+            'summary' => [
+                'total_days' => $totalDays,
+                'present_days' => $presentDays,
+                'late_days' => $lateDays,
+                'overtime_days' => $overtimeDays,
+                'half_days' => $halfDays,
+                'absent_days' => $absentDays,
+                'attendance_rate' => $totalDays > 0 ? round(($attendanceRecords->count() / $totalDays) * 100, 1) : 0
+            ],
+            'records' => $formattedRecords
+        ]);
+    }
+
+    /**
+     * Mark employees without time_out as Half Day (scheduled task or manual trigger)
+     */
+    public function markHalfDayForMissingTimeOut()
+    {
+        $today = Carbon::today();
+        $halfDayCutoff = Carbon::createFromTime(21, 30, 0); // 9:30 PM
+        
+        // Only run if it's past 9:30 PM
+        if (Carbon::now()->format('H:i:s') < $halfDayCutoff->format('H:i:s')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'This action can only be performed after 9:30 PM'
+            ], 400);
+        }
+        
+        // Find all attendance records from today that have time_in but no time_out
+        $affectedRecords = Attendance::where('attendance_date', $today)
+            ->whereNotNull('time_in')
+            ->whereNull('time_out')
+            ->update(['status' => 'Half Day']);
+        
+        return response()->json([
+            'success' => true,
+            'message' => $affectedRecords . ' records marked as Half Day',
+            'affected_count' => $affectedRecords
         ]);
     }
 }

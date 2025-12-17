@@ -64,8 +64,12 @@
                                             ($project->status->StatusName == 'Under Warranty' ? 'warning' : 
                                             ($project->status->StatusName == 'Pending' ? 'info' : 
                                             ($project->status->StatusName == 'Pre-Construction' ? 'warning' :
-                                            ($project->status->StatusName == 'On Hold' ? 'secondary' : 'danger'))))
+                                            ($project->status->StatusName == 'Delayed' ? 'danger' :
+                                            ($project->status->StatusName == 'On Hold' ? 'secondary' : 'danger')))))
                                         }}">
+                                            @if($project->status->StatusName == 'Delayed')
+                                                <i class="fas fa-exclamation-triangle mr-1"></i>
+                                            @endif
                                             {{ $project->status->StatusName }}
                                         </span>
                                     </td>
@@ -237,7 +241,25 @@
                                     <tr>
                                         <td><strong>{{ $milestone->milestone_name }}</strong></td>
                                         <td>{{ Str::limit($milestone->description ?? 'N/A', 50) }}</td>
-                                        <td>{{ $milestone->formatted_target_date ?? 'N/A' }}</td>
+                                        <td>
+                                            @if($milestone->formatted_target_date && $milestone->formatted_target_date !== 'N/A')
+                                                {{ $milestone->formatted_target_date }}
+                                            @elseif($milestone->status === 'Pending')
+                                                <small class="text-info">Set when started</small>
+                                            @else
+                                                N/A
+                                            @endif
+                                            @if($milestone->is_overdue)
+                                                <br><span class="badge badge-danger">
+                                                    <i class="fas fa-exclamation-circle"></i> Overdue ({{ $milestone->days_overdue }} days)
+                                                </span>
+                                            @endif
+                                            @if($milestone->is_early)
+                                                <br><span class="badge badge-success">
+                                                    <i class="fas fa-check-circle"></i> Early ({{ $milestone->days_early }} days)
+                                                </span>
+                                            @endif
+                                        </td>
                                         <td>
                                             @if($milestone->SubmissionStatus == 'Pending Approval')
                                                 <span class="badge badge-warning">Pending Approval</span>

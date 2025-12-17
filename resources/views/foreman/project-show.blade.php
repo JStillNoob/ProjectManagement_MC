@@ -65,10 +65,16 @@
                                                         ($project->status->StatusName == 'Under Warranty' ? 'warning' :
                                                             ($project->status->StatusName == 'Pending' ? 'info' :
                                                                 ($project->status->StatusName == 'Pre-Construction' ? 'warning' :
-                                                                    ($project->status->StatusName == 'On Hold' ? 'secondary' : 'info')))));
+                                                                    ($project->status->StatusName == 'Delayed' ? 'danger' :
+                                                                        ($project->status->StatusName == 'On Hold' ? 'secondary' : 'info'))))));
                                             @endphp
                                             <span class="badge badge-{{ $statusClass }}"
-                                                style="font-size: 0.8rem; padding: 0.4em 0.8em; background-color: transparent !important; border: none !important; color: #2d3748 !important; font-weight: 600;">{{ $project->status->StatusName }}</span>
+                                                style="font-size: 0.8rem; padding: 0.4em 0.8em; {{ $project->status->StatusName == 'Delayed' ? 'background-color: #dc3545 !important; color: white !important;' : 'background-color: transparent !important; border: none !important; color: #2d3748 !important;' }} font-weight: 600;">
+                                                @if($project->status->StatusName == 'Delayed')
+                                                    <i class="fas fa-exclamation-triangle mr-1"></i>
+                                                @endif
+                                                {{ $project->status->StatusName }}
+                                            </span>
                                         </div>
                                     </div>
 
@@ -382,7 +388,25 @@
                             </div>
                             <div class="col-md-6">
                                 <strong>Target Date:</strong>
-                                <p>{{ $milestone->formatted_target_date ?? 'N/A' }}</p>
+                                <p>
+                                    @if($milestone->formatted_target_date && $milestone->formatted_target_date !== 'N/A')
+                                        {{ $milestone->formatted_target_date }}
+                                    @elseif($milestone->status === 'Pending')
+                                        <span class="text-info">Will be set when milestone starts</span>
+                                    @else
+                                        N/A
+                                    @endif
+                                    @if($milestone->is_overdue)
+                                        <span class="badge badge-danger ml-2">
+                                            <i class="fas fa-exclamation-circle"></i> Overdue ({{ $milestone->days_overdue }} days)
+                                        </span>
+                                    @endif
+                                    @if($milestone->is_early)
+                                        <span class="badge badge-success ml-2">
+                                            <i class="fas fa-check-circle"></i> Completed Early ({{ $milestone->days_early }} days ahead)
+                                        </span>
+                                    @endif
+                                </p>
                                 <strong>Status:</strong>
                                 <p>
                                     @if($milestone->SubmissionStatus == 'Pending Approval')
