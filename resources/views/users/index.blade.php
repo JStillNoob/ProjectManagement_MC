@@ -54,10 +54,10 @@
                                             </td>
                                             <td>{{ $user->Email }}</td>
                                             <td>{{ $user->userType->UserType ?? 'N/A' }}</td>
-                                            <td style="white-space: nowrap;">
+                                            <td class="text-center" style="white-space: nowrap;">
                                                 <a href="{{ route('users.show', $user) }}" class="text-info mr-3"
-                                                    style="text-decoration: underline; cursor: pointer;">
-                                                    <i class="fas fa-eye mr-1"></i> View Details
+                                                    style="cursor: pointer;" title="View Details">
+                                                    <i class="fas fa-eye"></i>
                                                 </a>
                                                 @if($user->FlagDeleted)
                                                     <form action="{{ route('users.reactivate', $user) }}" method="POST"
@@ -69,8 +69,8 @@
                                                         @csrf
                                                         @method('PATCH')
                                                         <button type="submit" class="btn btn-link text-success p-0"
-                                                            style="text-decoration: underline; border: none; background: none; cursor: pointer;">
-                                                            <i class="fas fa-undo mr-1"></i> Reactivate
+                                                            style="border: none; background: none; cursor: pointer;" title="Reactivate">
+                                                            <i class="fas fa-undo"></i>
                                                         </button>
                                                     </form>
                                                 @else
@@ -83,8 +83,8 @@
                                                         @csrf
                                                         @method('DELETE')
                                                         <button type="submit" class="btn btn-link text-danger p-0"
-                                                            style="text-decoration: underline; border: none; background: none; cursor: pointer;">
-                                                            <i class="fas fa-ban mr-1"></i> Deactivate
+                                                            style="border: none; background: none; cursor: pointer;" title="Deactivate">
+                                                            <i class="fas fa-ban"></i>
                                                         </button>
                                                     </form>
                                                 @endif

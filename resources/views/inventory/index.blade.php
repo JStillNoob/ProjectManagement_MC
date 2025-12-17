@@ -71,7 +71,7 @@
                                         <th>Available Qty</th>
                                         <th>Unit</th>
                                         <th>Status</th>
-                                        <th>Actions</th>
+                                        <th class="text-center">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -91,8 +91,7 @@
                                             </td>
                                             <td>{{ number_format($item->TotalQuantity, 2) }}</td>
                                             <td>
-                                                <span
-                                                    class="{{ $item->AvailableQuantity < 10 ? 'text-danger font-weight-bold' : '' }}">
+                                                <span class="text-success">
                                                     {{ number_format($item->AvailableQuantity, 2) }}
                                                 </span>
                                             </td>
@@ -104,10 +103,10 @@
                                                     <span>{{ $item->Status }}</span>
                                                 </div>
                                             </td>
-                                            <td style="white-space: nowrap;">
+                                            <td class="text-center" style="white-space: nowrap;">
                                                 <a href="{{ route('inventory.show', $item) }}" class="text-info"
-                                                    style="text-decoration: underline; cursor: pointer;">
-                                                    <i class="fas fa-eye mr-1"></i> View Details
+                                                    style="cursor: pointer;" title="View Details">
+                                                    <i class="fas fa-eye"></i>
                                                 </a>
                                             </td>
                                         </tr>
@@ -256,7 +255,8 @@
                         "pageLength": 10,
                         "order": [[0, 'asc']],
                         "columnDefs": [
-                            { "orderable": false, "targets": [6] }
+                            { "orderable": false, "targets": [6] },
+                            { "className": "text-center", "targets": [6] }
                         ],
                         "language": {
                             "search": "Search:",

@@ -147,8 +147,8 @@
 
                         <!-- Card 2: Assigned Employees (Moved from bottom) -->
                         <div class="col-md-4 mb-4 mb-md-0">
-                            <div class="card h-100">
-                                <div class="card-header">
+                            <div class="card h-100" style="display: flex; flex-direction: column;">
+                                <div class="card-header" style="flex-shrink: 0;">
                                     <div class="d-flex justify-content-between align-items-center">
                                         <h5 class="mb-0 font-weight-bold">Assigned Employees</h5>
                                         <a href="{{ route('projects.employees.qr-pdf', $project) }}"
@@ -158,11 +158,11 @@
                                         </a>
                                     </div>
                                 </div>
-                                <div class="card-body">
+                                <div class="card-body" style="padding: 0.75rem; flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: hidden;">
                                     @if($project->projectEmployees && $project->projectEmployees->count() > 0)
-                                        <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
-                                            <table class="table table-sm">
-                                                <thead style="background-color: #f0f8f0; position: sticky; top: 0;">
+                                        <div class="table-responsive" style="flex: 1; overflow-y: auto; overflow-x: hidden; min-height: 0;">
+                                            <table class="table table-sm mb-0">
+                                                <thead style="background-color: #f0f8f0; position: sticky; top: 0; z-index: 10;">
                                                     <tr>
                                                         <th>Name</th>
                                                         <th>Designation</th>
@@ -321,20 +321,24 @@
                                                                 @endif
                                                             </td>
                                                             <td class="text-center">
-                                                                <button type="button" class="btn btn-link text-info p-0 mr-2"
-                                                                    style="text-decoration: underline; font-size: 0.9rem;"
-                                                                    data-toggle="modal"
-                                                                    data-target="#milestoneDetailsModal{{ $milestone->milestone_id }}">
-                                                                    <i class="fas fa-eye mr-1"></i> View
-                                                                </button>
-                                                                @if($milestone->canUserSubmit(Auth::user()))
-                                                                    <button type="button" class="btn btn-link text-success p-0"
-                                                                        style="text-decoration: underline; font-size: 0.9rem;"
+                                                                <div style="display: inline-flex; align-items: center; justify-content: center; gap: 0.75rem;">
+                                                                    <button type="button" class="btn btn-link text-info p-0"
+                                                                        style="cursor: pointer;"
                                                                         data-toggle="modal"
-                                                                        data-target="#submitMilestoneModal{{ $milestone->milestone_id }}">
-                                                                        <i class="fas fa-paper-plane mr-1"></i> Submit
+                                                                        data-target="#milestoneDetailsModal{{ $milestone->milestone_id }}"
+                                                                        title="View">
+                                                                        <i class="fas fa-eye"></i>
                                                                     </button>
-                                                                @endif
+                                                                    @if($milestone->canUserSubmit(Auth::user()))
+                                                                        <button type="button" class="btn btn-link text-success p-0"
+                                                                            style="cursor: pointer;"
+                                                                            data-toggle="modal"
+                                                                            data-target="#submitMilestoneModal{{ $milestone->milestone_id }}"
+                                                                            title="Submit">
+                                                                            <i class="fas fa-paper-plane"></i>
+                                                                        </button>
+                                                                    @endif
+                                                                </div>
                                                             </td>
                                                         </tr>
                                                     @endforeach

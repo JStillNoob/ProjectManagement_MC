@@ -1,5 +1,8 @@
 @extends('layouts.app')
 
+@section('title', 'Resource Catalog')
+@section('page-title', 'Inventory')
+
 @section('content')
     <div class="container-fluid">
         <div class="row">
@@ -27,7 +30,7 @@
                                             <th>Item Name</th>
                                             <th>Type</th>
                                             <th>Unit</th>
-                                            <th>Actions</th>
+                                            <th class="text-center">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -40,10 +43,10 @@
                                                     </span>
                                                 </td>
                                                 <td>{{ $item->Unit }}</td>
-                                                <td style="white-space: nowrap;">
+                                                <td class="text-center" style="white-space: nowrap;">
                                                     <a href="{{ route('resource-catalog.show', $item->ResourceCatalogID) }}"
-                                                        class="text-info" style="text-decoration: underline; cursor: pointer;">
-                                                        <i class="fas fa-eye mr-1"></i> View
+                                                        class="text-info" style="cursor: pointer;" title="View">
+                                                        <i class="fas fa-eye"></i>
                                                     </a>
                                                 </td>
                                             </tr>
@@ -352,7 +355,8 @@
                     "pageLength": 10,
                     "order": [[0, 'asc']],
                     "columnDefs": [
-                        { "orderable": false, "targets": [3] }
+                        { "orderable": false, "targets": [3] },
+                        { "className": "text-center", "targets": [3] }
                     ],
                     "language": {
                         "search": "Search:",

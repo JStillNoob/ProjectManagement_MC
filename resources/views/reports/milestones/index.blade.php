@@ -78,9 +78,9 @@
                                                 </td>
                                                 <td class="text-center">
                                                     <a href="{{ route('reports.milestones.show', $milestone) }}" 
-                                                       class="btn btn-sm text-white"
-                                                       style="background-color: #007bff !important; border: 2px solid #007bff !important; color: white !important; opacity: 1 !important; visibility: visible !important; display: inline-block !important;">
-                                                        <i class="fas fa-eye mr-1"></i> View Report
+                                                       class="text-info"
+                                                       style="cursor: pointer;" title="View Report">
+                                                        <i class="fas fa-eye"></i>
                                                     </a>
                                                 </td>
                                             </tr>

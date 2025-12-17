@@ -100,8 +100,8 @@
                                                                 </div>
                                                             </td>
                                                             <td style="white-space: nowrap;">
-                                                                <a href="{{ route('employees.show', $employee) }}" class="text-info mr-3" style="text-decoration: underline; cursor: pointer;">
-                                                                    <i class="fas fa-eye mr-1"></i> View Details
+                                                                <a href="{{ route('employees.show', $employee) }}" class="text-info mr-3" style="cursor: pointer;" title="View Details">
+                                                                    <i class="fas fa-eye"></i>
                                                                 </a>
                                                                 @if($employee->employee_status_id == \App\Models\EmployeeStatus::ARCHIVED)
                                                                     <form action="{{ route('employees.unarchive', $employee) }}" method="POST"
@@ -112,8 +112,8 @@
                                                                         data-confirm-text="Yes, Unarchive">
                                                                         @csrf
                                                                         @method('PATCH')
-                                                                        <button type="submit" class="btn btn-link text-success p-0" style="text-decoration: underline; border: none; background: none; cursor: pointer;">
-                                                                            <i class="fas fa-undo mr-1"></i> Unarchive
+                                                                        <button type="submit" class="btn btn-link text-success p-0" style="border: none; background: none; cursor: pointer;" title="Unarchive">
+                                                                            <i class="fas fa-undo"></i>
                                                                         </button>
                                                                     </form>
                                                                 @else
@@ -125,8 +125,8 @@
                                                                         data-confirm-text="Yes, Archive">
                                                                         @csrf
                                                                         @method('DELETE')
-                                                                        <button type="submit" class="btn btn-link text-danger p-0" style="text-decoration: underline; border: none; background: none; cursor: pointer;">
-                                                                            <i class="fas fa-archive mr-1"></i> Archive
+                                                                        <button type="submit" class="btn btn-link text-danger p-0" style="border: none; background: none; cursor: pointer;" title="Archive">
+                                                                            <i class="fas fa-archive"></i>
                                                                         </button>
                                                                     </form>
                                                                 @endif

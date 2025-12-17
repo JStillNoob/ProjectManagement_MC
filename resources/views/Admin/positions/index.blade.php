@@ -37,8 +37,8 @@
                                             <strong>{{ $position->PositionName }}</strong>
                                         </td>
                                         <td class="text-center">
-                                            <a href="{{ route('positions.show', $position) }}" class="text-info">
-                                                <i class="fas fa-eye mr-1"></i> View Details
+                                            <a href="{{ route('positions.show', $position) }}" class="text-info" title="View Details">
+                                                <i class="fas fa-eye"></i>
                                             </a>
                                         </td>
                                     </tr>

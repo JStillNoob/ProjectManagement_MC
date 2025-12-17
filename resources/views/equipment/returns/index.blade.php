@@ -65,8 +65,9 @@
                                             <td class="text-center">
                                                 @if(!$assignment->DateReturned)
                                                     <a href="{{ route('equipment.returns.create', $assignment->EquipmentAssignmentID) }}"
-                                                        class="text-primary" style="text-decoration: underline; cursor: pointer;">
-                                                        <i class="fas fa-box-arrow-in-left mr-1"></i> Process Return
+                                                        class="btn btn-sm text-white text-center" 
+                                                        style="background-color: #007bff !important; border: 2px solid #007bff !important; color: white !important; opacity: 1 !important; visibility: visible !important; display: inline-block !important; cursor: pointer; text-align: center !important;">
+                                                        <i class="fas fa-box-arrow-in-left mr-1"></i> Return
                                                     </a>
                                                 @else
                                                     <span class="text-muted">Completed</span>

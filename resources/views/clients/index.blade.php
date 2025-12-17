@@ -30,7 +30,7 @@
                                     <th>Contact Number</th>
                                     <th>Email</th>
                                     <th>Projects</th>
-                                    <th>Actions</th>
+                                    <th class="text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -48,9 +48,9 @@
                                         <td>
                                             <span class="badge badge-info">{{ $client->projects->count() }} projects</span>
                                         </td>
-                                        <td style="white-space: nowrap;">
-                                            <a href="{{ route('clients.show', $client) }}" class="text-info" style="text-decoration: underline; cursor: pointer;">
-                                                <i class="fas fa-eye mr-1"></i> View Details
+                                        <td class="text-center" style="white-space: nowrap;">
+                                            <a href="{{ route('clients.show', $client) }}" class="text-info" style="cursor: pointer;" title="View Details">
+                                                <i class="fas fa-eye"></i>
                                             </a>
                                         </td>
                                     </tr>
@@ -349,7 +349,8 @@
             "pageLength": 10,
             "order": [[0, 'asc']],
             "columnDefs": [
-                { "orderable": false, "targets": [5] } // Disable sorting on Actions
+                { "orderable": false, "targets": [5] }, // Disable sorting on Actions
+                { "className": "text-center", "targets": [5] } // Center Actions column
             ],
             "language": {
                 "search": "Search:",
