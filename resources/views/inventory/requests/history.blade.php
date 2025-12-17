@@ -109,8 +109,8 @@
                                                 </td>
                                                 <td class="text-center">
                                                     <a href="{{ route('inventory.requests.show', $request) }}"
-                                                        class="btn btn-outline-info btn-sm" title="View Details">
-                                                        <i class="fas fa-eye"></i> View
+                                                        class="text-info" style="cursor: pointer;" title="View Details">
+                                                        <i class="fas fa-eye"></i>
                                                     </a>
                                                 </td>
                                             </tr>
@@ -155,7 +155,11 @@
                     "info": false,
                     "autoWidth": false,
                     "responsive": true,
-                    "order": [[5, 'desc']] // Sort by date descending
+                    "order": [[5, 'desc']], // Sort by date descending
+                    "columnDefs": [
+                        { "orderable": false, "targets": [7] }, // Disable sorting on Actions
+                        { "className": "text-center", "targets": [7] } // Center Actions column
+                    ]
                 });
             });
         </script>

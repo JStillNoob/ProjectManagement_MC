@@ -1,5 +1,8 @@
 @extends('layouts.app')
 
+@section('title', 'Suppliers Management')
+@section('page-title', 'Inventory')
+
 @section('content')
 <div class="container-fluid">
     <div class="row">
@@ -28,7 +31,7 @@
                                         <th>Phone Number</th>
                                         <th>Email</th>
                                         <th>City</th>
-                                        <th>Actions</th>
+                                        <th class="text-center">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -39,9 +42,9 @@
                                             <td>{{ $supplier->PhoneNumber ?? 'N/A' }}</td>
                                             <td>{{ $supplier->Email ?? 'N/A' }}</td>
                                             <td>{{ $supplier->City ?? 'N/A' }}</td>
-                                            <td style="white-space: nowrap;">
-                                                <a href="{{ route('suppliers.show', $supplier) }}" class="text-info" style="text-decoration: underline; cursor: pointer;">
-                                                    <i class="fas fa-eye mr-1"></i> View
+                                            <td class="text-center" style="white-space: nowrap;">
+                                                <a href="{{ route('suppliers.show', $supplier) }}" class="text-info" style="cursor: pointer;" title="View">
+                                                    <i class="fas fa-eye"></i>
                                                 </a>
                                             </td>
                                         </tr>
@@ -532,7 +535,8 @@
             "pageLength": 10,
             "order": [[0, 'asc']],
             "columnDefs": [
-                { "orderable": false, "targets": [5] }
+                { "orderable": false, "targets": [5] },
+                { "className": "text-center", "targets": [5] }
             ],
             "language": {
                 "search": "Search:",

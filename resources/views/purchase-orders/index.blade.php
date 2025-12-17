@@ -76,7 +76,7 @@
                                         <th>Order Date</th>
                                         <th>Status</th>
                                         <th>Created By</th>
-                                        <th>Actions</th>
+                                        <th class="text-center">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -102,23 +102,21 @@
                                                 <span class="badge bg-{{ $statusClass }}">{{ $po->Status }}</span>
                                             </td>
                                             <td>{{ $po->creator->FirstName ?? '' }} {{ $po->creator->LastName ?? '' }}</td>
-                                            <td>
-                                                <div class="btn-group btn-group-sm">
-                                                    <a href="{{ route('purchase-orders.show', $po->POID) }}"
-                                                        class="btn btn-info" title="View">
-                                                        <i class="fas fa-eye"></i>
+                                            <td class="text-center">
+                                                <a href="{{ route('purchase-orders.show', $po->POID) }}"
+                                                    class="text-info mr-2" style="cursor: pointer;" title="View">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                @if($po->isEditable())
+                                                    <a href="{{ route('purchase-orders.edit', $po->POID) }}"
+                                                        class="text-warning mr-2" style="cursor: pointer;" title="Edit">
+                                                        <i class="fas fa-edit"></i>
                                                     </a>
-                                                    @if($po->isEditable())
-                                                        <a href="{{ route('purchase-orders.edit', $po->POID) }}"
-                                                            class="btn btn-warning" title="Edit">
-                                                            <i class="fas fa-edit"></i>
-                                                        </a>
-                                                    @endif
-                                                    <a href="{{ route('purchase-orders.pdf', $po->POID) }}"
-                                                        class="btn btn-secondary" title="Download PDF">
-                                                        <i class="fas fa-file-pdf"></i>
-                                                    </a>
-                                                </div>
+                                                @endif
+                                                <a href="{{ route('purchase-orders.pdf', $po->POID) }}"
+                                                    class="text-secondary" style="cursor: pointer;" title="Download PDF" target="_blank">
+                                                    <i class="fas fa-file-pdf"></i>
+                                                </a>
                                             </td>
                                         </tr>
                                     @empty

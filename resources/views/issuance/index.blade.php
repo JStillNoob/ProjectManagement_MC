@@ -56,13 +56,13 @@
                                             <td>{{ $issuance->items->count() }}</td>
                                             <td class="text-center" style="white-space: nowrap;">
                                                 <a href="{{ route('issuance.show', $issuance) }}" class="text-info mr-2"
-                                                    style="text-decoration: underline; cursor: pointer;">
-                                                    <i class="fas fa-eye mr-1"></i> View
+                                                    style="cursor: pointer;" title="View">
+                                                    <i class="fas fa-eye"></i>
                                                 </a>
                                                 @if(Auth::user()->UserTypeID != 3)
                                                     <a href="{{ route('issuance.pdf', $issuance) }}" class="text-success mr-2"
-                                                        style="text-decoration: underline; cursor: pointer;" target="_blank">
-                                                        <i class="fas fa-file-pdf mr-1"></i> PDF
+                                                        style="cursor: pointer;" target="_blank" title="PDF">
+                                                        <i class="fas fa-file-pdf"></i>
                                                     </a>
                                                     @if($issuance->Status == 'Issued')
                                                         <form action="{{ route('issuance.destroy', $issuance) }}" method="POST"
@@ -74,8 +74,8 @@
                                                             @csrf
                                                             @method('DELETE')
                                                             <button type="submit" class="btn btn-link text-danger p-0"
-                                                                style="text-decoration: underline; border: none; background: none; cursor: pointer;">
-                                                                <i class="fas fa-archive mr-1"></i> Archive
+                                                                style="border: none; background: none; cursor: pointer;" title="Archive">
+                                                                <i class="fas fa-archive"></i>
                                                             </button>
                                                         </form>
                                                     @endif

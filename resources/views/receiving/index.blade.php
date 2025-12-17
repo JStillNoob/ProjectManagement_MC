@@ -82,9 +82,7 @@
                                             </td>
                                             <td>{{ $record->purchaseOrder->supplier->SupplierName ?? 'N/A' }}</td>
                                             <td class="text-center">
-                                                <span class="badge text-white" style="background-color: #87A96B;">
-                                                    {{ $record->items->count() }}
-                                                </span>
+                                                {{ $record->items->count() }}
                                             </td>
                                             <td class="text-center">
                                                 @php
@@ -107,9 +105,10 @@
                                             </td>
                                             <td class="text-center">
                                                 <a href="{{ route('receiving.show', $record->ReceivingID) }}" 
-                                                   class="btn btn-sm btn-info"
-                                                   style="background-color: #007bff !important; border: 2px solid #007bff !important; color: white !important; opacity: 1 !important; visibility: visible !important; display: inline-block !important;">
-                                                    <i class="fas fa-eye mr-1"></i> View Details
+                                                   class="text-info"
+                                                   style="cursor: pointer;"
+                                                   title="View Details">
+                                                    <i class="fas fa-eye"></i>
                                                 </a>
                                             </td>
                                         </tr>
