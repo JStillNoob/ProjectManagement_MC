@@ -41,6 +41,7 @@ class Project extends Model
         'NTPAttachment',
         'BlueprintPath',
         'FloorPlanPath',
+        'additional_images',
     ];
 
     protected $casts = [
@@ -49,6 +50,7 @@ class Project extends Model
         'WarrantyDays'   => 'integer',
         'EstimatedAccomplishDays' => 'integer',
         'NTPStartDate'   => 'date',
+        'additional_images' => 'array',
     ];
 
     // Relationship with project status
@@ -172,7 +174,7 @@ class Project extends Model
     public function scopeActive($query)
     {
         return $query->whereHas('status', function($q) {
-            $q->whereIn('StatusName', ['On Going', 'Pending', 'Pre-Construction', 'Under Warranty']);
+            $q->whereIn('StatusName', ['On Going', 'Pending', 'Pre-Construction', 'Under Warranty', 'Delayed']);
         });
     }
 
@@ -289,19 +291,6 @@ class Project extends Model
                 return $getStatusId('Pre-Construction');
             }
         }
-
-        // Check if any milestone is in progress - if so, project should be On Going
-        // This only applies if start date has arrived (checked above)
-        if ($projectId) {
-            $hasInProgressMilestone = \DB::table('project_milestones')
-                ->where('project_id', $projectId)
-                ->where('status', 'In Progress')
-                ->exists();
-            
-            if ($hasInProgressMilestone) {
-                return $getStatusId('On Going');
-            }
-        }
         
         // If end date is null, calculate it or return pending
         if (!$endDate) {
@@ -344,16 +333,40 @@ class Project extends Model
             return $getStatusId('Pending');
         }
 
-        if ($startDateStr <= $today && $endDateStr >= $today) {
-            return $getStatusId('On Going');
-        }
-
+        // IMPORTANT: Check if end date has passed FIRST before checking "On Going"
+        // This ensures projects past their end date with incomplete milestones are marked as "Delayed"
         if ($endDateStr < $today) {
+            // Check if all milestones are completed - if not, project is Delayed
+            if ($projectId) {
+                $totalMilestones = \DB::table('project_milestones')
+                    ->where('project_id', $projectId)
+                    ->count();
+                
+                $completedMilestones = \DB::table('project_milestones')
+                    ->where('project_id', $projectId)
+                    ->where('status', 'Completed')
+                    ->count();
+                
+                // If there are milestones and not all are completed, project is Delayed
+                // This applies even if some milestones are "In Progress"
+                if ($totalMilestones > 0 && $completedMilestones < $totalMilestones) {
+                    return $getStatusId('Delayed');
+                }
+            }
+            
+            // All milestones completed - NOW check warranty period
+            // Warranty only starts after ALL milestones are completed
             if ($warrantyEndDateStr && $warrantyEndDateStr >= $today) {
                 return $getStatusId('Under Warranty');
             } else {
                 return $getStatusId('Completed');
             }
+        }
+
+        // Project is within its timeline (start date passed, end date not yet passed)
+        // Check for in-progress milestones to confirm it's actively being worked on
+        if ($startDateStr <= $today && $endDateStr >= $today) {
+            return $getStatusId('On Going');
         }
 
         return $getStatusId('Pending');

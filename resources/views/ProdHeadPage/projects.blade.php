@@ -32,7 +32,8 @@
                                         ($status->StatusName == 'Under Warranty' ? 'warning' :
                                             ($status->StatusName == 'Pending' ? 'info' :
                                                 ($status->StatusName == 'Pre-Construction' ? 'warning' :
-                                                    ($status->StatusName == 'On Hold' ? 'secondary' : 'info')))));
+                                                    ($status->StatusName == 'Delayed' ? 'danger' :
+                                                        ($status->StatusName == 'On Hold' ? 'secondary' : 'info'))))));
                             @endphp
                             <li class="nav-item">
                                 <a class="nav-link custom-pill-tab {{ $index === 0 ? 'active' : '' }}" id="{{ $tabId }}-tab" data-toggle="tab"
@@ -65,7 +66,8 @@
                                                         ($project->status->StatusName == 'Under Warranty' ? 'warning' :
                                                             ($project->status->StatusName == 'Pending' ? 'info' :
                                                                 ($project->status->StatusName == 'Pre-Construction' ? 'warning' :
-                                                                    ($project->status->StatusName == 'On Hold' ? 'secondary' : 'info')))));
+                                                                    ($project->status->StatusName == 'Delayed' ? 'danger' :
+                                                                        ($project->status->StatusName == 'On Hold' ? 'secondary' : 'info'))))));
                                                 $clientName = $project->client ? $project->client->ClientName : ($project->Client ?? 'No Client');
                                             @endphp
                                             <div class="col-md-6 col-lg-4 mb-4">

@@ -49,6 +49,73 @@ class ProjectMilestone extends Model
     {
         parent::boot();
 
+        // Enforce sequential milestone progression and calculate target dates
+        static::saving(function ($milestone) {
+            $project = $milestone->project;
+            
+            // Only check when changing status to "In Progress"
+            if ($milestone->isDirty('status') && $milestone->status === 'In Progress') {
+                if (!$project) {
+                    return true; // Allow if no project context
+                }
+                
+                $currentOrder = $milestone->order ?? $milestone->milestone_id;
+                
+                // Find previous milestones that are not completed
+                $incompletePreviousMilestones = $project->milestones()
+                    ->where('milestone_id', '!=', $milestone->milestone_id)
+                    ->where(function($q) use ($currentOrder, $milestone) {
+                        $q->where('order', '<', $currentOrder)
+                          ->orWhere(function($q2) use ($currentOrder, $milestone) {
+                              $q2->where('order', '=', $currentOrder)
+                                 ->where('milestone_id', '<', $milestone->milestone_id);
+                          });
+                    })
+                    ->whereIn('status', ['Pending', 'In Progress'])
+                    ->exists();
+                
+                // If there are incomplete previous milestones, prevent this milestone from starting
+                if ($incompletePreviousMilestones) {
+                    return true; // Allow the save but let controller handle validation
+                }
+                
+                // Calculate target_date when milestone starts (becomes In Progress)
+                if ($project->StartDate && $milestone->EstimatedDays) {
+                    // Find the last completed milestone before this one
+                    $lastCompletedMilestone = $project->milestones()
+                        ->where('milestone_id', '!=', $milestone->milestone_id)
+                        ->where('status', 'Completed')
+                        ->where(function($q) use ($currentOrder, $milestone) {
+                            $q->where('order', '<', $currentOrder)
+                              ->orWhere(function($q2) use ($currentOrder, $milestone) {
+                                  $q2->where('order', '=', $currentOrder)
+                                     ->where('milestone_id', '<', $milestone->milestone_id);
+                              });
+                        })
+                        ->orderBy('order', 'desc')
+                        ->orderBy('milestone_id', 'desc')
+                        ->first();
+                    
+                    // Calculate target date based on when the previous milestone actually completed
+                    // or from project start date if this is the first milestone
+                    if ($lastCompletedMilestone && $lastCompletedMilestone->actual_date) {
+                        $startFrom = $lastCompletedMilestone->actual_date;
+                    } else {
+                        $startFrom = $project->StartDate;
+                    }
+                    
+                    $milestone->target_date = Carbon::parse($startFrom)->addDays($milestone->EstimatedDays);
+                }
+            }
+            
+            // Clear target_date when milestone is reset to Pending
+            if ($milestone->isDirty('status') && $milestone->status === 'Pending') {
+                $milestone->target_date = null;
+            }
+            
+            return true;
+        });
+
         // Update project status when milestone status changes
         static::saved(function ($milestone) {
             if ($milestone->isDirty('status') || $milestone->wasRecentlyCreated) {
@@ -58,8 +125,8 @@ class ProjectMilestone extends Model
                     if ($milestone->status === 'Completed' && $milestone->isDirty('status')) {
                         $projectStatus = $project->status->StatusName ?? '';
                         
-                        // Only auto-progress if project is On Going
-                        if ($projectStatus === 'On Going') {
+                        // Only auto-progress if project is On Going or Delayed
+                        if (in_array($projectStatus, ['On Going', 'Delayed'])) {
                             $currentOrder = $milestone->order ?? $milestone->milestone_id;
                             
                             // Find next pending milestone
@@ -77,6 +144,10 @@ class ProjectMilestone extends Model
                                 ->first();
                             
                             if ($nextMilestone) {
+                                // Calculate target date for next milestone based on this milestone's actual completion date
+                                if ($milestone->actual_date && $nextMilestone->EstimatedDays) {
+                                    $nextMilestone->target_date = Carbon::parse($milestone->actual_date)->addDays($nextMilestone->EstimatedDays);
+                                }
                                 $nextMilestone->status = 'In Progress';
                                 $nextMilestone->saveQuietly();
                             }
@@ -150,6 +221,70 @@ class ProjectMilestone extends Model
         } catch (\Exception $e) {
             return 'N/A';
         }
+    }
+
+    /**
+     * Check if milestone is overdue
+     * A milestone is overdue if:
+     * - It has a target_date
+     * - The target_date has passed (is before today)
+     * - The milestone is not yet completed
+     */
+    public function getIsOverdueAttribute()
+    {
+        if (!$this->target_date || $this->status === 'Completed') {
+            return false;
+        }
+        return $this->target_date->lt(now()->startOfDay());
+    }
+
+    /**
+     * Get the number of days the milestone is overdue
+     * Returns 0 if not overdue
+     */
+    public function getDaysOverdueAttribute()
+    {
+        if (!$this->is_overdue) {
+            return 0;
+        }
+        return $this->target_date->diffInDays(now()->startOfDay());
+    }
+
+    /**
+     * Check if milestone was completed early
+     * A milestone is early if:
+     * - It is completed
+     * - It has both actual_date and target_date
+     * - The actual_date is before the target_date
+     */
+    public function getIsEarlyAttribute()
+    {
+        if ($this->status !== 'Completed' || !$this->actual_date || !$this->target_date) {
+            return false;
+        }
+        return $this->actual_date->lt($this->target_date);
+    }
+
+    /**
+     * Get the number of days the milestone was completed early
+     * Returns 0 if not early
+     */
+    public function getDaysEarlyAttribute()
+    {
+        if (!$this->is_early) {
+            return 0;
+        }
+        return $this->actual_date->diffInDays($this->target_date);
+    }
+
+    /**
+     * Scope for overdue milestones
+     */
+    public function scopeOverdue($query)
+    {
+        return $query->whereNotNull('target_date')
+            ->where('target_date', '<', now()->toDateString())
+            ->whereIn('status', ['Pending', 'In Progress']);
     }
 
     // Scope for pending milestones

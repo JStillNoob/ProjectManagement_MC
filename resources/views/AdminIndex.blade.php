@@ -43,19 +43,19 @@
             </a>
         </div>
 
-        <!-- Card 3: Total Employees -->
+        <!-- Card 3: Overdue Milestones -->
         <div class="col-lg-3 col-6">
-            <a href="{{ route('employees.index') }}" class="text-decoration-none">
-                <div class="small-box" style="background-color: #87A96B; color: white;">
+            <a href="{{ route('projects.index') }}" class="text-decoration-none">
+                <div class="small-box" style="background-color: {{ $overdueMilestones > 0 ? '#dc3545' : '#87A96B' }}; color: white;">
                     <div class="inner">
-                        <h3>{{ $employeeCount }}</h3>
-                        <p>Total Employees</p>
+                        <h3>{{ $overdueMilestones }}</h3>
+                        <p>Overdue Milestones</p>
                     </div>
                     <div class="icon">
-                        <i class="fas fa-users"></i>
+                        <i class="fas fa-exclamation-triangle"></i>
                     </div>
                     <div class="small-box-footer" style="color: rgba(255,255,255,0.8);">
-                        View Employees <i class="fas fa-arrow-circle-right"></i>
+                        View Projects <i class="fas fa-arrow-circle-right"></i>
                     </div>
                 </div>
             </a>
@@ -98,8 +98,19 @@
                                         {{ $project->ProjectName }}
                                     </a>
                                 </span>
+                                @php
+                                    $statusColor = match($project->status->StatusName) {
+                                        'On Going' => '#17a2b8',
+                                        'Delayed' => '#dc3545',
+                                        'Pre-Construction' => '#ffc107',
+                                        default => '#6c757d'
+                                    };
+                                @endphp
                                 <span class="badge"
-                                    style="background-color: {{ $project->status->StatusName == 'On Going' ? '#17a2b8' : '#6c757d' }}; color: white;">
+                                    style="background-color: {{ $statusColor }}; color: white;">
+                                    @if($project->status->StatusName == 'Delayed')
+                                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                                    @endif
                                     {{ $project->status->StatusName }}
                                 </span>
                             </div>

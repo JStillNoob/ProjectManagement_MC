@@ -15,8 +15,9 @@ class ProjectStatusSeeder extends Seeder
     {
         $statuses = [
             ['StatusName' => 'Pending'],
-            
+            ['StatusName' => 'Pre-Construction'],
             ['StatusName' => 'On Going'],
+            ['StatusName' => 'Delayed'],
             ['StatusName' => 'Under Warranty'],
             ['StatusName' => 'Completed'],
             ['StatusName' => 'On Hold'],

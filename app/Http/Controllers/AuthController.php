@@ -50,9 +50,9 @@ class AuthController extends Controller
         $this->updateProjectStatuses();
         
         // Include these statuses in the desired order
-        $allowedStatuses = ['Pending', 'Pre-Construction', 'On Going', 'Under Warranty', 'Completed', 'On Hold'];
+        $allowedStatuses = ['Pending', 'Pre-Construction', 'On Going', 'Delayed', 'Under Warranty', 'Completed', 'On Hold'];
         $statuses = ProjectStatus::whereIn('StatusName', $allowedStatuses)
-            ->orderByRaw("FIELD(StatusName, 'Pending', 'Pre-Construction', 'On Going', 'Under Warranty', 'Completed', 'On Hold')")
+            ->orderByRaw("FIELD(StatusName, 'Pending', 'Pre-Construction', 'On Going', 'Delayed', 'Under Warranty', 'Completed', 'On Hold')")
             ->get();
         
         // Get projects grouped by status
