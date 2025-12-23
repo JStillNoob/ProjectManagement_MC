@@ -149,4 +149,50 @@ class InventoryItem extends Model
 
         return $available > 0 ? $available : 0;
     }
+
+    /**
+     * Check if this item requires integer quantities (no decimals)
+     */
+    public function requiresIntegerQuantity(): bool
+    {
+        if (!$this->resourceCatalog) {
+            return false;
+        }
+        return $this->resourceCatalog->requiresIntegerQuantity();
+    }
+
+    /**
+     * Get the step value for quantity inputs (1 for integers, 0.01 for decimals)
+     */
+    public function getQuantityStepAttribute(): string
+    {
+        return $this->requiresIntegerQuantity() ? '1' : '0.01';
+    }
+
+    /**
+     * Format quantity based on unit type
+     */
+    public function formatQuantity($quantity): string
+    {
+        if ($this->requiresIntegerQuantity()) {
+            return number_format((int) $quantity, 0);
+        }
+        return number_format($quantity, 2);
+    }
+
+    /**
+     * Get formatted total quantity
+     */
+    public function getFormattedTotalQuantityAttribute(): string
+    {
+        return $this->formatQuantity($this->TotalQuantity);
+    }
+
+    /**
+     * Get formatted available quantity
+     */
+    public function getFormattedAvailableQuantityAttribute(): string
+    {
+        return $this->formatQuantity($this->AvailableQuantity);
+    }
 }

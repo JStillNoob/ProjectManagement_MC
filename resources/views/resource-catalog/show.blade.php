@@ -12,7 +12,7 @@
                         </h3>
                         <div class="card-tools">
                             <a href="{{ route('resource-catalog.index') }}" class="btn btn-secondary btn-sm">
-                                <i class="fas fa-arrow-left"></i> Back to List
+                                <i class="fas fa-arrow-left"></i> Back
                             </a>
                         </div>
                     </div>
@@ -54,12 +54,22 @@
                                 <h5 class="text-primary mb-3"><i class="fas fa-warehouse mr-2"></i>Inventory Stock</h5>
                                 <div class="mb-3">
                                     <label class="form-label text-muted">Total Stock</label>
-                                    <h4 class="mb-0">{{ number_format($resourceCatalog->total_stock, 2) }}
+                                    <h4 class="mb-0">
+                                        @if($resourceCatalog->requiresIntegerQuantity())
+                                            {{ number_format((int) $resourceCatalog->total_stock, 0) }}
+                                        @else
+                                            {{ number_format($resourceCatalog->total_stock, 2) }}
+                                        @endif
                                         {{ $resourceCatalog->Unit }}</h4>
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label text-muted">Available Stock</label>
-                                    <h4 class="mb-0 text-success">{{ number_format($resourceCatalog->available_stock, 2) }}
+                                    <h4 class="mb-0 text-success">
+                                        @if($resourceCatalog->requiresIntegerQuantity())
+                                            {{ number_format((int) $resourceCatalog->available_stock, 0) }}
+                                        @else
+                                            {{ number_format($resourceCatalog->available_stock, 2) }}
+                                        @endif
                                         {{ $resourceCatalog->Unit }}</h4>
                                 </div>
                                 <small class="text-muted">Across all inventory items</small>

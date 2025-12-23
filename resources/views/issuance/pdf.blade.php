@@ -238,7 +238,13 @@
                     <td class="text-center">
                         {{ $item->inventoryItem->resourceCatalog->Type ?? 'N/A' }}
                     </td>
-                    <td class="text-right">{{ number_format($item->QuantityIssued, 2) }}</td>
+                    <td class="text-right">
+                        @if($item->inventoryItem && $item->inventoryItem->requiresIntegerQuantity())
+                            {{ number_format((int) $item->QuantityIssued, 0) }}
+                        @else
+                            {{ number_format($item->QuantityIssued, 2) }}
+                        @endif
+                    </td>
                     <td>{{ $item->inventoryItem->resourceCatalog->Unit ?? 'N/A' }}</td>
                 </tr>
             @endforeach

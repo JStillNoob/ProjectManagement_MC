@@ -52,7 +52,7 @@
                 </ul>
 
                 <a href="{{ route('employees.index') }}" class="btn btn-secondary btn-block">
-                    <i class="fas fa-arrow-left"></i> Back to List
+                    <i class="fas fa-arrow-left"></i> Back
                 </a>
             </div>
         </div>

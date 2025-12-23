@@ -37,10 +37,20 @@
                                             <td><strong>{{ $item->ItemName }}</strong></td>
                                             <td>
                                                 <strong class="text-danger">
-                                                    {{ number_format($item->AvailableQuantity, 2) }}
+                                                    @if($item->requiresIntegerQuantity())
+                                                        {{ number_format((int) $item->AvailableQuantity, 0) }}
+                                                    @else
+                                                        {{ number_format($item->AvailableQuantity, 2) }}
+                                                    @endif
                                                 </strong>
                                             </td>
-                                            <td>{{ number_format($item->MinimumStockLevel, 2) }}</td>
+                                            <td>
+                                                @if($item->requiresIntegerQuantity())
+                                                    {{ number_format((int) $item->MinimumStockLevel, 0) }}
+                                                @else
+                                                    {{ number_format($item->MinimumStockLevel, 2) }}
+                                                @endif
+                                            </td>
                                             <td>{{ $item->Unit }}</td>
                                             <td>
                                                 <a href="{{ route('inventory.show', $item) }}" class="btn btn-sm btn-outline-info">

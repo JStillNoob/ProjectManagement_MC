@@ -281,14 +281,21 @@
                         <td>{{ $item->item->ItemName ?? 'N/A' }}</td>
                         <td>{{ $item->item->type->ItemTypeName ?? 'N/A' }}</td>
                         <td>{{ $item->Specifications ?? '-' }}</td>
-                        <td class="text-right">{{ number_format($item->QuantityOrdered, 2) }} {{ $item->Unit }}</td>
+                        <td class="text-right">
+                            @if($item->inventoryItem && $item->inventoryItem->requiresIntegerQuantity())
+                                {{ number_format((int) $item->QuantityOrdered, 0) }}
+                            @else
+                                {{ number_format($item->QuantityOrdered, 2) }}
+                            @endif
+                            {{ $item->Unit }}
+                        </td>
                     </tr>
                 @endforeach
             </tbody>
             <tfoot>
                 <tr class="summary-row">
                     <td colspan="4" class="text-right">TOTAL QUANTITY:</td>
-                    <td class="text-right">{{ number_format($totalQuantity, 2) }}</td>
+                    <td class="text-right">{{ number_format($totalQuantity, 0) }}</td>
                 </tr>
             </tfoot>
         </table>

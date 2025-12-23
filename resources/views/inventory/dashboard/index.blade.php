@@ -130,13 +130,28 @@
                         @if($criticalAlerts->count() > 0)
                             <div class="list-group list-group-flush">
                                 @foreach($criticalAlerts as $alert)
+                                    @php
+                                        $requiresInteger = $alert->Type === 'Equipment' || \App\Models\ResourceCatalog::unitRequiresInteger($alert->Unit);
+                                    @endphp
                                     <div class="list-group-item px-0 py-2">
                                         <strong>{{ $alert->ItemName }}</strong>
                                         <br>
                                         <small class="text-danger">
-                                            Available: {{ number_format($alert->AvailableQuantity, 2) }} {{ $alert->Unit }}
+                                            Available: 
+                                            @if($requiresInteger)
+                                                {{ number_format((int) $alert->AvailableQuantity, 0) }}
+                                            @else
+                                                {{ number_format($alert->AvailableQuantity, 2) }}
+                                            @endif
+                                            {{ $alert->Unit }}
                                             <br>
-                                            Reorder Level: {{ number_format($alert->ReorderLevel, 2) }} {{ $alert->Unit }}
+                                            Reorder Level: 
+                                            @if($requiresInteger)
+                                                {{ number_format((int) $alert->ReorderLevel, 0) }}
+                                            @else
+                                                {{ number_format($alert->ReorderLevel, 2) }}
+                                            @endif
+                                            {{ $alert->Unit }}
                                         </small>
                                     </div>
                                 @endforeach

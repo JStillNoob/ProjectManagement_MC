@@ -8,6 +8,8 @@
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap4.min.css">
 <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.bootstrap4.min.css">
 <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.bootstrap4.min.css">
+<!-- SweetAlert2 CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 <style>
     .info-box {
         cursor: pointer;
@@ -361,7 +363,6 @@
                                     <th>Time Out</th>
                                     <th>Status</th>
                                     <th>Working Hours</th>
-                                    <th style="width: 120px;">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -389,26 +390,10 @@
                                         @endif
                                     </td>
                                             <td>{{ $record->working_hours ?? 'N/A' }}</td>
-                                    <td>
-                                        <div class="btn-group">
-                                                    <button type="button" id="edit-attendance-{{ $record->id }}"
-                                                        name="edit_attendance_{{ $record->id }}"
-                                                        class="btn btn-warning btn-sm edit-attendance"
-                                                        data-id="{{ $record->id }}">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                                    <button type="button" id="delete-attendance-{{ $record->id }}"
-                                                        name="delete_attendance_{{ $record->id }}"
-                                                        class="btn btn-danger btn-sm delete-attendance"
-                                                        data-id="{{ $record->id }}">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    </td>
                                 </tr>
                                 @empty
                                 <tr>
-                                    <td colspan="9" class="text-center">No attendance records found for this date.</td>
+                                    <td colspan="8" class="text-center">No attendance records found for this date.</td>
                                 </tr>
                                 @endforelse
                             </tbody>
@@ -529,6 +514,10 @@
 
     <!-- Instascan QR Scanner (matching your native PHP version) -->
     <script src="https://rawgit.com/schmich/instascan-builds/master/instascan.min.js"></script>
+    
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
         // Instascan library check
         window.addEventListener('load', function () {
@@ -777,7 +766,17 @@
             
             if (!isSecure) {
                 console.warn('Camera access requires HTTPS or localhost. Current URL:', location.href);
-                alert('❌ Camera access requires HTTPS or localhost.\n\nCurrent URL: ' + location.href + '\n\nPlease access via:\n• http://localhost:8000/attendance\n• Or set up HTTPS\n• Or use Chrome with --unsafely-treat-insecure-origin-as-secure flag');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Camera Access Required',
+                    html: '<strong>Camera access requires HTTPS or localhost.</strong><br><br>' +
+                          '<strong>Current URL:</strong> ' + location.href + '<br><br>' +
+                          '<strong>Please access via:</strong><br>' +
+                          '• http://localhost:8000/attendance<br>' +
+                          '• Or set up HTTPS<br>' +
+                          '• Or use Chrome with --unsafely-treat-insecure-origin-as-secure flag',
+                    confirmButtonColor: '#3085d6'
+                });
                 return;
             }
             
@@ -808,21 +807,41 @@
                                         $('.scanner-con h5').text('✅ Camera Active - Scanning for QR codes...');
                                     } else {
                                         console.error('No cameras found.');
-                                        alert('No cameras found.');
+                                        Swal.fire({
+                                            icon: 'error',
+                                            title: 'No Cameras Found',
+                                            text: 'No camera devices were detected on your device.',
+                                            confirmButtonColor: '#3085d6'
+                                        });
                                     }
                                 })
                                 .catch(function (err) {
                                     console.error('Camera access error:', err);
-                                    alert('Camera access error: ' + err);
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Camera Access Error',
+                                        text: 'Failed to access camera: ' + err,
+                                        confirmButtonColor: '#3085d6'
+                                    });
                         });
                     } catch (error) {
                             console.warn('Instascan initialization failed:', error);
-                            alert('❌ Instascan initialization failed: ' + error.message);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Scanner Initialization Failed',
+                                text: 'Instascan initialization failed: ' + error.message,
+                                confirmButtonColor: '#3085d6'
+                            });
                     }
                 }
             } else {
                     console.warn('Instascan library not available');
-                    alert('❌ Instascan library not available. Please refresh the page and try again.');
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Scanner Library Not Available',
+                        text: 'Instascan library not available. Please refresh the page and try again.',
+                        confirmButtonColor: '#3085d6'
+                    });
             }
         }
 
@@ -893,15 +912,30 @@
                     if (response.success) {
                         showEmployeeDetected(response.employee.id, response.employee.full_name);
                     } else {
-                            alert('❌ ' + response.message || 'Employee not found for QR code: ' + qrCode);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Employee Not Found',
+                                text: response.message || 'Employee not found for QR code: ' + qrCode,
+                                confirmButtonColor: '#3085d6'
+                            });
                     }
                 },
                     error: function (xhr, status, error) {
                     console.error('Error finding employee by QR code:', { xhr, status, error });
                         if (xhr.status === 403) {
-                            alert('❌ Employee is not assigned to this project');
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Access Denied',
+                                text: 'Employee is not assigned to this project',
+                                confirmButtonColor: '#3085d6'
+                            });
                         } else {
-                    alert('❌ Error looking up employee by QR code: ' + error);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: 'Error looking up employee by QR code: ' + error,
+                                confirmButtonColor: '#3085d6'
+                            });
                         }
                 }
             });
@@ -1076,7 +1110,12 @@
             $(document).on('click', '#btnAutoAction', function () {
             const employeeId = $('#detected-employee-id').val();
             if (!employeeId) {
-                alert('No employee detected');
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'No Employee Detected',
+                    text: 'Please scan an employee QR code first.',
+                    confirmButtonColor: '#3085d6'
+                });
                 return;
             }
             
@@ -1090,7 +1129,12 @@
             $(document).on('click', '#btnTimeIn', function () {
             const employeeId = $('#detected-employee-id').val();
             if (!employeeId) {
-                alert('No employee detected');
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'No Employee Detected',
+                    text: 'Please scan an employee QR code first.',
+                    confirmButtonColor: '#3085d6'
+                });
                 return;
             }
             markAttendance(employeeId, 'time_in');
@@ -1099,7 +1143,12 @@
             $(document).on('click', '#btnLunchOut', function () {
             const employeeId = $('#detected-employee-id').val();
             if (!employeeId) {
-                alert('No employee detected');
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'No Employee Detected',
+                    text: 'Please scan an employee QR code first.',
+                    confirmButtonColor: '#3085d6'
+                });
                 return;
             }
             markAttendance(employeeId, 'lunch_out');
@@ -1108,7 +1157,12 @@
             $(document).on('click', '#btnLunchIn', function () {
             const employeeId = $('#detected-employee-id').val();
             if (!employeeId) {
-                alert('No employee detected');
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'No Employee Detected',
+                    text: 'Please scan an employee QR code first.',
+                    confirmButtonColor: '#3085d6'
+                });
                 return;
             }
             markAttendance(employeeId, 'lunch_in');
@@ -1117,7 +1171,12 @@
             $(document).on('click', '#btnTimeOut', function () {
             const employeeId = $('#detected-employee-id').val();
             if (!employeeId) {
-                alert('No employee detected');
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'No Employee Detected',
+                    text: 'Please scan an employee QR code first.',
+                    confirmButtonColor: '#3085d6'
+                });
                 return;
             }
             markAttendance(employeeId, 'time_out');
@@ -1155,7 +1214,12 @@
             const action = $('#attendance_type').val();
             
             if (!employeeId || !action) {
-                alert('Please select employee and attendance type');
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Missing Information',
+                    text: 'Please select employee and attendance type',
+                    confirmButtonColor: '#3085d6'
+                });
                 return;
             }
             
@@ -1223,45 +1287,16 @@
                 form.submit();
         }
 
-        // Edit attendance
-            $(document).on('click', '.edit-attendance', function () {
-            const attendanceId = $(this).data('id');
-            // You can implement a modal for editing attendance
-            alert('Edit functionality for attendance ID: ' + attendanceId);
-        });
-
-        // Delete attendance
-            $(document).on('click', '.delete-attendance', function () {
-            const attendanceId = $(this).data('id');
-            if (confirm('Are you sure you want to delete this attendance record?')) {
-                $.ajax({
-                    url: '/attendance/' + attendanceId,
-                    method: 'DELETE',
-                        headers: {
-                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
-                            'Accept': 'application/json'
-                        },
-                    data: {
-                        _token: $('meta[name="csrf-token"]').attr('content')
-                    },
-                        success: function (response) {
-                        if (response.success) {
-                            alert('Attendance record deleted successfully!');
-                            location.reload();
-                        }
-                    },
-                        error: function (xhr) {
-                        alert('Error deleting attendance record');
-                    }
-                });
-            }
-        });
-
         // View history for absent employees
             $(document).on('click', '.view-history', function () {
             const employeeId = $(this).data('employee-id');
             // You can implement a modal to show attendance history
-            alert('View history for employee ID: ' + employeeId);
+            Swal.fire({
+                icon: 'info',
+                title: 'View History',
+                text: 'View history for employee ID: ' + employeeId,
+                confirmButtonColor: '#3085d6'
+            });
         });
     });
 </script>

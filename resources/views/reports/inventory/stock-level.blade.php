@@ -135,15 +135,40 @@
                                         </span>
                                     </td>
                                     <td>{{ $item->inventoryItemType->TypeName ?? 'N/A' }}</td>
-                                    <td class="text-end">{{ number_format($item->TotalQuantity, 2) }}</td>
+                                    @php
+                                        $requiresInteger = $item->ItemType === 'Equipment' || \App\Models\ResourceCatalog::unitRequiresInteger($item->Unit);
+                                    @endphp
+                                    <td class="text-end">
+                                        @if($requiresInteger)
+                                            {{ number_format((int) $item->TotalQuantity, 0) }}
+                                        @else
+                                            {{ number_format($item->TotalQuantity, 2) }}
+                                        @endif
+                                    </td>
                                     <td class="text-end">
                                         <strong
                                             class="{{ $isOutOfStock ? 'text-danger' : ($isLowStock ? 'text-warning' : 'text-success') }}">
-                                            {{ number_format($item->AvailableQuantity, 2) }}
+                                            @if($requiresInteger)
+                                                {{ number_format((int) $item->AvailableQuantity, 0) }}
+                                            @else
+                                                {{ number_format($item->AvailableQuantity, 2) }}
+                                            @endif
                                         </strong>
                                     </td>
-                                    <td class="text-end">{{ number_format($item->CommittedQuantity, 2) }}</td>
-                                    <td class="text-end">{{ number_format($item->ReorderLevel, 2) }}</td>
+                                    <td class="text-end">
+                                        @if($requiresInteger)
+                                            {{ number_format((int) $item->CommittedQuantity, 0) }}
+                                        @else
+                                            {{ number_format($item->CommittedQuantity, 2) }}
+                                        @endif
+                                    </td>
+                                    <td class="text-end">
+                                        @if($requiresInteger)
+                                            {{ number_format((int) $item->ReorderLevel, 0) }}
+                                        @else
+                                            {{ number_format($item->ReorderLevel, 2) }}
+                                        @endif
+                                    </td>
                                     <td>{{ $item->Unit }}</td>
                                     <td>
                                         @if($isOutOfStock)

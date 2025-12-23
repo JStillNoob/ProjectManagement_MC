@@ -334,6 +334,7 @@ Route::get('issuance/{issuance}/pdf', [App\Http\Controllers\IssuanceController::
 // Equipment Return Routes
 Route::get('equipment/returns', [App\Http\Controllers\EquipmentReturnController::class, 'index'])->name('equipment.returns.index')->middleware('auth');
 Route::get('equipment/returns/{id}/create', [App\Http\Controllers\EquipmentReturnController::class, 'create'])->name('equipment.returns.create')->middleware('auth');
+Route::get('equipment/returns/{id}', [App\Http\Controllers\EquipmentReturnController::class, 'show'])->name('equipment.returns.show')->middleware('auth');
 Route::post('equipment/returns/{id}', [App\Http\Controllers\EquipmentReturnController::class, 'store'])->name('equipment.returns.store')->middleware('auth');
 Route::get('equipment/incidents', [App\Http\Controllers\EquipmentReturnController::class, 'incidents'])->name('equipment.incidents.index')->middleware('auth');
 Route::get('equipment/incidents/{id}', [App\Http\Controllers\EquipmentReturnController::class, 'showIncident'])->name('equipment.incidents.show')->middleware('auth');

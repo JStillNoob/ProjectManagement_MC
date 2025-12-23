@@ -13,7 +13,7 @@
                             <div class="row align-items-center">
                                 <div class="col-auto mb-3 mb-md-0">
                                     <a href="{{ route('issuance.index') }}" class="btn btn-secondary">
-                                        <i class="fas fa-arrow-left me-1"></i> Back to List
+                                        <i class="fas fa-arrow-left me-1"></i> Back
                                     </a>
                                 </div>
                                 <div class="col">
@@ -221,21 +221,31 @@
                                                             {{ $catalog->Type ?? 'Materials' }}
                                                         </span>
                                                     </td>
-                                                    <td class="text-center">{{ number_format($reqItem->QuantityRequested, 2) }}</td>
+                                                    <td class="text-center">
+                                                        @if($item->requiresIntegerQuantity())
+                                                            {{ number_format((int) $reqItem->QuantityRequested, 0) }}
+                                                        @else
+                                                            {{ number_format($reqItem->QuantityRequested, 2) }}
+                                                        @endif
+                                                    </td>
                                                     <td class="text-center">{{ $catalog->Unit ?? 'unit' }}</td>
                                                     <td class="text-center">
                                                         <span class="{{ $available >= $reqItem->QuantityRequested ? 'text-success' : 'text-warning' }}">
-                                                            {{ number_format($available, 2) }}
+                                                            @if($item->requiresIntegerQuantity())
+                                                                {{ number_format((int) $available, 0) }}
+                                                            @else
+                                                                {{ number_format($available, 2) }}
+                                                            @endif
                                                         </span>
                                                     </td>
                                                     <td>
                                                         <input type="number" 
                                                                name="items[{{ $index }}][Quantity]" 
                                                                class="form-control text-center" 
-                                                               value="{{ $qtyToIssue }}"
-                                                               min="0.01" 
+                                                               value="{{ $item->requiresIntegerQuantity() ? (int) $qtyToIssue : $qtyToIssue }}"
+                                                               min="{{ $item->requiresIntegerQuantity() ? '1' : '0.01' }}" 
                                                                max="{{ $available }}"
-                                                               step="0.01" 
+                                                               step="{{ $item->requiresIntegerQuantity() ? '1' : '0.01' }}" 
                                                                required>
                                                     </td>
                                                 </tr>
@@ -284,7 +294,23 @@
 
     <script>
         let rowIndex = 0;
-        const inventoryItems = @json($inventoryItems);
+        // Format inventory items for easier access
+        const inventoryItems = @json($inventoryItems).map(item => {
+            const catalog = item.resource_catalog || {};
+            const itemType = catalog.Type || 'Materials';
+            // Equipment always requires integer, materials with specific units require integer
+            const integerUnits = ['pcs', 'unit', 'box', 'set', 'pair', 'piece'];
+            const requiresInteger = itemType === 'Equipment' || integerUnits.includes((catalog.Unit || '').toLowerCase());
+            
+            return {
+                ItemID: item.ItemID,
+                AvailableQuantity: item.AvailableQuantity || 0,
+                ItemName: catalog.ItemName || 'Unknown Item',
+                ItemType: itemType,
+                Unit: catalog.Unit || 'unit',
+                RequiresInteger: requiresInteger
+            };
+        });
 
         @if(!isset($inventoryRequest) || !$inventoryRequest)
         // Auto-fill project and milestone when request is selected (only when not pre-filled)
@@ -339,7 +365,10 @@
                     <select name="items[${rowIndex}][ItemID]" class="form-select item-select" onchange="updateAvailability(${rowIndex})" required>
                         <option value="">Select Item</option>
                         ${inventoryItems.map(item =>
-                            `<option value="${item.ItemID}" data-available="${item.AvailableQuantity}" data-unit="${item.Unit}">
+                            `<option value="${item.ItemID}" 
+                                data-available="${item.AvailableQuantity}" 
+                                data-unit="${item.Unit}" 
+                                data-requires-integer="${item.RequiresInteger}">
                                 ${item.ItemName} (${item.ItemType})
                             </option>`
                         ).join('')}
@@ -352,7 +381,7 @@
                     <input type="text" class="form-control text-center unit-field" id="unit${rowIndex}" readonly style="background-color: #e9ecef;">
                 </td>
                 <td>
-                    <input type="number" name="items[${rowIndex}][Quantity]" class="form-control text-center" 
+                    <input type="number" name="items[${rowIndex}][Quantity]" class="form-control text-center quantity-input" id="quantity${rowIndex}"
                            min="0.01" step="0.01" required onchange="validateQuantity(${rowIndex})">
                 </td>
                 <td class="text-center">
@@ -370,11 +399,27 @@
             const select = document.querySelector(`select[name="items[${index}][ItemID]"]`);
             const selectedOption = select.options[select.selectedIndex];
 
-            const available = selectedOption.getAttribute('data-available') || '';
+            const available = parseFloat(selectedOption.getAttribute('data-available')) || 0;
             const unit = selectedOption.getAttribute('data-unit') || '';
+            const requiresInteger = selectedOption.getAttribute('data-requires-integer') === 'true';
 
-            document.getElementById(`available${index}`).value = available;
+            // Format available quantity based on whether it requires integer
+            const formattedAvailable = requiresInteger ? Math.floor(available) : parseFloat(available).toFixed(2);
+            
+            document.getElementById(`available${index}`).value = formattedAvailable;
             document.getElementById(`unit${index}`).value = unit;
+            
+            // Update quantity input step and min based on whether it requires integer
+            const qtyInput = document.getElementById(`quantity${index}`);
+            if (qtyInput) {
+                if (requiresInteger) {
+                    qtyInput.min = '1';
+                    qtyInput.step = '1';
+                } else {
+                    qtyInput.min = '0.01';
+                    qtyInput.step = '0.01';
+                }
+            }
         }
 
         function validateQuantity(index) {

@@ -16,7 +16,7 @@
                             </div>
                             <div class="col-auto">
                                 <a href="{{ route('reports.milestones.index') }}" class="btn btn-secondary">
-                                    <i class="fas fa-arrow-left me-1"></i> Back to List
+                                    <i class="fas fa-arrow-left me-1"></i> Back
                                 </a>
                             </div>
                         </div>
@@ -127,29 +127,60 @@
                                     @forelse($comparisonData as $item)
                                         <tr>
                                             <td>
-                                                <div class="d-flex align-items-center">
-                                                    <div class="rounded-circle d-flex align-items-center justify-content-center me-2"
-                                                        style="width: 32px; height: 32px; background-color: {{ $item['item_type'] == 'Equipment' ? 'rgba(23, 162, 184, 0.15)' : 'rgba(135, 169, 107, 0.15)' }};">
-                                                        <i class="fas {{ $item['item_type'] == 'Equipment' ? 'fa-tools' : 'fa-cube' }}"
-                                                            style="color: {{ $item['item_type'] == 'Equipment' ? '#17a2b8' : '#87A96B' }}; font-size: 0.8rem;"></i>
-                                                    </div>
-                                                    <span><strong>{{ $item['item_name'] }}</strong></span>
-                                                </div>
+                                                <strong>{{ $item['item_name'] }}</strong>
                                             </td>
                                             <td>
                                                 <span class="badge" style="background-color: {{ $item['item_type'] == 'Equipment' ? '#17a2b8' : '#87A96B' }};">
                                                     {{ $item['item_type'] }}
                                                 </span>
                                             </td>
-                                            <td class="text-center">{{ number_format($item['required_qty'], 2) }} {{ $item['unit'] }}</td>
-                                            <td class="text-center">{{ number_format($item['actual_qty'], 2) }} {{ $item['unit'] }}</td>
+                                            @php
+                                                $requiresInteger = $item['item_type'] === 'Equipment' || \App\Models\ResourceCatalog::unitRequiresInteger($item['unit']);
+                                            @endphp
+                                            <td class="text-center">
+                                                @if($requiresInteger)
+                                                    {{ number_format((int) $item['required_qty'], 0) }}
+                                                @else
+                                                    {{ number_format($item['required_qty'], 2) }}
+                                                @endif
+                                                {{ $item['unit'] }}
+                                            </td>
+                                            <td class="text-center">
+                                                @if($requiresInteger)
+                                                    {{ number_format((int) $item['actual_qty'], 0) }}
+                                                @else
+                                                    {{ number_format($item['actual_qty'], 2) }}
+                                                @endif
+                                                {{ $item['unit'] }}
+                                            </td>
                                             <td class="text-center">
                                                 @if($item['variance'] > 0)
-                                                    <span class="text-danger">+{{ number_format($item['variance'], 2) }} {{ $item['unit'] }}</span>
+                                                    <span class="text-danger">+
+                                                        @if($requiresInteger)
+                                                            {{ number_format((int) $item['variance'], 0) }}
+                                                        @else
+                                                            {{ number_format($item['variance'], 2) }}
+                                                        @endif
+                                                        {{ $item['unit'] }}
+                                                    </span>
                                                 @elseif($item['variance'] < 0)
-                                                    <span class="text-warning">{{ number_format($item['variance'], 2) }} {{ $item['unit'] }}</span>
+                                                    <span class="text-warning">
+                                                        @if($requiresInteger)
+                                                            {{ number_format((int) $item['variance'], 0) }}
+                                                        @else
+                                                            {{ number_format($item['variance'], 2) }}
+                                                        @endif
+                                                        {{ $item['unit'] }}
+                                                    </span>
                                                 @else
-                                                    <span class="text-muted">{{ number_format($item['variance'], 2) }} {{ $item['unit'] }}</span>
+                                                    <span class="text-muted">
+                                                        @if($requiresInteger)
+                                                            {{ number_format((int) $item['variance'], 0) }}
+                                                        @else
+                                                            {{ number_format($item['variance'], 2) }}
+                                                        @endif
+                                                        {{ $item['unit'] }}
+                                                    </span>
                                                 @endif
                                             </td>
                                             <td class="text-center">{{ number_format($item['percentage'], 2) }}%</td>

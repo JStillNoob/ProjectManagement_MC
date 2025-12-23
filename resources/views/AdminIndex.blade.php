@@ -10,16 +10,20 @@
         <!-- Card 1: Pending Inventory Requests -->
         <div class="col-lg-3 col-6">
             <a href="{{ route('inventory.requests.index') }}" class="text-decoration-none">
-                <div class="small-box" style="background-color: #f39c12; color: white;">
-                    <div class="inner">
-                        <h3>{{ $pendingRequests }}</h3>
-                        <p>Pending Inventory Requests</p>
+                <div class="card" style="background-color: #ffffff; border-radius: 8px; overflow: hidden;">
+                    <div class="card-body p-3">
+                        <div class="d-flex align-items-start">
+                            <div class="mr-3" style="font-size: 2.5rem; color: #6c757d;">
+                                <i class="fas fa-clipboard-list"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <p class="mb-2" style="font-size: 0.875rem; font-weight: 500; color: #6c757d;">Pending Inventory Requests</p>
+                                <h3 class="mb-0 text-right" style="font-size: 2rem; font-weight: bold; color: #333;">{{ $pendingRequests }}</h3>
+                            </div>
+                        </div>
                     </div>
-                    <div class="icon">
-                        <i class="fas fa-clipboard-list"></i>
-                    </div>
-                    <div class="small-box-footer" style="color: rgba(255,255,255,0.8);">
-                        View Requests <i class="fas fa-arrow-circle-right"></i>
+                    <div class="card-footer text-center py-2" style="background-color: #f39c12; color: white; border: none;">
+                        View Requests <i class="fas fa-arrow-circle-right ml-1"></i>
                     </div>
                 </div>
             </a>
@@ -28,16 +32,20 @@
         <!-- Card 2: In-Progress Projects -->
         <div class="col-lg-3 col-6">
             <a href="{{ route('projects.index') }}" class="text-decoration-none">
-                <div class="small-box" style="background-color: #17a2b8; color: white;">
-                    <div class="inner">
-                        <h3>{{ $inProgressProjects }}</h3>
-                        <p>In-Progress Projects</p>
+                <div class="card" style="background-color: #ffffff; border-radius: 8px; overflow: hidden;">
+                    <div class="card-body p-3">
+                        <div class="d-flex align-items-start">
+                            <div class="mr-3" style="font-size: 2.5rem; color: #6c757d;">
+                                <i class="fas fa-tasks"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <p class="mb-2" style="font-size: 0.875rem; font-weight: 500; color: #6c757d;">In-Progress Projects</p>
+                                <h3 class="mb-0 text-right" style="font-size: 2rem; font-weight: bold; color: #333;">{{ $inProgressProjects }}</h3>
+                            </div>
+                        </div>
                     </div>
-                    <div class="icon">
-                        <i class="fas fa-tasks"></i>
-                    </div>
-                    <div class="small-box-footer" style="color: rgba(255,255,255,0.8);">
-                        View Projects <i class="fas fa-arrow-circle-right"></i>
+                    <div class="card-footer text-center py-2" style="background-color: #17a2b8; color: white; border: none;">
+                        View Projects <i class="fas fa-arrow-circle-right ml-1"></i>
                     </div>
                 </div>
             </a>
@@ -46,16 +54,20 @@
         <!-- Card 3: Overdue Milestones -->
         <div class="col-lg-3 col-6">
             <a href="{{ route('projects.index') }}" class="text-decoration-none">
-                <div class="small-box" style="background-color: {{ $overdueMilestones > 0 ? '#dc3545' : '#87A96B' }}; color: white;">
-                    <div class="inner">
-                        <h3>{{ $overdueMilestones }}</h3>
-                        <p>Overdue Milestones</p>
+                <div class="card" style="background-color: #ffffff; border-radius: 8px; overflow: hidden;">
+                    <div class="card-body p-3">
+                        <div class="d-flex align-items-start">
+                            <div class="mr-3" style="font-size: 2.5rem; color: #6c757d;">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <p class="mb-2" style="font-size: 0.875rem; font-weight: 500; color: #6c757d;">Overdue Milestones</p>
+                                <h3 class="mb-0 text-right" style="font-size: 2rem; font-weight: bold; color: #333;">{{ $overdueMilestones }}</h3>
+                            </div>
+                        </div>
                     </div>
-                    <div class="icon">
-                        <i class="fas fa-exclamation-triangle"></i>
-                    </div>
-                    <div class="small-box-footer" style="color: rgba(255,255,255,0.8);">
-                        View Projects <i class="fas fa-arrow-circle-right"></i>
+                    <div class="card-footer text-center py-2" style="background-color: #dc3545; color: white; border: none;">
+                        View Projects <i class="fas fa-arrow-circle-right ml-1"></i>
                     </div>
                 </div>
             </a>
@@ -64,16 +76,20 @@
         <!-- Card 4: Projects Pending NTP -->
         <div class="col-lg-3 col-6">
             <a href="{{ route('projects.index') }}" class="text-decoration-none">
-                <div class="small-box" style="background-color: #dc3545; color: white;">
-                    <div class="inner">
-                        <h3>{{ $pendingNTPProjects }}</h3>
-                        <p>Projects Pending NTP</p>
+                <div class="card" style="background-color: #ffffff; border-radius: 8px; overflow: hidden;">
+                    <div class="card-body p-3">
+                        <div class="d-flex align-items-start">
+                            <div class="mr-3" style="font-size: 2.5rem; color: #6c757d;">
+                                <i class="fas fa-file-signature"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <p class="mb-2" style="font-size: 0.875rem; font-weight: 500; color: #6c757d;">Projects Pending NTP</p>
+                                <h3 class="mb-0 text-right" style="font-size: 2rem; font-weight: bold; color: #333;">{{ $pendingNTPProjects }}</h3>
+                            </div>
+                        </div>
                     </div>
-                    <div class="icon">
-                        <i class="fas fa-file-signature"></i>
-                    </div>
-                    <div class="small-box-footer" style="color: rgba(255,255,255,0.8);">
-                        View Pending <i class="fas fa-arrow-circle-right"></i>
+                    <div class="card-footer text-center py-2" style="background-color: #87A96B; color: white; border: none;">
+                        View Pending <i class="fas fa-arrow-circle-right ml-1"></i>
                     </div>
                 </div>
             </a>

@@ -379,7 +379,7 @@ class InventoryRequestController extends Controller
      */
     public function show(InventoryRequest $inventoryRequest)
     {
-        $inventoryRequest->load(['project', 'employee', 'items.item.resourceCatalog', 'milestone', 'approver', 'purchaseOrders']);
+        $inventoryRequest->load(['project', 'employee', 'items.item.resourceCatalog', 'milestone', 'approver', 'purchaseOrders.items']);
         $shortageItems = $inventoryRequest->items->where('NeedsPurchase', true);
 
         // Calculate current stock availability for each item for admin verification
@@ -469,7 +469,7 @@ class InventoryRequestController extends Controller
                 'SupplierID' => $mainSupplierID,
                 'RequestID' => $inventoryRequest->RequestID,
                 'OrderDate' => now()->format('Y-m-d'),
-                'Status' => 'Draft',
+                'Status' => 'Sent',  // Set to Sent so it appears in Receiving
                 'CreatedBy' => $user->EmployeeID,
             ]);
 
@@ -534,9 +534,9 @@ class InventoryRequestController extends Controller
                 ->with('error', 'Only Admin/GM accounts can approve inventory requests.');
         }
 
-        // Allow approval for 'Pending', 'Pending - To Order', and 'Ordered' statuses
+        // Allow approval for 'Pending', 'Pending - To Order', 'Ordered', and 'Ready for Approval' statuses
         // Admin can approve even if stock is low - they verify stock before approving
-        if (!in_array($inventoryRequest->Status, ['Pending', 'Pending - To Order', 'Ordered'])) {
+        if (!in_array($inventoryRequest->Status, ['Pending', 'Pending - To Order', 'Ordered', 'Ready for Approval'])) {
             return redirect()->back()
                 ->with('error', 'Only pending requests can be approved.');
         }

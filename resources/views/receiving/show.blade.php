@@ -16,7 +16,7 @@
                             </div>
                             <div class="col-auto">
                                 <a href="{{ route('receiving.index') }}" class="btn btn-secondary">
-                                    <i class="fas fa-arrow-left me-1"></i> Back to List
+                                    <i class="fas fa-arrow-left me-1"></i> Back
                                 </a>
                             </div>
                         </div>
@@ -141,23 +141,46 @@
                                         @endphp
                                         <tr>
                                             <td>
-                                                <div class="d-flex align-items-center">
-                                                    <div class="rounded-circle d-flex align-items-center justify-content-center me-2"
-                                                        style="width: 32px; height: 32px; background-color: {{ $itemType == 'Equipment' ? 'rgba(23, 162, 184, 0.15)' : 'rgba(135, 169, 107, 0.15)' }};">
-                                                        <i class="fas {{ $itemType == 'Equipment' ? 'fa-tools' : 'fa-cube' }}"
-                                                            style="color: {{ $itemType == 'Equipment' ? '#17a2b8' : '#87A96B' }}; font-size: 0.8rem;"></i>
-                                                    </div>
-                                                    <span><strong>{{ $itemName }}</strong></span>
-                                                </div>
+                                                <strong>{{ $itemName }}</strong>
                                             </td>
-                                            <td class="text-center">{{ number_format($poItem->QuantityOrdered ?? 0) }} {{ $poItem->Unit ?? '' }}</td>
-                                            <td class="text-center"><strong>{{ number_format($item->QuantityReceived) }} {{ $poItem->Unit ?? '' }}</strong></td>
                                             <td class="text-center">
-                                                <span class="badge text-white" style="background-color: #87A96B;">{{ number_format($goodQuantity) }} {{ $poItem->Unit ?? '' }}</span>
+                                                @if($inventoryItem && $inventoryItem->requiresIntegerQuantity())
+                                                    {{ number_format((int) ($poItem->QuantityOrdered ?? 0), 0) }}
+                                                @else
+                                                    {{ number_format($poItem->QuantityOrdered ?? 0, 2) }}
+                                                @endif
+                                                {{ $poItem->Unit ?? '' }}
+                                            </td>
+                                            <td class="text-center">
+                                                <strong>
+                                                    @if($inventoryItem && $inventoryItem->requiresIntegerQuantity())
+                                                        {{ number_format((int) $item->QuantityReceived, 0) }}
+                                                    @else
+                                                        {{ number_format($item->QuantityReceived, 2) }}
+                                                    @endif
+                                                    {{ $poItem->Unit ?? '' }}
+                                                </strong>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge text-white" style="background-color: #87A96B;">
+                                                    @if($inventoryItem && $inventoryItem->requiresIntegerQuantity())
+                                                        {{ number_format((int) $goodQuantity, 0) }}
+                                                    @else
+                                                        {{ number_format($goodQuantity, 2) }}
+                                                    @endif
+                                                    {{ $poItem->Unit ?? '' }}
+                                                </span>
                                             </td>
                                             <td class="text-center">
                                                 @if(($item->QuantityDamaged ?? 0) > 0)
-                                                    <span class="badge bg-danger text-white">{{ number_format($item->QuantityDamaged) }} {{ $poItem->Unit ?? '' }}</span>
+                                                    <span class="badge bg-danger text-white">
+                                                        @if($inventoryItem && $inventoryItem->requiresIntegerQuantity())
+                                                            {{ number_format((int) $item->QuantityDamaged, 0) }}
+                                                        @else
+                                                            {{ number_format($item->QuantityDamaged, 2) }}
+                                                        @endif
+                                                        {{ $poItem->Unit ?? '' }}
+                                                    </span>
                                                 @else
                                                     <span class="text-muted">0</span>
                                                 @endif

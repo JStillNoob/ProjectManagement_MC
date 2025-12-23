@@ -39,7 +39,7 @@
                     <i class="fas fa-edit"></i> Edit Position
                 </button>
                 <a href="{{ route('positions.index') }}" class="btn btn-secondary btn-block">
-                    <i class="fas fa-arrow-left"></i> Back to List
+                    <i class="fas fa-arrow-left"></i> Back
                 </a>
             </div>
         </div>

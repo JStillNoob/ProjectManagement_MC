@@ -241,8 +241,28 @@ class Attendance extends Model
         $currentHour = $now->hour;
         $currentMinute = $now->minute;
         
-        // No time_in yet - expect time_in
-        if (!$this->time_in) {
+        // Check if it's too late to clock in (3 PM or later)
+        if ($currentHour >= 15) {
+            if (!$this->time_in && !$this->lunch_in) {
+                return 'complete'; // Too late, can't clock in
+            }
+        }
+        
+        // No time_in yet - determine based on current time
+        if (!$this->time_in && !$this->lunch_in) {
+            // If it's 10 AM - 12 PM, too late for morning
+            if ($currentHour >= 10 && $currentHour < 12) {
+                return 'complete'; // Wait for afternoon at 1 PM
+            }
+            // If it's lunch time (12 PM - 1 PM), wait for afternoon
+            if ($currentHour === 12) {
+                return 'complete'; // Wait for 1 PM
+            }
+            // If it's afternoon (1 PM - 3 PM), expect lunch_in instead
+            if ($currentHour >= 13 && $currentHour < 15) {
+                return 'lunch_in';
+            }
+            // Otherwise, expect time_in (before 10 AM)
             return 'time_in';
         }
         
@@ -263,7 +283,7 @@ class Attendance extends Model
             return 'lunch_in';
         }
         
-        // Has lunch_in, no time_out - expect time_out
+        // Has lunch_in (afternoon start), no time_out - expect time_out
         if ($this->lunch_in && !$this->time_out) {
             return 'time_out';
         }

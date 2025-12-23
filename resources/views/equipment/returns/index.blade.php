@@ -37,7 +37,7 @@
                                             </td>
                                             <td>{{ $assignment->milestone->project->ProjectName ?? 'N/A' }}</td>
                                             <td>{{ $assignment->milestone->milestone_name ?? 'N/A' }}</td>
-                                            <td>{{ number_format($assignment->QuantityAssigned, 2) }}</td>
+                                            <td>{{ number_format((int) $assignment->QuantityAssigned, 0) }}</td>
                                             <td>{{ $assignment->DateAssigned ? $assignment->DateAssigned->format('M d, Y') : 'N/A' }}
                                             </td>
                                             <td>
@@ -65,12 +65,18 @@
                                             <td class="text-center">
                                                 @if(!$assignment->DateReturned)
                                                     <a href="{{ route('equipment.returns.create', $assignment->EquipmentAssignmentID) }}"
-                                                        class="btn btn-sm text-white text-center" 
-                                                        style="background-color: #007bff !important; border: 2px solid #007bff !important; color: white !important; opacity: 1 !important; visibility: visible !important; display: inline-block !important; cursor: pointer; text-align: center !important;">
-                                                        <i class="fas fa-box-arrow-in-left mr-1"></i> Return
+                                                        class="text-info"
+                                                        style="cursor: pointer; font-size: 1.2rem; display: inline-block; text-decoration: none;"
+                                                        title="Return Equipment">
+                                                        <i class="fas fa-undo-alt"></i>
                                                     </a>
                                                 @else
-                                                    <span class="text-muted">Completed</span>
+                                                    <a href="{{ route('equipment.returns.show', $assignment->EquipmentAssignmentID) }}"
+                                                        class="text-info"
+                                                        style="cursor: pointer; font-size: 1.2rem; display: inline-block; text-decoration: none;"
+                                                        title="View Details">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
                                                 @endif
                                             </td>
                                         </tr>

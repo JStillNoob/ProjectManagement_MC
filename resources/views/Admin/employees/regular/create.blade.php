@@ -216,7 +216,7 @@
                         <i class="fas fa-save"></i> Create Regular Employee
                     </button>
                     <a href="{{ route('regular-employees.index') }}" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i> Back to List
+                        <i class="fas fa-arrow-left"></i> Back
                     </a>
                 </div>
             </form>

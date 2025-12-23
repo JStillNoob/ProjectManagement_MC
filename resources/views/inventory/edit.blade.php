@@ -14,7 +14,7 @@
                     </h3>
                     <div class="card-tools">
                         <a href="{{ route('inventory.index') }}" class="btn btn-secondary btn-sm">
-                            <i class="fas fa-arrow-left"></i> Back to List
+                            <i class="fas fa-arrow-left"></i> Back
                         </a>
                     </div>
                 </div>

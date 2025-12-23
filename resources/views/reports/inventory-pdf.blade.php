@@ -185,13 +185,27 @@
                 </thead>
                 <tbody>
                     @foreach($lowStockItems as $item)
+                        @php
+                            $requiresInteger = $item->Type === 'Equipment' || \App\Models\ResourceCatalog::unitRequiresInteger($item->Unit);
+                        @endphp
                         <tr class="low-stock">
                             <td class="text-center">{{ $item->ItemID }}</td>
                             <td>{{ $item->ItemName }}</td>
                             <td>{{ $item->type->ItemTypeName ?? 'N/A' }}</td>
-                            <td class="text-center low-stock-indicator">{{ number_format($item->QuantityInStock, 2) }}
+                            <td class="text-center low-stock-indicator">
+                                @if($requiresInteger)
+                                    {{ number_format((int) $item->QuantityInStock, 0) }}
+                                @else
+                                    {{ number_format($item->QuantityInStock, 2) }}
+                                @endif
                                 {{ $item->Unit }}</td>
-                            <td class="text-center">{{ number_format($item->MinimumStockLevel, 2) }} {{ $item->Unit }}</td>
+                            <td class="text-center">
+                                @if($requiresInteger)
+                                    {{ number_format((int) $item->MinimumStockLevel, 0) }}
+                                @else
+                                    {{ number_format($item->MinimumStockLevel, 2) }}
+                                @endif
+                                {{ $item->Unit }}</td>
                             <td>{{ $item->Location ?? '-' }}</td>
                         </tr>
                     @endforeach
@@ -213,15 +227,29 @@
             </thead>
             <tbody>
                 @foreach($items as $item)
+                    @php
+                        $requiresInteger = $item->Type === 'Equipment' || \App\Models\ResourceCatalog::unitRequiresInteger($item->Unit);
+                    @endphp
                     <tr class="{{ $item->QuantityInStock <= $item->MinimumStockLevel ? 'low-stock' : '' }}">
                         <td class="text-center">{{ $item->ItemID }}</td>
                         <td>{{ $item->ItemName }}</td>
                         <td>{{ $item->type->ItemTypeName ?? 'N/A' }}</td>
                         <td
                             class="text-center {{ $item->QuantityInStock <= $item->MinimumStockLevel ? 'low-stock-indicator' : '' }}">
-                            {{ number_format($item->QuantityInStock, 2) }} {{ $item->Unit }}
+                            @if($requiresInteger)
+                                {{ number_format((int) $item->QuantityInStock, 0) }}
+                            @else
+                                {{ number_format($item->QuantityInStock, 2) }}
+                            @endif
+                            {{ $item->Unit }}
                         </td>
-                        <td class="text-center">{{ number_format($item->MinimumStockLevel, 2) }} {{ $item->Unit }}</td>
+                        <td class="text-center">
+                            @if($requiresInteger)
+                                {{ number_format((int) $item->MinimumStockLevel, 0) }}
+                            @else
+                                {{ number_format($item->MinimumStockLevel, 2) }}
+                            @endif
+                            {{ $item->Unit }}</td>
                         <td>{{ $item->Location ?? '-' }}</td>
                     </tr>
                 @endforeach

@@ -83,10 +83,27 @@
                                                         {{ $item->UnitOfMeasure ?? ($item->item->resourceCatalog->Unit ?? 'UNITS') }}
                                                     </div>
                                                 </td>
-                                                <td class="text-center">{{ number_format($item->QuantityRequested, 2) }}</td>
-                                                <td class="text-center">{{ number_format($available, 2) }}</td>
-                                                <td class="text-center"><strong
-                                                        class="text-danger">{{ number_format($toOrder, 2) }}</strong></td>
+                                                <td class="text-center">
+                                                    @if($item->item && $item->item->requiresIntegerQuantity())
+                                                        {{ number_format((int) $item->QuantityRequested, 0) }}
+                                                    @else
+                                                        {{ number_format($item->QuantityRequested, 2) }}
+                                                    @endif
+                                                </td>
+                                                <td class="text-center">
+                                                    @if($item->item && $item->item->requiresIntegerQuantity())
+                                                        {{ number_format((int) $available, 0) }}
+                                                    @else
+                                                        {{ number_format($available, 2) }}
+                                                    @endif
+                                                </td>
+                                                <td class="text-center"><strong class="text-danger">
+                                                    @if($item->item && $item->item->requiresIntegerQuantity())
+                                                        {{ number_format((int) $toOrder, 0) }}
+                                                    @else
+                                                        {{ number_format($toOrder, 2) }}
+                                                    @endif
+                                                </strong></td>
                                                 <td>
                                                     <label for="supplier-{{ $index }}" class="visually-hidden">Supplier for
                                                         {{ $item->item->resourceCatalog->ItemName ?? 'Item' }}</label>
