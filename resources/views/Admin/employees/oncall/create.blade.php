@@ -225,7 +225,7 @@
                                 <i class="fas fa-save"></i> Create On-Call Employee
                             </button>
                             <a href="{{ route('oncall-employees.index') }}" class="btn btn-secondary">
-                                <i class="fas fa-arrow-left"></i> Back to List
+                                <i class="fas fa-arrow-left"></i> Back
                             </a>
                         </div>
                     </form>

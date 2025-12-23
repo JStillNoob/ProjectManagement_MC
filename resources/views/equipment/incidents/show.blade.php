@@ -9,7 +9,7 @@
             </div>
             <div class="col-auto">
                 <a href="{{ route('equipment.incidents.index') }}" class="btn btn-outline-secondary">
-                    <i class="bi bi-arrow-left"></i> Back to List
+                    <i class="bi bi-arrow-left"></i> Back
                 </a>
             </div>
         </div>

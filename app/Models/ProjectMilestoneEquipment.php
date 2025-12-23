@@ -47,6 +47,18 @@ class ProjectMilestoneEquipment extends Model
         return $this->belongsTo(InventoryItem::class, 'ItemID', 'ItemID');
     }
 
+    // Relationship with the user who returned the equipment
+    public function returnedByUser()
+    {
+        return $this->belongsTo(User::class, 'ReturnedBy', 'EmployeeID');
+    }
+
+    // Relationship with incident report
+    public function incident()
+    {
+        return $this->hasOne(EquipmentIncident::class, 'EquipmentAssignmentID', 'EquipmentAssignmentID');
+    }
+
     // Method to return equipment
     public function returnEquipment($status, $remarks = null)
     {

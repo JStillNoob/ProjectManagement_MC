@@ -85,10 +85,15 @@
                                                 <strong>Action Required:</strong> Some items have insufficient stock. You must create a
                                                 Purchase Order before approving.
                                             </div>
+                                        @elseif($inventoryRequest->Status === 'Ready for Approval')
+                                            <div class="alert alert-success mb-3">
+                                                <i class="fas fa-check-circle mr-2"></i>
+                                                <strong>Ready for Approval:</strong> All items have been received and are in stock. You can now approve this request.
+                                            </div>
                                         @elseif($inventoryRequest->Status === 'Ordered')
                                             <div class="alert alert-info mb-3">
-                                                <i class="fas fa-info-circle mr-2"></i>
-                                                <strong>Purchase Order Created:</strong> You can now approve this request.
+                                                <i class="fas fa-hourglass-half mr-2"></i>
+                                                <strong>Waiting for Stock:</strong> Purchase Order created but items not yet received. Please receive the order first.
                                             </div>
                                         @endif
                                     @elseif($inventoryRequest->Status === 'Approved')
@@ -112,6 +117,8 @@
                                             $statusClass = [
                                                 'Pending' => 'badge-warning',
                                                 'Pending - To Order' => 'badge-warning text-dark',
+                                                'Ordered' => 'badge-info',
+                                                'Ready for Approval' => 'badge-success',
                                                 'Approved' => 'badge-primary',
                                                 'Rejected' => 'badge-danger',
                                                 'Fulfilled' => 'badge-success',
@@ -150,7 +157,11 @@
                                     @foreach($shortageItems as $line)
                                         <li>
                                             {{ $line->item->resourceCatalog->ItemName ?? 'Item removed' }} — Requested:
-                                            {{ number_format($line->QuantityRequested, 2) }}
+                                            @if($line->item && $line->item->requiresIntegerQuantity())
+                                                {{ number_format((int) $line->QuantityRequested, 0) }}
+                                            @else
+                                                {{ number_format($line->QuantityRequested, 2) }}
+                                            @endif
                                             {{ $line->UnitOfMeasure ?? $line->item->resourceCatalog->Unit ?? 'units' }}
                                         </li>
                                     @endforeach
@@ -208,13 +219,22 @@
                                                         {{ $line->UnitOfMeasure ?? $line->item->resourceCatalog->Unit ?? 'units' }}
                                                     </td>
                                                     <td class="text-center font-weight-bold">
-                                                        {{ number_format($line->QuantityRequested, 2) }}</td>
+                                                        @if($line->item && $line->item->requiresIntegerQuantity())
+                                                            {{ number_format((int) $line->QuantityRequested, 0) }}
+                                                        @else
+                                                            {{ number_format($line->QuantityRequested, 2) }}
+                                                        @endif
+                                                    </td>
                                                     @if($isAdmin && in_array($inventoryRequest->Status, ['Pending', 'Pending - To Order']))
                                                         <td class="text-center">
                                                             @if($stockInfo)
                                                                 <span
                                                                     class="{{ $stockInfo['sufficient'] ? 'text-success' : 'text-danger font-weight-bold' }}">
-                                                                    {{ number_format($stockInfo['available'], 2) }}
+                                                                    @if($line->item && $line->item->requiresIntegerQuantity())
+                                                                        {{ number_format((int) $stockInfo['available'], 0) }}
+                                                                    @else
+                                                                        {{ number_format($stockInfo['available'], 2) }}
+                                                                    @endif
                                                                     {{ $stockInfo['unit'] }}
                                                                 </span>
                                                             @else
@@ -276,8 +296,9 @@
                     <div class="card-footer bg-white">
                         <div class="d-flex flex-wrap justify-content-end">
                             @if($isAdmin)
-                                @if(in_array($inventoryRequest->Status, ['Pending', 'Pending - To Order', 'Ordered']))
-                                    @if($inventoryRequest->Status === 'Ordered')
+                                @if(in_array($inventoryRequest->Status, ['Pending', 'Pending - To Order', 'Ordered', 'Ready for Approval']))
+                                    @if($inventoryRequest->Status === 'Ready for Approval')
+                                        {{-- Ready for Approval - Items received, show approve button --}}
                                         @php $purchaseOrder = $inventoryRequest->purchaseOrders->first(); @endphp
                                         @if($purchaseOrder)
                                             <a href="{{ route('purchase-orders.show', $purchaseOrder->POID) }}"
@@ -301,25 +322,74 @@
                                             data-target="#rejectModal">
                                             <i class="fas fa-times mr-1"></i> Reject Request
                                         </button>
-                                    @elseif($hasInsufficientStock)
+                                    @elseif($inventoryRequest->Status === 'Ordered')
+                                        {{-- Ordered - Waiting for items to be received --}}
                                         @php $purchaseOrder = $inventoryRequest->purchaseOrders->first(); @endphp
                                         @if($purchaseOrder)
                                             <a href="{{ route('purchase-orders.show', $purchaseOrder->POID) }}"
                                                 class="btn btn-info mr-2 mb-2">
                                                 <i class="fas fa-file-invoice-dollar mr-1"></i> View Purchase Order
                                             </a>
-                                            <form action="{{ route('inventory.requests.approve', $inventoryRequest) }}" method="POST"
-                                                class="d-inline mr-2 mb-2 swal-confirm-form"
-                                                data-title="Approve Request?"
-                                                data-text="Approve this request? Stock will be reserved."
-                                                data-icon="question"
-                                                data-confirm-text="Yes, Approve">
-                                                @csrf
-                                                <button type="submit" class="btn text-white"
-                                                    style="background-color: #87A96B; border-color: #87A96B;">
-                                                    <i class="fas fa-check mr-1"></i> Approve Request
+                                        @endif
+                                        <button type="button" class="btn btn-secondary mr-2 mb-2" disabled title="Waiting for Purchase Order to be received">
+                                            <i class="fas fa-hourglass-half mr-1"></i> Waiting for Stock
+                                        </button>
+                                        <button type="button" class="btn btn-secondary mb-2" data-toggle="modal"
+                                            data-target="#rejectModal">
+                                            <i class="fas fa-times mr-1"></i> Reject Request
+                                        </button>
+                                    @elseif($hasInsufficientStock)
+                                        @php 
+                                            $purchaseOrder = $inventoryRequest->purchaseOrders->first();
+                                            $poCompleted = false;
+                                            if ($purchaseOrder) {
+                                                // Ensure items are loaded
+                                                if (!$purchaseOrder->relationLoaded('items')) {
+                                                    $purchaseOrder->load('items');
+                                                }
+                                                // Check if PO status is Completed
+                                                if ($purchaseOrder->Status === 'Completed') {
+                                                    $poCompleted = true;
+                                                } else {
+                                                    // Check if all items are fully received
+                                                    $allItemsReceived = true;
+                                                    if ($purchaseOrder->items && $purchaseOrder->items->count() > 0) {
+                                                        foreach ($purchaseOrder->items as $item) {
+                                                            if ($item->QuantityReceived < $item->QuantityOrdered) {
+                                                                $allItemsReceived = false;
+                                                                break;
+                                                            }
+                                                        }
+                                                        $poCompleted = $allItemsReceived;
+                                                    }
+                                                }
+                                            }
+                                        @endphp
+                                        @if($purchaseOrder)
+                                            <a href="{{ route('purchase-orders.show', $purchaseOrder->POID) }}"
+                                                class="btn btn-info mr-2 mb-2">
+                                                <i class="fas fa-file-invoice-dollar mr-1"></i> View Purchase Order
+                                            </a>
+                                            @if($poCompleted)
+                                                {{-- Only allow approval if PO is completed (items received) --}}
+                                                <form action="{{ route('inventory.requests.approve', $inventoryRequest) }}" method="POST"
+                                                    class="d-inline mr-2 mb-2 swal-confirm-form"
+                                                    data-title="Approve Request?"
+                                                    data-text="Approve this request? Stock will be reserved."
+                                                    data-icon="question"
+                                                    data-confirm-text="Yes, Approve">
+                                                    @csrf
+                                                    <button type="submit" class="btn text-white"
+                                                        style="background-color: #87A96B; border-color: #87A96B;">
+                                                        <i class="fas fa-check mr-1"></i> Approve Request
+                                                    </button>
+                                                </form>
+                                            @else
+                                                {{-- PO exists but not completed - show waiting message --}}
+                                                <button type="button" class="btn btn-secondary mr-2 mb-2" disabled title="Waiting for Purchase Order to be received">
+                                                    <i class="fas fa-hourglass-half mr-1"></i> Waiting for Stock
                                                 </button>
-                                            </form>
+                                            @endif
                                             <button type="button" class="btn btn-secondary mb-2" data-toggle="modal"
                                                 data-target="#rejectModal">
                                                 <i class="fas fa-times mr-1"></i> Reject Request

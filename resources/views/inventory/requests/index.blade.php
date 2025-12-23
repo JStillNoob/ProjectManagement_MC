@@ -67,11 +67,17 @@
                                                     @if($request->Status === 'Pending')
                                                         <span class="badge badge-warning">Pending</span>
                                                     @elseif($request->Status === 'Approved')
-                                                        <span class="badge badge-success">Approved</span>
+                                                        <span class="badge badge-primary">Approved</span>
                                                     @elseif($request->Status === 'Rejected')
                                                         <span class="badge badge-danger">Rejected</span>
                                                     @elseif($request->Status === 'Pending - To Order')
                                                         <span class="badge badge-warning">To Order</span>
+                                                    @elseif($request->Status === 'Ordered')
+                                                        <span class="badge badge-info">Ordered</span>
+                                                    @elseif($request->Status === 'Ready for Approval')
+                                                        <span class="badge badge-success">Ready for Approval</span>
+                                                    @elseif($request->Status === 'Fulfilled')
+                                                        <span class="badge badge-success">Fulfilled</span>
                                                     @else
                                                         <span class="badge badge-secondary">{{ $request->Status }}</span>
                                                     @endif
@@ -83,11 +89,11 @@
                                                             class="btn btn-outline-info" title="View Details">
                                                             <i class="fas fa-eye"></i>
                                                         </a>
-                                                        @if(in_array($request->Status, ['Pending', 'Pending - To Order']))
+                                                        @if(in_array($request->Status, ['Pending', 'Ready for Approval']))
                                                             <form action="{{ route('inventory.requests.approve', $request) }}" method="POST"
                                                                 style="display:inline;" class="swal-confirm-form"
                                                                 data-title="Approve Request?"
-                                                                data-text="This will approve the inventory request and allow creating a purchase order."
+                                                                data-text="This will approve the inventory request and reserve items from stock."
                                                                 data-icon="question"
                                                                 data-confirm-text="Yes, Approve">
                                                                 @csrf
@@ -338,7 +344,11 @@
                                                                 <div class="font-weight-semibold text-dark">
                                                                     {{ $req->item->resourceCatalog->ItemName ?? '' }}</div>
                                                                 <small class="text-muted">Qty:
-                                                                    {{ number_format($req->estimated_quantity, 2) }}
+                                                                    @if($req->item->resourceCatalog && $req->item->resourceCatalog->requiresIntegerQuantity())
+                                                                        {{ number_format((int) $req->estimated_quantity, 0) }}
+                                                                    @else
+                                                                        {{ number_format($req->estimated_quantity, 2) }}
+                                                                    @endif
                                                                     {{ $req->unit ?? ($req->item->resourceCatalog->Unit ?? '') }}</small>
                                                             </div>
                                                             <span

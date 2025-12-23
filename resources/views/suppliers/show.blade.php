@@ -11,7 +11,7 @@
                     <i class="fas fa-edit"></i> Edit
                 </a>
                 <a href="{{ route('suppliers.index') }}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Back to List
+                    <i class="fas fa-arrow-left"></i> Back
                 </a>
             </div>
         </div>

@@ -16,7 +16,7 @@
                             </div>
                             <div class="col-auto">
                                 <a href="{{ route('issuance.index') }}" class="btn btn-secondary">
-                                    <i class="fas fa-arrow-left me-1"></i> Back to List
+                                    <i class="fas fa-arrow-left me-1"></i> Back
                                 </a>
                             </div>
                         </div>
@@ -155,21 +155,20 @@
                                         @endphp
                                         <tr>
                                             <td>
-                                                <div class="d-flex align-items-center">
-                                                    <div class="rounded-circle d-flex align-items-center justify-content-center me-2"
-                                                        style="width: 32px; height: 32px; background-color: {{ $itemType == 'Equipment' ? 'rgba(23, 162, 184, 0.15)' : 'rgba(135, 169, 107, 0.15)' }};">
-                                                        <i class="fas {{ $itemType == 'Equipment' ? 'fa-tools' : 'fa-cube' }}"
-                                                            style="color: {{ $itemType == 'Equipment' ? '#17a2b8' : '#87A96B' }}; font-size: 0.8rem;"></i>
-                                                    </div>
-                                                    <span class="fw-semibold">{{ $itemName }}</span>
-                                                </div>
+                                                <span class="fw-semibold">{{ $itemName }}</span>
                                             </td>
                                             <td class="text-center">
                                                 <span class="badge {{ $itemType == 'Equipment' ? 'bg-info' : 'bg-primary' }}">
                                                     {{ $itemType }}
                                                 </span>
                                             </td>
-                                            <td class="text-center fw-bold">{{ number_format($item->QuantityIssued, 2) }}</td>
+                                            <td class="text-center fw-bold">
+                                                @if($item->inventoryItem && $item->inventoryItem->requiresIntegerQuantity())
+                                                    {{ number_format((int) $item->QuantityIssued, 0) }}
+                                                @else
+                                                    {{ number_format($item->QuantityIssued, 2) }}
+                                                @endif
+                                            </td>
                                             <td class="text-center">{{ $unit }}</td>
                                             <td class="text-center">
                                                 @if($itemType == 'Equipment')

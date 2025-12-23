@@ -48,12 +48,20 @@ class InventoryReportController extends Controller
 
     public function consumption(Request $request)
     {
+        // Use default dates if not provided (last 30 days)
+        $dateFrom = $request->input('date_from', now()->subDays(30)->format('Y-m-d'));
+        $dateTo = $request->input('date_to', now()->format('Y-m-d'));
+        
         $validated = $request->validate([
-            'date_from' => 'required|date',
-            'date_to' => 'required|date|after_or_equal:date_from',
+            'date_from' => 'nullable|date',
+            'date_to' => 'nullable|date|after_or_equal:date_from',
             'project_id' => 'nullable|exists:projects,ProjectID',
             'milestone_id' => 'nullable|exists:project_milestones,milestone_id',
         ]);
+        
+        // Use defaults if validation passed but values are empty
+        $validated['date_from'] = $validated['date_from'] ?? $dateFrom;
+        $validated['date_to'] = $validated['date_to'] ?? $dateTo;
 
         $query = ProjectMilestoneMaterial::with(['inventoryItem', 'milestone.project'])
             ->whereBetween('DateUsed', [$validated['date_from'], $validated['date_to']]);
@@ -91,10 +99,18 @@ class InventoryReportController extends Controller
 
     public function equipmentUtilization(Request $request)
     {
+        // Use default dates if not provided (last 30 days)
+        $dateFrom = $request->input('date_from', now()->subDays(30)->format('Y-m-d'));
+        $dateTo = $request->input('date_to', now()->format('Y-m-d'));
+        
         $validated = $request->validate([
-            'date_from' => 'required|date',
-            'date_to' => 'required|date|after_or_equal:date_from',
+            'date_from' => 'nullable|date',
+            'date_to' => 'nullable|date|after_or_equal:date_from',
         ]);
+        
+        // Use defaults if validation passed but values are empty
+        $validated['date_from'] = $validated['date_from'] ?? $dateFrom;
+        $validated['date_to'] = $validated['date_to'] ?? $dateTo;
 
         $assignments = ProjectMilestoneEquipment::with([
             'inventoryItem',
@@ -132,11 +148,19 @@ class InventoryReportController extends Controller
 
     public function purchaseOrderSummary(Request $request)
     {
+        // Use default dates if not provided (last 30 days)
+        $dateFrom = $request->input('date_from', now()->subDays(30)->format('Y-m-d'));
+        $dateTo = $request->input('date_to', now()->format('Y-m-d'));
+        
         $validated = $request->validate([
-            'date_from' => 'required|date',
-            'date_to' => 'required|date|after_or_equal:date_from',
+            'date_from' => 'nullable|date',
+            'date_to' => 'nullable|date|after_or_equal:date_from',
             'status' => 'nullable|in:Draft,Sent,Partially Received,Completed,Cancelled',
         ]);
+        
+        // Use defaults if validation passed but values are empty
+        $validated['date_from'] = $validated['date_from'] ?? $dateFrom;
+        $validated['date_to'] = $validated['date_to'] ?? $dateTo;
 
         $query = PurchaseOrder::with('supplier')
             ->whereBetween('OrderDate', [$validated['date_from'], $validated['date_to']]);
@@ -164,11 +188,19 @@ class InventoryReportController extends Controller
 
     public function issuanceHistory(Request $request)
     {
+        // Use default dates if not provided (last 30 days)
+        $dateFrom = $request->input('date_from', now()->subDays(30)->format('Y-m-d'));
+        $dateTo = $request->input('date_to', now()->format('Y-m-d'));
+        
         $validated = $request->validate([
-            'date_from' => 'required|date',
-            'date_to' => 'required|date|after_or_equal:date_from',
+            'date_from' => 'nullable|date',
+            'date_to' => 'nullable|date|after_or_equal:date_from',
             'project_id' => 'nullable|exists:projects,ProjectID',
         ]);
+        
+        // Use defaults if validation passed but values are empty
+        $validated['date_from'] = $validated['date_from'] ?? $dateFrom;
+        $validated['date_to'] = $validated['date_to'] ?? $dateTo;
 
         $query = IssuanceRecord::with(['project', 'issuer', 'receiver', 'items.inventoryItem'])
             ->whereBetween('IssuanceDate', [$validated['date_from'], $validated['date_to']]);
@@ -204,11 +236,19 @@ class InventoryReportController extends Controller
 
     public function damageReport(Request $request)
     {
+        // Use default dates if not provided (last 30 days)
+        $dateFrom = $request->input('date_from', now()->subDays(30)->format('Y-m-d'));
+        $dateTo = $request->input('date_to', now()->format('Y-m-d'));
+        
         $validated = $request->validate([
-            'date_from' => 'required|date',
-            'date_to' => 'required|date|after_or_equal:date_from',
+            'date_from' => 'nullable|date',
+            'date_to' => 'nullable|date|after_or_equal:date_from',
             'incident_type' => 'nullable|in:Damage,Loss,Theft,Malfunction',
         ]);
+        
+        // Use defaults if validation passed but values are empty
+        $validated['date_from'] = $validated['date_from'] ?? $dateFrom;
+        $validated['date_to'] = $validated['date_to'] ?? $dateTo;
 
         $query = EquipmentIncident::with(['inventoryItem', 'project', 'responsibleEmployee'])
             ->whereBetween('IncidentDate', [$validated['date_from'], $validated['date_to']]);

@@ -132,16 +132,38 @@ class MilestoneReportController extends Controller
             $percentage = $requiredQty > 0 ? ($actualQty / $requiredQty) * 100 : 0;
             
             // Determine status color
-            $statusColor = 'success'; // Green (within ±5%)
-            $statusText = 'On Target';
-            
-            $variancePercent = abs($percentage - 100);
-            if ($variancePercent > 20) {
-                $statusColor = 'danger'; // Red (>20% variance)
-                $statusText = $variance > 0 ? 'Over Used' : 'Under Used';
-            } elseif ($variancePercent > 5) {
-                $statusColor = 'warning'; // Yellow (5-20% variance)
-                $statusText = $variance > 0 ? 'Slightly Over' : 'Slightly Under';
+            // Over-consumption should always be flagged, even small amounts
+            // Under-consumption can have tolerance
+            if ($variance > 0) {
+                // Over-consumption (actual > required)
+                $variancePercent = $percentage - 100;
+                if ($variancePercent > 20) {
+                    $statusColor = 'danger'; // Red (>20% over)
+                    $statusText = 'Over Used';
+                } elseif ($variancePercent > 5) {
+                    $statusColor = 'warning'; // Yellow (5-20% over)
+                    $statusText = 'Slightly Over';
+                } else {
+                    $statusColor = 'warning'; // Yellow (0-5% over - still flagged)
+                    $statusText = 'Slightly Over';
+                }
+            } elseif ($variance < 0) {
+                // Under-consumption (actual < required)
+                $variancePercent = abs($percentage - 100);
+                if ($variancePercent > 20) {
+                    $statusColor = 'danger'; // Red (>20% under)
+                    $statusText = 'Under Used';
+                } elseif ($variancePercent > 5) {
+                    $statusColor = 'warning'; // Yellow (5-20% under)
+                    $statusText = 'Slightly Under';
+                } else {
+                    $statusColor = 'success'; // Green (0-5% under - acceptable)
+                    $statusText = 'On Target';
+                }
+            } else {
+                // Exact match
+                $statusColor = 'success';
+                $statusText = 'On Target';
             }
 
             $comparisonData[] = [
@@ -230,16 +252,39 @@ class MilestoneReportController extends Controller
             $variance = $actualQty - $requiredQty;
             $percentage = $requiredQty > 0 ? ($actualQty / $requiredQty) * 100 : 0;
             
-            $statusColor = 'success';
-            $statusText = 'On Target';
-            
-            $variancePercent = abs($percentage - 100);
-            if ($variancePercent > 20) {
-                $statusColor = 'danger';
-                $statusText = $variance > 0 ? 'Over Used' : 'Under Used';
-            } elseif ($variancePercent > 5) {
-                $statusColor = 'warning';
-                $statusText = $variance > 0 ? 'Slightly Over' : 'Slightly Under';
+            // Determine status color
+            // Over-consumption should always be flagged, even small amounts
+            // Under-consumption can have tolerance
+            if ($variance > 0) {
+                // Over-consumption (actual > required)
+                $variancePercent = $percentage - 100;
+                if ($variancePercent > 20) {
+                    $statusColor = 'danger'; // Red (>20% over)
+                    $statusText = 'Over Used';
+                } elseif ($variancePercent > 5) {
+                    $statusColor = 'warning'; // Yellow (5-20% over)
+                    $statusText = 'Slightly Over';
+                } else {
+                    $statusColor = 'warning'; // Yellow (0-5% over - still flagged)
+                    $statusText = 'Slightly Over';
+                }
+            } elseif ($variance < 0) {
+                // Under-consumption (actual < required)
+                $variancePercent = abs($percentage - 100);
+                if ($variancePercent > 20) {
+                    $statusColor = 'danger'; // Red (>20% under)
+                    $statusText = 'Under Used';
+                } elseif ($variancePercent > 5) {
+                    $statusColor = 'warning'; // Yellow (5-20% under)
+                    $statusText = 'Slightly Under';
+                } else {
+                    $statusColor = 'success'; // Green (0-5% under - acceptable)
+                    $statusText = 'On Target';
+                }
+            } else {
+                // Exact match
+                $statusColor = 'success';
+                $statusText = 'On Target';
             }
 
             $comparisonData[] = [

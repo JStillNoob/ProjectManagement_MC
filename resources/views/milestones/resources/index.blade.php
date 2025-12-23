@@ -150,11 +150,27 @@
                                                 <span class="text-muted">N/A</span>
                                             @endif
                                         </td>
-                                        <td class="text-end">{{ number_format($plan->PlannedQuantity, 2) }}</td>
+                                        <td class="text-end">
+                                            @if($plan->inventoryItem && $plan->inventoryItem->requiresIntegerQuantity())
+                                                {{ number_format((int) $plan->PlannedQuantity, 0) }}
+                                            @else
+                                                {{ number_format($plan->PlannedQuantity, 2) }}
+                                            @endif
+                                        </td>
                                         <td class="text-end {{ $hasShortage ? 'text-danger fw-bold' : 'text-success' }}">
-                                            {{ number_format($available, 2) }}
+                                            @if($plan->inventoryItem && $plan->inventoryItem->requiresIntegerQuantity())
+                                                {{ number_format((int) $available, 0) }}
+                                            @else
+                                                {{ number_format($available, 2) }}
+                                            @endif
                                             @if($hasShortage)
-                                                <br><small>(Short: {{ number_format($shortage, 2) }})</small>
+                                                <br><small>(Short: 
+                                                    @if($plan->inventoryItem && $plan->inventoryItem->requiresIntegerQuantity())
+                                                        {{ number_format((int) $shortage, 0) }}
+                                                    @else
+                                                        {{ number_format($shortage, 2) }}
+                                                    @endif
+                                                )</small>
                                             @endif
                                         </td>
                                         <td>{{ $plan->inventoryItem->Unit ?? 'N/A' }}</td>

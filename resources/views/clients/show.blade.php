@@ -57,7 +57,7 @@
                     <i class="fas fa-edit"></i> Edit Contact Person
                 </button>
                 <a href="{{ route('clients.index') }}" class="btn btn-secondary btn-block">
-                    <i class="fas fa-arrow-left"></i> Back to List
+                    <i class="fas fa-arrow-left"></i> Back
                 </a>
             </div>
         </div>

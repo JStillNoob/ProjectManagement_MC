@@ -83,6 +83,23 @@ class EquipmentReturnController extends Controller
         return view('equipment.returns.create', compact('assignment', 'employees'));
     }
 
+    public function show($id)
+    {
+        $assignment = ProjectMilestoneEquipment::with([
+            'inventoryItem.resourceCatalog',
+            'milestone.project',
+            'returnedByUser.employee'
+        ])->findOrFail($id);
+
+        // Get incident report if exists
+        $incident = null;
+        if (in_array($assignment->Status, ['Damaged', 'Missing'])) {
+            $incident = EquipmentIncident::where('EquipmentAssignmentID', $id)->first();
+        }
+
+        return view('equipment.returns.show', compact('assignment', 'incident'));
+    }
+
     public function store(Request $request, $id)
     {
         // Normalize empty strings to null for incident fields when status is Returned
@@ -102,7 +119,6 @@ class EquipmentReturnController extends Controller
             'Status' => 'required|in:Returned,Damaged,Missing',
             'ReturnRemarks' => 'nullable|string',
             'damage_photo' => 'nullable|file|mimes:jpg,jpeg,png|max:5120',
-            'estimated_cost' => 'nullable|numeric|min:0',
         ];
 
         // Only require incident fields if status is Damaged or Missing
@@ -155,7 +171,7 @@ class EquipmentReturnController extends Controller
                     'IncidentDate' => $validated['DateReturned'],
                     'ResponsibleEmployeeID' => null, // Can be set later
                     'Description' => $validated['incident_description'],
-                    'EstimatedCost' => $validated['estimated_cost'] ?? 0,
+                    'EstimatedCost' => 0,
                     'PhotoPath' => $photoPath,
                 ]);
             } elseif ($validated['Status'] == 'Missing') {
@@ -171,7 +187,7 @@ class EquipmentReturnController extends Controller
                     'IncidentType' => $validated['incident_type'],
                     'IncidentDate' => $validated['DateReturned'],
                     'Description' => $validated['incident_description'],
-                    'EstimatedCost' => $validated['estimated_cost'] ?? 0,
+                    'EstimatedCost' => 0,
                     'PhotoPath' => $photoPath,
                 ]);
             }

@@ -100,6 +100,11 @@ class ReceivingRecord extends Model
         
         if ($po->isFullyReceived()) {
             $po->update(['Status' => 'Completed']);
+            
+            // Update linked Inventory Request status to "Ready for Approval"
+            if ($po->inventoryRequest && $po->inventoryRequest->Status === 'Ordered') {
+                $po->inventoryRequest->update(['Status' => 'Ready for Approval']);
+            }
         } else {
             $po->update(['Status' => 'Partially Received']);
         }

@@ -100,13 +100,22 @@
                         </thead>
                         <tbody>
                             @foreach($consumption as $item)
+                                @php
+                                    $requiresInteger = $item->item_type === 'Equipment' || \App\Models\ResourceCatalog::unitRequiresInteger($item->unit);
+                                @endphp
                                 <tr>
                                     <td>{{ $item->issuance_date ? \Carbon\Carbon::parse($item->issuance_date)->format('M d, Y') : 'N/A' }}
                                     </td>
                                     <td>{{ $item->project_name ?? 'N/A' }}</td>
                                     <td>{{ $item->milestone_name ?? 'N/A' }}</td>
                                     <td><strong>{{ $item->item_name }}</strong></td>
-                                    <td class="text-end">{{ number_format($item->total_quantity, 2) }}</td>
+                                    <td class="text-end">
+                                        @if($requiresInteger)
+                                            {{ number_format((int) $item->total_quantity, 0) }}
+                                        @else
+                                            {{ number_format($item->total_quantity, 2) }}
+                                        @endif
+                                    </td>
                                     <td>{{ $item->unit }}</td>
                                     <td class="text-end">
                                         @if($item->estimated_value)

@@ -251,19 +251,32 @@
                         <td>
                             <span class="badge badge-info">{{ $item['item_type'] }}</span>
                         </td>
+                        @php
+                            $requiresInteger = $item['item_type'] === 'Equipment' || \App\Models\ResourceCatalog::unitRequiresInteger($item['unit']);
+                        @endphp
                         <td class="text-right">
-                            {{ number_format($item['required_qty'], 2) }} {{ $item['unit'] }}
+                            @if($requiresInteger)
+                                {{ number_format((int) $item['required_qty'], 0) }}
+                            @else
+                                {{ number_format($item['required_qty'], 2) }}
+                            @endif
+                            {{ $item['unit'] }}
                         </td>
                         <td class="text-right">
-                            {{ number_format($item['actual_qty'], 2) }} {{ $item['unit'] }}
+                            @if($requiresInteger)
+                                {{ number_format((int) $item['actual_qty'], 0) }}
+                            @else
+                                {{ number_format($item['actual_qty'], 2) }}
+                            @endif
+                            {{ $item['unit'] }}
                         </td>
                         <td class="text-right">
                             @if($item['variance'] > 0)
-                                <span style="color: #dc3545;">+{{ number_format($item['variance'], 2) }}</span>
+                                <span style="color: #dc3545;">+@if($requiresInteger){{ number_format((int) $item['variance'], 0) }}@else{{ number_format($item['variance'], 2) }}@endif</span>
                             @elseif($item['variance'] < 0)
-                                <span style="color: #ffc107;">{{ number_format($item['variance'], 2) }}</span>
+                                <span style="color: #ffc107;">@if($requiresInteger){{ number_format((int) $item['variance'], 0) }}@else{{ number_format($item['variance'], 2) }}@endif</span>
                             @else
-                                {{ number_format($item['variance'], 2) }}
+                                @if($requiresInteger){{ number_format((int) $item['variance'], 0) }}@else{{ number_format($item['variance'], 2) }}@endif
                             @endif
                             {{ $item['unit'] }}
                         </td>

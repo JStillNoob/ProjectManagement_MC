@@ -200,6 +200,22 @@ class AttendanceController extends Controller
         $date = $request->attendance_date;
         $action = $request->action;
         $currentTime = now();
+        $currentHour = $currentTime->hour;
+        $currentMinute = $currentTime->minute;
+
+        // Time-based validation rules
+        // Rule 1: If it's 3 PM (15:00) or later, don't allow any clock in
+        if ($currentHour >= 15 && ($action === 'time_in' || $action === 'lunch_in')) {
+            $errorMessage = 'Clock in not allowed after 3:00 PM. You are too late for today.';
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMessage
+                ], 400);
+            }
+            return redirect()->route('attendance.index', ['date' => $date])
+                ->with('error', $errorMessage);
+        }
 
         // Check if attendance record exists for this date
         $attendance = Attendance::where('employee_id', $employeeId)
@@ -207,8 +223,58 @@ class AttendanceController extends Controller
             ->first();
 
         if (!$attendance) {
-            // Create new attendance record - only for time_in action
-            if ($action !== 'time_in') {
+            // Rule 2: If it's 10 AM - 11:59 AM, don't allow morning time_in
+            if ($action === 'time_in' && $currentHour >= 10 && $currentHour < 12) {
+                $errorMessage = 'You are more than 2 hours late for morning shift (after 10:00 AM). Please come back for afternoon shift at 1:00 PM.';
+                if ($request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $errorMessage
+                    ], 400);
+                }
+                return redirect()->route('attendance.index', ['date' => $date])
+                    ->with('error', $errorMessage);
+            }
+
+            // Rule 3: If it's during lunch period (12 PM - 12:59 PM), don't allow clock in
+            if ($action === 'time_in' && $currentHour === 12) {
+                $errorMessage = 'This is lunch break time (12:00 PM - 1:00 PM). Please clock in for afternoon shift at 1:00 PM.';
+                if ($request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $errorMessage
+                    ], 400);
+                }
+                return redirect()->route('attendance.index', ['date' => $date])
+                    ->with('error', $errorMessage);
+            }
+
+            // Rule 4: If it's afternoon period (1 PM - 2:59 PM) and action is time_in, 
+            // they should use lunch_in instead (afternoon time in)
+            if ($action === 'time_in' && $currentHour >= 13 && $currentHour < 15) {
+                // Create attendance with lunch_in (afternoon start) instead of time_in
+                $attendance = Attendance::create([
+                    'employee_id' => $employeeId,
+                    'attendance_date' => $date,
+                    'lunch_in' => $currentTime->format('H:i:s'),
+                    'status' => 'Late' // They missed morning shift entirely
+                ]);
+                
+                $successMessage = 'Afternoon shift started at ' . $currentTime->format('h:i A') . ' (Morning shift was missed)';
+                if ($request->ajax()) {
+                    return response()->json([
+                        'success' => true,
+                        'message' => $successMessage,
+                        'attendance' => $attendance->load('employee'),
+                        'next_action' => $attendance->getNextExpectedAction()
+                    ]);
+                }
+                return redirect()->route('attendance.index', ['date' => $date])
+                    ->with('success', $successMessage);
+            }
+
+            // Normal time_in for early arrivals (before 10 AM)
+            if ($action !== 'time_in' && $action !== 'lunch_in') {
                 $errorMessage = 'Employee must clock in first before ' . str_replace('_', ' ', $action);
                 if ($request->ajax()) {
                     return response()->json([
@@ -227,6 +293,47 @@ class AttendanceController extends Controller
                 'status' => $this->determineStatus('time_in', $currentTime, null)
             ]);
         } else {
+            // Apply time-based rules for existing records
+            // Rule 2: If it's 10 AM - 11:59 AM and trying to do time_in, block it
+            if ($action === 'time_in' && $currentHour >= 10 && $currentHour < 12) {
+                $errorMessage = 'You are more than 2 hours late for morning shift (after 10:00 AM). Please come back for afternoon shift at 1:00 PM.';
+                if ($request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $errorMessage
+                    ], 400);
+                }
+                return redirect()->route('attendance.index', ['date' => $date])
+                    ->with('error', $errorMessage);
+            }
+
+            // Rule 3: If it's during lunch period (12 PM - 12:59 PM) and trying to do time_in, block it
+            if ($action === 'time_in' && $currentHour === 12) {
+                $errorMessage = 'This is lunch break time (12:00 PM - 1:00 PM). Please clock in for afternoon shift at 1:00 PM.';
+                if ($request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $errorMessage
+                    ], 400);
+                }
+                return redirect()->route('attendance.index', ['date' => $date])
+                    ->with('error', $errorMessage);
+            }
+
+            // Rule 4: If it's afternoon (1 PM - 2:59 PM) and trying to do time_in, 
+            // redirect to lunch_in instead
+            if ($action === 'time_in' && $currentHour >= 13 && $currentHour < 15) {
+                $errorMessage = 'Morning shift has ended. Please use "Lunch In" to start your afternoon shift.';
+                if ($request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => $errorMessage
+                    ], 400);
+                }
+                return redirect()->route('attendance.index', ['date' => $date])
+                    ->with('error', $errorMessage);
+            }
+
             // Validate action sequence and check for duplicates
             $validationResult = $this->validateActionSequence($attendance, $action, $currentTime);
             if ($validationResult !== true) {
@@ -253,6 +360,10 @@ class AttendanceController extends Controller
                     break;
                 case 'lunch_in':
                     $updateData['lunch_in'] = $currentTime->format('H:i:s');
+                    // If they're doing lunch_in and there's no time_in, mark as Late
+                    if (is_null($attendance->time_in)) {
+                        $updateData['status'] = 'Late';
+                    }
                     break;
                 case 'time_out':
                     $updateData['time_out'] = $currentTime->format('H:i:s');
@@ -306,11 +417,14 @@ class AttendanceController extends Controller
                 }
                 break;
             case 'lunch_in':
-                if (is_null($attendance->lunch_out)) {
-                    return 'Employee must clock out for lunch first';
-                }
+                // Allow lunch_in as first action for afternoon arrivals (no time_in required)
+                // But check if they already have lunch_in
                 if (!is_null($attendance->lunch_in)) {
                     return 'Employee has already clocked in from lunch at ' . $attendance->lunch_in->format('h:i A');
+                }
+                // If they have time_in and lunch_out is null, they should do lunch_out first
+                if (!is_null($attendance->time_in) && is_null($attendance->lunch_out)) {
+                    return 'Employee must clock out for lunch first';
                 }
                 break;
             case 'time_out':

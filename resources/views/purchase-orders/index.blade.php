@@ -107,12 +107,6 @@
                                                     class="text-info mr-2" style="cursor: pointer;" title="View">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
-                                                @if($po->isEditable())
-                                                    <a href="{{ route('purchase-orders.edit', $po->POID) }}"
-                                                        class="text-warning mr-2" style="cursor: pointer;" title="Edit">
-                                                        <i class="fas fa-edit"></i>
-                                                    </a>
-                                                @endif
                                                 <a href="{{ route('purchase-orders.pdf', $po->POID) }}"
                                                     class="text-secondary" style="cursor: pointer;" title="Download PDF" target="_blank">
                                                     <i class="fas fa-file-pdf"></i>

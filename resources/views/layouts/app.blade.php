@@ -1514,21 +1514,57 @@
             "hideMethod": "fadeOut"
         };
 
-        // Show toastr notifications from session flash messages
+        // Show SweetAlert2 notifications from session flash messages
         @if(session('success'))
-            toastr.success("{{ session('success') }}");
+            Swal.fire({
+                icon: 'success',
+                title: 'Success!',
+                text: "{{ session('success') }}",
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true
+            });
         @endif
 
         @if(session('error'))
-            toastr.error("{{ session('error') }}");
+            Swal.fire({
+                icon: 'error',
+                title: 'Error!',
+                text: "{{ session('error') }}",
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 5000,
+                timerProgressBar: true
+            });
         @endif
 
         @if(session('warning'))
-            toastr.warning("{{ session('warning') }}");
+            Swal.fire({
+                icon: 'warning',
+                title: 'Warning!',
+                text: "{{ session('warning') }}",
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 4000,
+                timerProgressBar: true
+            });
         @endif
 
         @if(session('info'))
-            toastr.info("{{ session('info') }}");
+            Swal.fire({
+                icon: 'info',
+                title: 'Info',
+                text: "{{ session('info') }}",
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true
+            });
         @endif
 
         // Global SweetAlert2 confirmation handler

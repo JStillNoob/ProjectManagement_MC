@@ -30,21 +30,37 @@
                 <ul class="list-group list-group-unbordered mb-3">
                     <li class="list-group-item">
                         <b>Total Quantity</b> 
-                        <a class="float-right">{{ number_format($inventory->TotalQuantity, 2) }} {{ $inventory->resourceCatalog->Unit ?? 'N/A' }}</a>
+                        <a class="float-right">
+                            @if($inventory->requiresIntegerQuantity())
+                                {{ number_format((int) $inventory->TotalQuantity, 0) }}
+                            @else
+                                {{ number_format($inventory->TotalQuantity, 2) }}
+                            @endif
+                            {{ $inventory->resourceCatalog->Unit ?? 'N/A' }}
+                        </a>
                     </li>
                     <li class="list-group-item">
                         <b>Available Quantity</b> 
-                        <a class="float-right {{ $inventory->is_low_stock ? 'text-danger' : '' }}">
-                            {{ number_format($inventory->AvailableQuantity, 2) }} {{ $inventory->resourceCatalog->Unit ?? 'N/A' }}
-                            @if($inventory->is_low_stock)
-                                <span class="badge badge-warning ml-2">Low Stock</span>
+                        <a class="float-right">
+                            @if($inventory->requiresIntegerQuantity())
+                                {{ number_format((int) $inventory->AvailableQuantity, 0) }}
+                            @else
+                                {{ number_format($inventory->AvailableQuantity, 2) }}
                             @endif
+                            {{ $inventory->resourceCatalog->Unit ?? 'N/A' }}
                         </a>
                     </li>
                     @if($inventory->is_material && $inventory->MinimumStockLevel)
                     <li class="list-group-item">
                         <b>Minimum Stock Level</b> 
-                        <a class="float-right">{{ number_format($inventory->MinimumStockLevel, 2) }} {{ $inventory->resourceCatalog->Unit ?? 'N/A' }}</a>
+                        <a class="float-right">
+                            @if($inventory->requiresIntegerQuantity())
+                                {{ number_format((int) $inventory->MinimumStockLevel, 0) }}
+                            @else
+                                {{ number_format($inventory->MinimumStockLevel, 2) }}
+                            @endif
+                            {{ $inventory->resourceCatalog->Unit ?? 'N/A' }}
+                        </a>
                     </li>
                     @endif
                     <li class="list-group-item">
@@ -58,7 +74,7 @@
                 </ul>
 
                 <a href="{{ route('inventory.index') }}" class="btn btn-secondary btn-block">
-                    <i class="fas fa-arrow-left mr-1"></i> Back to List
+                    <i class="fas fa-arrow-left mr-1"></i> Back
                 </a>
             </div>
         </div>
@@ -121,7 +137,15 @@
                             </div>
                             <div class="col-md-6">
                                 <strong><i class="fas fa-cubes mr-1"></i> Total Quantity</strong>
-                                <p class="text-muted"><strong>{{ number_format($inventory->TotalQuantity, 2) }}</strong></p>
+                                <p class="text-muted">
+                                    <strong>
+                                        @if($inventory->requiresIntegerQuantity())
+                                            {{ number_format((int) $inventory->TotalQuantity, 0) }}
+                                        @else
+                                            {{ number_format($inventory->TotalQuantity, 2) }}
+                                        @endif
+                                    </strong>
+                                </p>
                             </div>
                         </div>
                         <hr>
@@ -130,18 +154,25 @@
                             <div class="col-md-6">
                                 <strong><i class="fas fa-check-circle mr-1"></i> Available Quantity</strong>
                                 <p class="text-muted">
-                                    <strong class="{{ $inventory->is_low_stock ? 'text-danger' : '' }}">
-                                        {{ number_format($inventory->AvailableQuantity, 2) }}
+                                    <strong>
+                                        @if($inventory->requiresIntegerQuantity())
+                                            {{ number_format((int) $inventory->AvailableQuantity, 0) }}
+                                        @else
+                                            {{ number_format($inventory->AvailableQuantity, 2) }}
+                                        @endif
                                     </strong>
-                                    @if($inventory->is_low_stock)
-                                        <span class="badge badge-warning ml-2">Low Stock</span>
-                                    @endif
                                 </p>
                             </div>
                             @if($inventory->is_material && $inventory->MinimumStockLevel)
                             <div class="col-md-6">
                                 <strong><i class="fas fa-exclamation-triangle mr-1"></i> Minimum Stock Level</strong>
-                                <p class="text-muted">{{ number_format($inventory->MinimumStockLevel, 2) }}</p>
+                                <p class="text-muted">
+                                    @if($inventory->requiresIntegerQuantity())
+                                        {{ number_format((int) $inventory->MinimumStockLevel, 0) }}
+                                    @else
+                                        {{ number_format($inventory->MinimumStockLevel, 2) }}
+                                    @endif
+                                </p>
                             </div>
                             @endif
                         </div>
@@ -189,7 +220,16 @@
                                             <tr>
                                                 <td>{{ $material->milestone->project->ProjectName ?? 'N/A' }}</td>
                                                 <td>{{ $material->milestone->milestone_name }}</td>
-                                                <td><strong>{{ number_format($material->QuantityUsed, 2) }} {{ $inventory->resourceCatalog->Unit ?? 'N/A' }}</strong></td>
+                                                <td>
+                                                    <strong>
+                                                        @if($inventory->requiresIntegerQuantity())
+                                                            {{ number_format((int) $material->QuantityUsed, 0) }}
+                                                        @else
+                                                            {{ number_format($material->QuantityUsed, 2) }}
+                                                        @endif
+                                                        {{ $inventory->resourceCatalog->Unit ?? 'N/A' }}
+                                                    </strong>
+                                                </td>
                                                 <td>{{ $material->DateUsed->format('M d, Y') }}</td>
                                                 <td>{{ $material->Remarks ?? 'N/A' }}</td>
                                             </tr>
@@ -228,7 +268,16 @@
                                             <tr>
                                                 <td>{{ $equipment->milestone->project->ProjectName ?? 'N/A' }}</td>
                                                 <td>{{ $equipment->milestone->milestone_name }}</td>
-                                                <td><strong>{{ number_format($equipment->QuantityAssigned, 2) }} {{ $inventory->resourceCatalog->Unit ?? 'N/A' }}</strong></td>
+                                                <td>
+                                                    <strong>
+                                                        @if($inventory->requiresIntegerQuantity())
+                                                            {{ number_format((int) $equipment->QuantityAssigned, 0) }}
+                                                        @else
+                                                            {{ number_format($equipment->QuantityAssigned, 2) }}
+                                                        @endif
+                                                        {{ $inventory->resourceCatalog->Unit ?? 'N/A' }}
+                                                    </strong>
+                                                </td>
                                                 <td>{{ $equipment->DateAssigned->format('M d, Y') }}</td>
                                                 <td>
                                                     @if($equipment->DateReturned)

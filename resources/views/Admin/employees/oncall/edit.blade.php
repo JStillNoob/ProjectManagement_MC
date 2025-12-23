@@ -249,7 +249,7 @@
                                 <i class="fas fa-eye"></i> View Details
                             </a>
                             <a href="{{ route('oncall-employees.index') }}" class="btn btn-secondary">
-                                <i class="fas fa-arrow-left"></i> Back to List
+                                <i class="fas fa-arrow-left"></i> Back
                             </a>
                         </div>
                     </form>

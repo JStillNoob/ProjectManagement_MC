@@ -52,7 +52,7 @@
                                             </tr>
                                             <tr>
                                                 <td class="text-muted ps-0">Qty Issued</td>
-                                                <td><strong>{{ number_format($assignment->QuantityAssigned, 2) }}</strong> {{ $assignment->inventoryItem->resourceCatalog->Unit ?? '' }}</td>
+                                                <td><strong>{{ number_format((int) $assignment->QuantityAssigned, 0) }}</strong> {{ $assignment->inventoryItem->resourceCatalog->Unit ?? '' }}</td>
                                             </tr>
                                             <tr>
                                                 <td class="text-muted ps-0">Date Assigned</td>
@@ -199,7 +199,7 @@
                                         @enderror
                                     </div>
 
-                                    <div class="col-md-3 mb-3">
+                                    <div class="col-md-4 mb-3">
                                         <label for="ResponsibleEmployeeID" class="form-label">Responsible Employee</label>
                                         <select name="ResponsibleEmployeeID" id="ResponsibleEmployeeID" class="form-select" aria-label="Responsible Employee">
                                             <option value="">Select Employee (if applicable)</option>
@@ -210,15 +210,6 @@
                                             @endforeach
                                         </select>
                                         @error('ResponsibleEmployeeID')
-                                            <div class="text-danger small">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-
-                                    <div class="col-md-3 mb-3">
-                                        <label for="estimated_cost" class="form-label">Est. Repair/Replacement Cost</label>
-                                        <input type="number" name="estimated_cost" id="EstimatedCost" class="form-control"
-                                            step="0.01" min="0" value="{{ old('estimated_cost') }}" placeholder="0.00">
-                                        @error('estimated_cost')
                                             <div class="text-danger small">{{ $message }}</div>
                                         @enderror
                                     </div>

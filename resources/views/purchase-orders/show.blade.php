@@ -19,7 +19,7 @@
                             </div>
                             <div class="col-auto">
                                 <a href="{{ route('purchase-orders.index') }}" class="btn btn-secondary">
-                                    <i class="fas fa-arrow-left me-1"></i> Back to List
+                                    <i class="fas fa-arrow-left me-1"></i> Back
                                 </a>
                             </div>
                         </div>
@@ -158,20 +158,25 @@
                                         @endphp
                                         <tr>
                                             <td>
-                                                <div class="d-flex align-items-center">
-                                                    <div class="rounded-circle d-flex align-items-center justify-content-center me-2"
-                                                        style="width: 32px; height: 32px; background-color: {{ $itemType == 'Equipment' ? 'rgba(23, 162, 184, 0.15)' : 'rgba(135, 169, 107, 0.15)' }};">
-                                                        <i class="fas {{ $itemType == 'Equipment' ? 'fa-tools' : 'fa-cube' }}"
-                                                            style="color: {{ $itemType == 'Equipment' ? '#17a2b8' : '#87A96B' }}; font-size: 0.8rem;"></i>
-                                                    </div>
-                                                    <span>{{ $itemName }}</span>
-                                                </div>
+                                                {{ $itemName }}
                                             </td>
                                             <td>{{ $item->supplier->SupplierName ?? '-' }}</td>
-                                            <td class="text-center">{{ number_format($item->QuantityOrdered) }}
-                                                {{ $item->Unit }}</td>
-                                            <td class="text-center">{{ number_format($item->QuantityReceived) }}
-                                                {{ $item->Unit }}</td>
+                                            <td class="text-center">
+                                                @if($item->inventoryItem && $item->inventoryItem->requiresIntegerQuantity())
+                                                    {{ number_format((int) $item->QuantityOrdered, 0) }}
+                                                @else
+                                                    {{ number_format($item->QuantityOrdered, 2) }}
+                                                @endif
+                                                {{ $item->Unit }}
+                                            </td>
+                                            <td class="text-center">
+                                                @if($item->inventoryItem && $item->inventoryItem->requiresIntegerQuantity())
+                                                    {{ number_format((int) $item->QuantityReceived, 0) }}
+                                                @else
+                                                    {{ number_format($item->QuantityReceived, 2) }}
+                                                @endif
+                                                {{ $item->Unit }}
+                                            </td>
                                             <td class="text-center">
                                                 @if($isFullyReceived)
                                                     <span class="badge text-white" style="background-color: #87A96B;">Complete</span>

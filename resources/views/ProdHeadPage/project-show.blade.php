@@ -455,7 +455,11 @@
                                                                                     {{ $req->item->resourceCatalog->ItemName ?? '' }}
                                                                                 </div>
                                                                                 <small class="text-muted">Qty:
-                                                                                    {{ number_format($req->estimated_quantity, 2) }}
+                                                                                    @if($req->item->resourceCatalog && $req->item->resourceCatalog->requiresIntegerQuantity())
+                                                                                        {{ number_format((int) $req->estimated_quantity, 0) }}
+                                                                                    @else
+                                                                                        {{ number_format($req->estimated_quantity, 2) }}
+                                                                                    @endif
                                                                                     {{ $req->unit ?? ($req->item->resourceCatalog->Unit ?? '') }}</small>
                                                                             </div>
                                                                             <span
@@ -1369,7 +1373,12 @@
                                     <option value="{{ $material->ItemID }}" data-available="{{ $material->AvailableQuantity }}"
                                         data-unit="{{ $material->Unit }}">
                                         {{ $material->ItemName }} (Available:
-                                        {{ number_format($material->AvailableQuantity, 2) }} {{ $material->Unit }})
+                                        @if($material->requiresIntegerQuantity())
+                                            {{ number_format((int) $material->AvailableQuantity, 0) }}
+                                        @else
+                                            {{ number_format($material->AvailableQuantity, 2) }}
+                                        @endif
+                                        {{ $material->Unit }})
                                     </option>
                                 @endforeach
                             </select>
@@ -1427,7 +1436,12 @@
                                 @foreach($equipment as $item)
                                     <option value="{{ $item->ItemID }}" data-available="{{ $item->AvailableQuantity }}"
                                         data-unit="{{ $item->Unit }}">
-                                        {{ $item->ItemName }} (Available: {{ number_format($item->AvailableQuantity, 2) }}
+                                        {{ $item->ItemName }} (Available:
+                                        @if($item->requiresIntegerQuantity())
+                                            {{ number_format((int) $item->AvailableQuantity, 0) }}
+                                        @else
+                                            {{ number_format($item->AvailableQuantity, 2) }}
+                                        @endif
                                         {{ $item->Unit }})
                                     </option>
                                 @endforeach

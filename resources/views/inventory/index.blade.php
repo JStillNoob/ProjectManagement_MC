@@ -12,12 +12,6 @@
                         <h3 class="card-title">
                             <i class="fas fa-boxes mr-2"></i>Inventory Items
                         </h3>
-                        <div class="card-tools">
-                            <a href="{{ route('inventory.low-stock') }}" class="btn btn-warning btn-sm"
-                                style="background-color: #ffc107 !important; border: 2px solid #ffc107 !important; color: white !important; opacity: 1 !important; visibility: visible !important; display: inline-block !important;">
-                                <i class="fas fa-exclamation-triangle"></i> Low Stock
-                            </a>
-                        </div>
                     </div>
                     <div class="card-body p-0">
 
@@ -42,15 +36,6 @@
                                         <option value="">All Statuses</option>
                                         <option value="Active">Active</option>
                                         <option value="Inactive">Inactive</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group mb-0">
-                                    <label for="filterStock" class="small text-muted mb-1">Filter by Stock</label>
-                                    <select id="filterStock" class="form-control form-control-sm">
-                                        <option value="">All Items</option>
-                                        <option value="Low Stock">Low Stock Only</option>
                                     </select>
                                 </div>
                             </div>
@@ -79,9 +64,6 @@
                                         <tr>
                                             <td>
                                                 <strong>{{ $item->resourceCatalog->ItemName ?? 'N/A' }}</strong>
-                                                @if($item->AvailableQuantity < 10)
-                                                    <span class="badge badge-warning ml-2">Low Stock</span>
-                                                @endif
                                             </td>
                                             <td>
                                                 <span
@@ -89,10 +71,20 @@
                                                     {{ $item->resourceCatalog->Type ?? 'N/A' }}
                                                 </span>
                                             </td>
-                                            <td>{{ number_format($item->TotalQuantity, 2) }}</td>
+                                            <td>
+                                                @if($item->requiresIntegerQuantity())
+                                                    {{ number_format((int) $item->TotalQuantity, 0) }}
+                                                @else
+                                                    {{ number_format($item->TotalQuantity, 2) }}
+                                                @endif
+                                            </td>
                                             <td>
                                                 <span class="text-success">
-                                                    {{ number_format($item->AvailableQuantity, 2) }}
+                                                    @if($item->requiresIntegerQuantity())
+                                                        {{ number_format((int) $item->AvailableQuantity, 0) }}
+                                                    @else
+                                                        {{ number_format($item->AvailableQuantity, 2) }}
+                                                    @endif
                                                 </span>
                                             </td>
                                             <td>{{ $item->resourceCatalog->Unit ?? 'N/A' }}</td>
@@ -229,15 +221,13 @@
 
                 /* Filter section styling */
                 #filterType,
-                #filterStatus,
-                #filterStock {
+                #filterStatus {
                     border: 1px solid #ced4da;
                     border-radius: 4px;
                 }
 
                 #filterType:focus,
-                #filterStatus:focus,
-                #filterStock:focus {
+                #filterStatus:focus {
                     border-color: #87A96B;
                     box-shadow: 0 0 0 0.2rem rgba(135, 169, 107, 0.25);
                 }
@@ -283,15 +273,6 @@
                     $('#filterStatus').on('change', function () {
                         var val = $(this).val();
                         table.column(5).search(val ? val : '', true, false).draw();
-                    });
-
-                    // Filter by Low Stock
-                    $('#filterStock').on('change', function () {
-                        if ($(this).is(':checked')) {
-                            table.column(3).search('text-danger', true, false).draw();
-                        } else {
-                            table.column(3).search('').draw();
-                        }
                     });
                 });
             </script>
